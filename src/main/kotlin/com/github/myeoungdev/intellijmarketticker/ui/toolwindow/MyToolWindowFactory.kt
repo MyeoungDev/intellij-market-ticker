@@ -1,4 +1,4 @@
-package com.github.myeoungdev.intellijmarketticker.toolWindow
+package com.github.myeoungdev.intellijmarketticker.ui.toolwindow
 
 import com.intellij.openapi.components.service
 import com.intellij.openapi.diagnostic.thisLogger

@@ -1,0 +1,65 @@
+{
+  "isSuccess": true,
+  "detailCode": "",
+  "message": "",
+  "result": {
+    "query": "삼성전",
+    "items": [
+      {
+        "code": "005930",
+        "name": "삼성전자",
+        "typeCode": "KOSPI",
+        "typeName": "코스피",
+        "url": "/domestic/stock/005930/total",
+        "reutersCode": "005930",
+        "nationCode": "KOR",
+        "nationName": "대한민국",
+        "category": "stock"
+      },
+      {
+        "code": "005935",
+        "name": "삼성전자우",
+        "typeCode": "KOSPI",
+        "typeName": "코스피",
+        "url": "/domestic/stock/005935/total",
+        "reutersCode": "005935",
+        "nationCode": "KOR",
+        "nationName": "대한민국",
+        "category": "stock"
+      },
+      {
+        "code": "009150",
+        "name": "삼성전기",
+        "typeCode": "KOSPI",
+        "typeName": "코스피",
+        "url": "/domestic/stock/009150/total",
+        "reutersCode": "009150",
+        "nationCode": "KOR",
+        "nationName": "대한민국",
+        "category": "stock"
+      },
+      {
+        "code": "009155",
+        "name": "삼성전기우",
+        "typeCode": "KOSPI",
+        "typeName": "코스피",
+        "url": "/domestic/stock/009155/total",
+        "reutersCode": "009155",
+        "nationCode": "KOR",
+        "nationName": "대한민국",
+        "category": "stock"
+      },
+      {
+        "code": "601567",
+        "name": "삼성전기",
+        "typeCode": "SHANGHAI",
+        "typeName": "상해(후강퉁) 증권거래소",
+        "url": "/worldstock/stock/601567.SS/total",
+        "reutersCode": "601567.SS",
+        "nationCode": "CHN",
+        "nationName": "중국",
+        "category": "stock"
+      }
+    ]
+  }
+}

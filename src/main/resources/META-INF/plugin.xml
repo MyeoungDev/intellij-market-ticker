@@ -9,7 +9,7 @@
     <resource-bundle>messages.MyBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.myeoungdev.intellijmarketticker.toolWindow.MyToolWindowFactory" id="MyToolWindow"/>
+        <toolWindow factoryClass="com.github.myeoungdev.intellijmarketticker.ui.toolwindow.MyToolWindowFactory" id="MyToolWindow"/>
         <postStartupActivity implementation="com.github.myeoungdev.intellijmarketticker.startup.MyProjectActivity" />
     </extensions>
 </idea-plugin>
