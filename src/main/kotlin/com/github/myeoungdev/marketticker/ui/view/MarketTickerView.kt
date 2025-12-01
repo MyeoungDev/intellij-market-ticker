@@ -1,9 +1,11 @@
 package com.github.myeoungdev.marketticker.ui.view
 
+import com.github.myeoungdev.marketticker.application.watch.WatchlistDataService
 import com.github.myeoungdev.marketticker.infrastructure.naver.NaverSearchClient
 import com.github.myeoungdev.marketticker.infrastructure.naver.NaverSearchItem
 import com.github.myeoungdev.marketticker.infrastructure.naver.toTicker
 import com.github.myeoungdev.marketticker.ui.rendener.SearchResultRenderer
+import com.intellij.openapi.components.service
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
@@ -45,7 +47,7 @@ class MarketTickerView() {
         searchField.margin = JBUI.insets(5)
 
         // 리스트 설정
-        resultList.cellRenderer = SearchResultRenderer() // (아래에서 정의)
+        resultList.cellRenderer = SearchResultRenderer()
 
         // 레이아웃 배치
         panel.add(searchField, BorderLayout.NORTH)
@@ -60,12 +62,13 @@ class MarketTickerView() {
             override fun changedUpdate(e: DocumentEvent) = onQueryChanged()
         })
 
-        // 리스트 더블 클릭 이벤트 (나중에 관심 종목 추가용)
         resultList.addMouseListener(object : java.awt.event.MouseAdapter() {
             override fun mouseClicked(e: java.awt.event.MouseEvent) {
                 if (e.clickCount == 2) {
                     val selected = resultList.selectedValue
                     val ticker = selected.toTicker()
+                    val service = service<WatchlistDataService>()
+                    service.addTicker(ticker)
                     println("관심 종목 추가됨: ${ticker.name}")
                 }
             }
@@ -77,14 +80,13 @@ class MarketTickerView() {
 
         // 이전 검색 취소
         searchJob?.cancel()
+//
+//        // 검색어 없거나 짧으면 리스트 클리어
+//        if (query.length < 2) {
+//            listModel.clear()
+//            return
+//        }
 
-        // 검색어 없거나 짧으면 리스트 클리어
-        if (query.length < 2) {
-            listModel.clear()
-            return
-        }
-
-        // 새 검색 시작
         searchJob = scope.launch {
             delay(300) // 300ms 디바운스 (입력 대기)
 
@@ -95,10 +97,11 @@ class MarketTickerView() {
                 emptyList()
             }
 
-            // UI 업데이트는 반드시 EDT(Main Thread)에서!
             withContext(Dispatchers.Main) { // IntelliJ에서는 Swing Thread
                 listModel.clear()
-                results.forEach { listModel.addElement(it) }
+                results.forEach {
+                    listModel.addElement(it)
+                }
             }
         }
     }
