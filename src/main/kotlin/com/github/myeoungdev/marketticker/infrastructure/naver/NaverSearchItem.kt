@@ -1,4 +1,4 @@
-package com.github.myeoungdev.intellijmarketticker.infrastructure.naver
+package com.github.myeoungdev.marketticker.infrastructure.naver
 
 /**
  * 네이버의 종목 검색에 대한 Item 정의 클래스

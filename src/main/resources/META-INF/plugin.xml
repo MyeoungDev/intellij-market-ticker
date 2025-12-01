@@ -1,6 +1,6 @@
 <!-- Plugin Configuration File. Read more: https://plugins.jetbrains.com/docs/intellij/plugin-configuration-file.html -->
 <idea-plugin>
-    <id>com.github.myeoungdev.intellijmarketticker</id>
+    <id>com.github.myeoungdev.marketticker</id>
     <name>intellij-market-ticker</name>
     <vendor>myeoungdev</vendor>
 
@@ -9,7 +9,10 @@
     <resource-bundle>messages.MyBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
-        <toolWindow factoryClass="com.github.myeoungdev.intellijmarketticker.ui.toolwindow.MyToolWindowFactory" id="MyToolWindow"/>
-        <postStartupActivity implementation="com.github.myeoungdev.intellijmarketticker.startup.MyProjectActivity" />
+<!--        <toolWindow factoryClass="com.github.myeoungdev.marketticker.ui.toolwindow.MyToolWindowFactory" id="MyToolWindow"/>-->
+        <toolWindow
+                id="Market Ticker"
+                anchor="right"
+                factoryClass="com.github.myeoungdev.marketticker.ui.toolwindow.MarketTickerToolWindowFactory"/>
     </extensions>
 </idea-plugin>

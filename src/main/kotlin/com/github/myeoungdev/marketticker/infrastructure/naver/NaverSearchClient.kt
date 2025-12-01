@@ -1,4 +1,4 @@
-package com.github.myeoungdev.intellijmarketticker.infrastructure.naver
+package com.github.myeoungdev.marketticker.infrastructure.naver
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
@@ -20,8 +20,9 @@ class NaverSearchClient(
 
     val mapper = jacksonObjectMapper()
 
-    inline fun <reified T> parseResponse(json: String): NaverResponse<T> =
-        mapper.readValue(json)
+    inline fun <reified T> parseResponse(json: String): NaverResponse<T> {
+        return mapper.readValue(json)
+    }
 
     fun searchStocks(keyword: String): List<NaverSearchItem> {
         if (keyword.length < 2) return emptyList()
@@ -49,8 +50,7 @@ class NaverSearchClient(
         }
 
         val body = response.body()
-        val wrapper: NaverResponse<NaverSearchResultPayload> =
-            parseResponse(body)
+        val wrapper: NaverResponse<NaverSearchResultPayload> = parseResponse(body)
 
         if (!wrapper.isSuccess || wrapper.result == null) {
             return emptyList()

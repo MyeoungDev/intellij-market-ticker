@@ -1,4 +1,4 @@
-package com.github.myeoungdev.intellijmarketticker.infrastructure.naver
+package com.github.myeoungdev.marketticker.infrastructure.naver
 
 /**
  * Some Descirption...

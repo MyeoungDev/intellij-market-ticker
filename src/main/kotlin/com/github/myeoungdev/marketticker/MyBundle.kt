@@ -1,4 +1,4 @@
-package com.github.myeoungdev.intellijmarketticker
+package com.github.myeoungdev.marketticker
 
 import com.intellij.DynamicBundle
 import org.jetbrains.annotations.NonNls

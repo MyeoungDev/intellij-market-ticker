@@ -1,4 +1,4 @@
-package com.github.myeoungdev.intellijmarketticker.domain.model
+package com.github.myeoungdev.marketticker.domain.model
 
 /**
  * Some Descirption...

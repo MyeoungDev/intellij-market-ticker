@@ -1,4 +1,4 @@
-package com.github.myeoungdev.intellijmarketticker.infrastructure.naver
+package com.github.myeoungdev.marketticker.infrastructure.naver
 
 /**
  * Naver 에서 사용되는 공통 응답 Wrapper

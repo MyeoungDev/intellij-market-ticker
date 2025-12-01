@@ -1,7 +1,7 @@
-package com.github.myeoungdev.intellijmarketticker.application.search
+package com.github.myeoungdev.marketticker.application.search
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
-import com.github.myeoungdev.intellijmarketticker.infrastructure.naver.NaverSearchResultPayload
+import com.github.myeoungdev.marketticker.infrastructure.naver.NaverSearchResultPayload
 import java.net.http.HttpClient
 
 /**
