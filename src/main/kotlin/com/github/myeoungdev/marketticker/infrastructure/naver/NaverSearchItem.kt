@@ -13,7 +13,7 @@ data class NaverSearchItem(
     val typeName: String,    // "코스피"
     val url: String,         // "/domestic/stock/005930/total"
     val reutersCode: String, // "005930"
-    val nationCode: String,  // "KOR"
-    val nationName: String,  // "대한민국"
+    val nationCode: String?,  // "KOR"
+    val nationName: String?,  // "대한민국"
     val category: String     // "stock"
 )

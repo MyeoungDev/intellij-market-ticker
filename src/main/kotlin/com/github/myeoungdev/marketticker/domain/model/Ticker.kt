@@ -10,5 +10,5 @@ data class Ticker(
     val symbol: String,
     val name: String,
     val market: String,
-    val country: String
+    val country: String?
 )

@@ -1,7 +1,9 @@
 package com.github.myeoungdev.marketticker.ui.view
 
+import com.github.myeoungdev.marketticker.application.search.NaverSearchProvider
+import com.github.myeoungdev.marketticker.application.search.SearchProvider
 import com.github.myeoungdev.marketticker.application.watch.WatchlistDataService
-import com.github.myeoungdev.marketticker.infrastructure.naver.NaverSearchClient
+import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.infrastructure.naver.NaverSearchItem
 import com.github.myeoungdev.marketticker.infrastructure.naver.toTicker
 import com.github.myeoungdev.marketticker.ui.rendener.SearchResultRenderer
@@ -19,20 +21,21 @@ import javax.swing.event.DocumentListener
 
 
 /**
- * Some Descirption...
+ * Market Ticker Plugin Main UI
  *
  * @author  : 강명관
  * @since   : 2025-12-01
  */
-class MarketTickerView() {
+class MarketTickerView(
+    private val searchProvider: SearchProvider = NaverSearchProvider()
+) {
 
     val panel = JPanel(BorderLayout())
     private val searchField = JBTextField()
-    private val listModel = DefaultListModel<NaverSearchItem>() // 리스트 데이터 모델
-    private val resultList = JBList(listModel) // 실제 리스트 컴포넌트
+    private val listModel = DefaultListModel<Ticker>()
+    private val resultList = JBList(listModel)
 
     // 서비스 및 코루틴 스코프
-    private val searchClient = NaverSearchClient()
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var searchJob: Job? = null
 
@@ -66,7 +69,7 @@ class MarketTickerView() {
             override fun mouseClicked(e: java.awt.event.MouseEvent) {
                 if (e.clickCount == 2) {
                     val selected = resultList.selectedValue
-                    val ticker = selected.toTicker()
+                    val ticker = selected
                     val service = service<WatchlistDataService>()
                     service.addTicker(ticker)
                     println("관심 종목 추가됨: ${ticker.name}")
@@ -80,28 +83,20 @@ class MarketTickerView() {
 
         // 이전 검색 취소
         searchJob?.cancel()
-//
-//        // 검색어 없거나 짧으면 리스트 클리어
-//        if (query.length < 2) {
-//            listModel.clear()
-//            return
-//        }
 
         searchJob = scope.launch {
             delay(300) // 300ms 디바운스 (입력 대기)
 
             val results = try {
-                searchClient.searchStocks(query)
+                searchProvider.search(query)
             } catch (e: Exception) {
                 e.printStackTrace()
                 emptyList()
             }
 
-            withContext(Dispatchers.Main) { // IntelliJ에서는 Swing Thread
+            withContext(Dispatchers.Main) {
                 listModel.clear()
-                results.forEach {
-                    listModel.addElement(it)
-                }
+                results.forEach { o -> listModel.addElement(o) }
             }
         }
     }

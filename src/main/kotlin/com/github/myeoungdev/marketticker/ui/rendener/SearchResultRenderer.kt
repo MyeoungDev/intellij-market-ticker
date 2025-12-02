@@ -1,5 +1,6 @@
 package com.github.myeoungdev.marketticker.ui.rendener
 
+import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.infrastructure.naver.NaverSearchItem
 import com.intellij.ui.ColoredListCellRenderer
 import com.intellij.ui.SimpleTextAttributes
@@ -11,10 +12,11 @@ import javax.swing.JList
  * @author  : 강명관
  * @since   : 2025-12-01
  */
-class SearchResultRenderer : ColoredListCellRenderer<NaverSearchItem>() {
+class SearchResultRenderer : ColoredListCellRenderer<Ticker>() {
+
     override fun customizeCellRenderer(
-        list: JList<out NaverSearchItem>,
-        value: NaverSearchItem?,
+        list: JList<out Ticker>,
+        value: Ticker?,
         index: Int,
         selected: Boolean,
         hasFocus: Boolean
@@ -28,9 +30,9 @@ class SearchResultRenderer : ColoredListCellRenderer<NaverSearchItem>() {
         append("  ")
 
         // 3. 코드 (회색)
-        append(value.code, SimpleTextAttributes.GRAYED_ATTRIBUTES)
+        append(value.symbol, SimpleTextAttributes.GRAYED_ATTRIBUTES)
 
         // 4. 시장 정보 (작게, 괄호)
-        append(" (${value.typeCode})", SimpleTextAttributes.GRAY_SMALL_ATTRIBUTES)
+        append(" (${value.symbol})", SimpleTextAttributes.GRAY_SMALL_ATTRIBUTES)
     }
 }
