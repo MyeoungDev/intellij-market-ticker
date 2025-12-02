@@ -2,6 +2,8 @@ package com.github.myeoungdev.marketticker.infrastructure.naver
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.github.myeoungdev.marketticker.domain.model.Ticker
+import com.github.myeoungdev.marketticker.domain.model.TickerPrice
 import java.net.URI
 import java.net.URLEncoder
 import java.net.http.HttpClient
@@ -14,7 +16,7 @@ import java.net.http.HttpResponse
  * @author  : 강명관
  * @since   : 2025-11-30
  */
-class NaverSearchClient(
+class NaverClient(
     private val httpClient: HttpClient = HttpClient.newHttpClient()
 ) {
 
@@ -33,18 +35,13 @@ class NaverSearchClient(
 
         val request = HttpRequest.newBuilder()
             .uri(URI.create(url))
-            .header(
-                "User-Agent",
-                "Mozilla/5.0 (compatible; IntelliJ-Market-Ticker/1.0)"
-            )
+            .header("User-Agent", "Mozilla/5.0")
             .header("Accept", "application/json")
-            .header("Referer", "https://m.stock.naver.com/search")
             .GET()
             .build()
 
         val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
         if (response.statusCode() != 200) {
-            // 로깅만 하고 빈 리스트
             println("Naver search error: ${response.statusCode()}")
             return emptyList()
         }
@@ -57,5 +54,33 @@ class NaverSearchClient(
         }
 
         return wrapper.result.items
+    }
+
+    fun getPrice(tickers: List<Ticker>): List<TickerPrice> {
+
+        if (tickers.isEmpty()) {
+            return emptyList()
+        }
+
+        val encoded = URLEncoder.encode(tickers.toString(), Charsets.UTF_8)
+        val url =
+            "https://polling.finance.naver.com/api/realtime/domestic/stock/${encoded}"
+
+        val request = HttpRequest.newBuilder()
+            .uri(URI.create(url))
+            .header("User-Agent", "Mozilla/5.0")
+            .header("Accept", "application/json")
+            .GET()
+            .build()
+
+        val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
+        if (response.statusCode() != 200) {
+            println("Naver search error: ${response.statusCode()}")
+            return emptyList()
+        }
+
+        val body = response.body()
+
+        return emptyList()
     }
 }

@@ -1,5 +1,7 @@
 package com.github.myeoungdev.marketticker.infrastructure.naver
 
+import com.github.myeoungdev.marketticker.domain.model.Ticker
+
 /**
  * 네이버의 종목 검색에 대한 Item 정의 클래스
  *
@@ -16,4 +18,15 @@ data class NaverSearchItem(
     val nationCode: String?,  // "KOR"
     val nationName: String?,  // "대한민국"
     val category: String     // "stock"
-)
+) {
+    fun toTicker(): Ticker {
+        return Ticker(
+            symbol = code,
+            name = name,
+            marketCode = typeCode,
+            marketName = typeName,
+            nationCode = nationCode,
+            nationName = nationName
+        )
+    }
+}
