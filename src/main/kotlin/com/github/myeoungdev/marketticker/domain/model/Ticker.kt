@@ -9,6 +9,8 @@ package com.github.myeoungdev.marketticker.domain.model
 data class Ticker(
     val symbol: String,
     val name: String,
-    val market: String,
-    val country: String?
+    val marketCode: String,
+    val marketName: String,
+    val nationCode: String?,
+    val nationName: String?
 )

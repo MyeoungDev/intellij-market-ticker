@@ -33,6 +33,6 @@ class SearchResultRenderer : ColoredListCellRenderer<Ticker>() {
         append(value.symbol, SimpleTextAttributes.GRAYED_ATTRIBUTES)
 
         // 4. 시장 정보 (작게, 괄호)
-        append(" (${value.symbol})", SimpleTextAttributes.GRAY_SMALL_ATTRIBUTES)
+        append(" (${value.marketName})", SimpleTextAttributes.GRAY_SMALL_ATTRIBUTES)
     }
 }

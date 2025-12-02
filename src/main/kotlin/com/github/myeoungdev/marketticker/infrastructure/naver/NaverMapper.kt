@@ -12,6 +12,8 @@ fun NaverSearchItem.toTicker(): Ticker =
     Ticker(
         symbol = code,
         name = name,
-        market = typeCode,
-        country = nationCode
+        marketCode = typeCode,
+        marketName = typeName,
+        nationCode = nationCode,
+        nationName = nationName
     )
