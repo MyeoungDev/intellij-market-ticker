@@ -2,6 +2,9 @@ package com.github.myeoungdev.marketticker.infrastructure.naver
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.github.myeoungdev.marketticker.domain.model.CurrencyType
+import com.github.myeoungdev.marketticker.domain.model.MarketStatus
+import com.github.myeoungdev.marketticker.domain.model.PriceStatus
+import com.github.myeoungdev.marketticker.domain.model.TickerPrice
 
 /**
  * Some Descirption...
@@ -10,7 +13,7 @@ import com.github.myeoungdev.marketticker.domain.model.CurrencyType
  * @since   : 2025-12-02
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
-data class NaverRealTimeStockPriceResponse (
+data class NaverRealTimeStockPriceResponse(
     val pollingInterval: Long = 0,
     val time: String? = null,
     val datas: List<NaverStockPrice> = emptyList()
@@ -23,6 +26,9 @@ data class NaverStockPrice(
 
     // 종목명 (삼성전자)
     val stockName: String,
+
+    // 주식에 대한 정보
+    val stockExchangeType: StockExchangeType,
 
     // 시가
     val openPrice: String,
@@ -61,6 +67,23 @@ data class NaverStockPrice(
 ) {
 
     // TODO: toDomain Logic
+    fun toTickerPrice(): TickerPrice {
+        return TickerPrice(
+            symbol = itemCode,
+            name = stockName,
+            previousClosePrice = closePrice - compareToPreviousClosePrice,
+            openPrice = openPrice,
+            highPrice = highPrice,
+            lowPrice = lowPrice,
+            currentPrice = closePrice,
+            priceStatus = PriceStatus.from(compareToPreviousClosePrice),
+            changeAmount = compareToPreviousClosePrice,
+            changeRate = fluctuationsRatio,
+            tradeVolume = accumulatedTradingVolume,
+            tradeValue = accumulatedTradingValue,
+            marketStatus = MarketStatus.of(marketStatus)
+        )
+    }
 
 
     // TODO: Extract Util Class
@@ -74,4 +97,20 @@ data class CompareStatus(
     val code: String, // "2" (상승), "5" (하락) 등
     val text: String, // "상승", "하락"
     val name: String  // "RISING", "FALLING"
+)
+
+data class StockExchangeType(
+    val code: String,                   // "KS",
+    val zoneId: String,                 // Asia/Seoul
+    val nationType: String,             // KOR
+    val delayTime: Long,                // 0
+    val startTime: String,              // 0900
+    val endTime: String,                // 1530
+    val closePriceSendTime: String,     // 1630
+    val nameKor: String,                // 코스피
+    val nameEng: String,                // KOSPI
+    val nationCode: String,             // KOR
+    val nationName: String,             // 대한미국
+    val stockType: String,              // domestic
+    val name: String                    // KOSPI
 )

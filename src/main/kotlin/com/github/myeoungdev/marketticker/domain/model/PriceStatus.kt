@@ -12,9 +12,9 @@ enum class PriceStatus {
     STEADY;   // 보합 (검정/회색)
 
     companion object {
-        fun from(rate: Double): PriceStatus = when {
-            rate > 0.0 -> RISING
-            rate < 0.0 -> FALLING
+        fun from(changeAmount: Double): PriceStatus = when {
+            changeAmount > 0.0 -> RISING
+            changeAmount < 0.0 -> FALLING
             else -> STEADY
         }
     }
