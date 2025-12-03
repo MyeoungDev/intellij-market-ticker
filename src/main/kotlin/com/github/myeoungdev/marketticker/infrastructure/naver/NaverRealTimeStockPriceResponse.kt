@@ -1,7 +1,7 @@
 package com.github.myeoungdev.marketticker.infrastructure.naver
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
-import com.github.myeoungdev.marketticker.domain.model.TickerPrice
+import com.github.myeoungdev.marketticker.domain.model.CurrencyType
 
 /**
  * Some Descirption...
@@ -9,19 +9,29 @@ import com.github.myeoungdev.marketticker.domain.model.TickerPrice
  * @author  : 강명관
  * @since   : 2025-12-02
  */
-data class NaverRealtimeResponse (
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class NaverRealTimeStockPriceResponse (
     val pollingInterval: Long = 0,
     val time: String? = null,
-    val datas: List<NaverRealtimeItem> = emptyList()
+    val datas: List<NaverStockPrice> = emptyList()
 )
 
-
-data class NaverRealtimeItem(
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class NaverStockPrice(
     // 종목 코드 (005930)
     val itemCode: String,
 
     // 종목명 (삼성전자)
     val stockName: String,
+
+    // 시가
+    val openPrice: String,
+
+    // 고가
+    val highPrice: String,
+
+    // 저가
+    val lowPrice: String,
 
     // 현재가 ("103,400") -> 콤마 포함 String
     val closePrice: String,
@@ -36,20 +46,24 @@ data class NaverRealtimeItem(
     val compareToPreviousPrice: CompareStatus? = null,
 
     // 거래량 ("10,079,219")
-    val accumulatedTradingVolume: String
+    val accumulatedTradingVolume: String,
+
+    // 거래 대금 ("1,032,919백만")
+    val accumulatedTradingValue: String,
+
+    // 시장 상태
+    val marketStatus: String,
+
+    // 국제 증권 식별 코드
+    val isinCode: String?,
+
+    val currencyType: CurrencyType
 ) {
 
-    fun toTickerPrice(): TickerPrice {
-        return TickerPrice(
-            symbol = itemCode,
-            price = parseDouble(closePrice),
-            changeRate = parseDouble(fluctuationsRatio),
-            volume = parseDouble(accumulatedTradingVolume).toLong(),
-            marketType = "KOREA"
-        )
-    }
+    // TODO: toDomain Logic
 
-    // 헬퍼 함수: 콤마 제거 후 Double 변환 (실패 시 0.0)
+
+    // TODO: Extract Util Class
     private fun parseDouble(value: String?): Double {
         return value?.replace(",", "")?.toDoubleOrNull() ?: 0.0
     }

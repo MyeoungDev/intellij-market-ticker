@@ -4,6 +4,7 @@
     {
       "itemCode": "005930",
       "stockName": "삼성전자",
+      // 주식에 대한 정보 (나라, 시장 시간, 시장 구분) -> Ticker 가 있으니 필요 x
       "stockExchangeType": {
         "code": "KS",
         "zoneId": "Asia/Seoul",
@@ -19,24 +20,33 @@
         "stockType": "domestic",
         "name": "KOSPI"
       },
+      // 종가
       "closePrice": "103,400",
+      // 이전 종가 비교값
       "compareToPreviousClosePrice": "2,600",
       "compareToPreviousPrice": {
         "code": "2",
         "text": "상승",
         "name": "RISING"
       },
+      // 변동 나폭
       "fluctuationsRatio": "2.58",
       "tradeStopType": {
         "code": "1",
         "text": "운영.Trading",
         "name": "TRADING"
       },
+      // 시가
       "openPrice": "101,200",
+      // 고가
       "highPrice": "103,500",
+      // 저가
       "lowPrice": "101,000",
+      // 거래량
       "accumulatedTradingVolume": "10,079,219",
+      // 거래대금
       "accumulatedTradingValue": "1,032,919백만",
+      // 시장의 여림 닫힘
       "marketStatus": "OPEN",
       "localTradedAt": "2025-12-02T13:48:08.504191+09:00",
       "overMarketPriceInfo": {
@@ -69,10 +79,12 @@
         "accumulatedTradingVolume": "14,842,826",
         "accumulatedTradingValue": "1,519,927백만"
       },
+      // 국제 증권 식별 코드
       "isinCode": "KR7005930003",
       "myDataCode": null,
       "stockEndUrl": null,
       "symbolCode": "005930",
+      // 통화 타입
       "currencyType": {
         "code": "KRW",
         "text": "Republic of Korea won",
