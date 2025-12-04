@@ -19,11 +19,7 @@ data class TickerPrice(
     val changeRate: Double,                     // 전일 대비 등락률 (+2.58, -1.2) - 퍼센트 단위
     val tradeVolume: Long = 0L,                 // 누적 거래량
     val tradeValue: Double = 0.0,               // 누적 거래대금
-//    val marketType: MarketType,                 // 시장 (KOREA, USA, COIN)
     val marketStatus: MarketStatus,             // 장 상태 (OPEN, CLOSED)
-    val currency: String,                       // 통화 (KRW, USD)
-) {
-    val status: PriceStatus
-        get() = PriceStatus.from(changeRate)
-
-}
+    val marketType: MarketType,                 // 시장 (KOREA, USA, COIN)
+    val currency: CurrencyType,                       // 통화 (KRW, USD)
+)

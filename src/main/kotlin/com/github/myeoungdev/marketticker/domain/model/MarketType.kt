@@ -1,11 +1,22 @@
 package com.github.myeoungdev.marketticker.domain.model
 
+import java.time.ZoneId
+
 /**
- * Some Descirption...
+ * 내부 시스템에서 사용할 표준 거래소(Market) 모델
  *
  * @author  : 강명관
  * @since   : 2025-12-03
  */
-enum class MarketType {
-    KOREA, USA, COIN
+enum class MarketType(
+    val code: String,
+    val displayName: String,
+    val zoneId: ZoneId,
+    val country: Country
+) {
+    KOSPI("KOSPI", "코스피", ZoneId.of("Asia/Seoul"), Country.KOREA),
+    KOSDAQ("KOSDAQ", "코스닥", ZoneId.of("Asia/Seoul"), Country.KOREA),
+    NASDAQ("NASDAQ", "나스닥", ZoneId.of("America/New_York"), Country.USA),
+    NYSE("NYSE", "뉴욕증권거래소", ZoneId.of("America/New_York"), Country.USA),
+    UNKNOWN("UNKNOWN", "알 수 없음", ZoneId.systemDefault(), Country.UNKNOWN);
 }

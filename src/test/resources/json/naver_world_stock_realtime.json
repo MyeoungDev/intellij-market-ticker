@@ -1,0 +1,134 @@
+{
+  "pollingInterval": 70000,
+  "datas": [
+    {
+      "reutersCode": "AAPL.O",
+      "stockName": "애플",
+      "symbolCode": "AAPL",
+      "stockExchangeType": {
+        "code": "NSQ",
+        "zoneId": "EST5EDT",
+        "nationType": "USA",
+        "delayTime": 0,
+        "startTime": "0930",
+        "endTime": "1600",
+        "closePriceSendTime": "2031",
+        "nameKor": "나스닥 증권거래소",
+        "nameEng": "NASDAQ Stock Exchange",
+        "nationCode": "USA",
+        "nationName": "미국",
+        "stockType": "worldstock",
+        "name": "NASDAQ"
+      },
+      "closePrice": "284.15",
+      "compareToPreviousClosePrice": "-2.04",
+      "compareToPreviousPrice": {
+        "code": "5",
+        "text": "하락",
+        "name": "FALLING"
+      },
+      "fluctuationsRatio": "-0.71",
+      "tradeStopType": {
+        "code": "1",
+        "text": "운영.Trading",
+        "name": "TRADING"
+      },
+      "openPrice": "286.20",
+      "highPrice": "288.62",
+      "lowPrice": "283.30",
+      "accumulatedTradingVolume": "43,538,687",
+      "accumulatedTradingValue": "124억 USD",
+      "localTradedAt": "2025-12-03T16:00:00-05:00",
+      "marketStatus": "CLOSE",
+      "overMarketPriceInfo": {
+        "tradingSessionType": "AFTER_MARKET",
+        "overMarketStatus": "CLOSE",
+        "overPrice": "284.22",
+        "compareToPreviousPrice": {
+          "code": "2",
+          "text": "상승",
+          "name": "RISING"
+        },
+        "compareToPreviousClosePrice": "0.07",
+        "fluctuationsRatio": "0.02",
+        "localTradedAt": "2025-12-03T20:00:00-05:00"
+      },
+      "currencyType": {
+        "code": "USD",
+        "text": "US dollar",
+        "name": "USD"
+      },
+      "isinCode": "US0378331005",
+      "myDataCode": null,
+      "stockEndUrl": null,
+      "marketValueFull": "4,198,700,704,950",
+      "marketValueHangeul": "4조 1,987억 USD",
+      "marketValueKrwHangeul": "6,187조 6,252억원"
+    },
+    {
+      "reutersCode": "SMR",
+      "stockName": "뉴스케일 파워",
+      "symbolCode": "SMR",
+      "stockExchangeType": {
+        "code": "NYS",
+        "zoneId": "EST5EDT",
+        "nationType": "USA",
+        "delayTime": 0,
+        "startTime": "0930",
+        "endTime": "1600",
+        "closePriceSendTime": "2031",
+        "nameKor": "뉴욕 거래소",
+        "nameEng": "New York Stock Exchange",
+        "nationCode": "USA",
+        "nationName": "미국",
+        "stockType": "worldstock",
+        "name": "NYSE"
+      },
+      "closePrice": "20.14",
+      "compareToPreviousClosePrice": "1.23",
+      "compareToPreviousPrice": {
+        "code": "2",
+        "text": "상승",
+        "name": "RISING"
+      },
+      "fluctuationsRatio": "6.50",
+      "tradeStopType": {
+        "code": "1",
+        "text": "운영.Trading",
+        "name": "TRADING"
+      },
+      "openPrice": "18.76",
+      "highPrice": "20.32",
+      "lowPrice": "18.21",
+      "accumulatedTradingVolume": "25,902,829",
+      "accumulatedTradingValue": "5.03억 USD",
+      "localTradedAt": "2025-12-03T16:00:00-05:00",
+      "marketStatus": "CLOSE",
+      "overMarketPriceInfo": {
+        "tradingSessionType": "AFTER_MARKET",
+        "overMarketStatus": "CLOSE",
+        "overPrice": "20.13",
+        "compareToPreviousPrice": {
+          "code": "5",
+          "text": "하락",
+          "name": "FALLING"
+        },
+        "compareToPreviousClosePrice": "-0.01",
+        "fluctuationsRatio": "-0.05",
+        "localTradedAt": "2025-12-03T20:00:00-05:00"
+      },
+      "currencyType": {
+        "code": "USD",
+        "text": "US dollar",
+        "name": "USD"
+      },
+      "isinCode": "US67079K1007",
+      "myDataCode": null,
+      "stockEndUrl": null,
+      "marketValueFull": "6,096,873,061",
+      "marketValueHangeul": "61억 USD",
+      "marketValueKrwHangeul": "8조 9,850억원"
+    }
+  ],
+  "time": "20251204131306"
+}

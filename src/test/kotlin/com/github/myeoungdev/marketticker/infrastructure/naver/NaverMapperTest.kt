@@ -1,7 +1,7 @@
 package com.github.myeoungdev.marketticker.infrastructure.naver
 
-import org.junit.Assert.assertEquals
-import org.junit.Test
+import org.assertj.core.api.Assertions.assertThat
+import org.junit.jupiter.api.Test
 
 /**
  * Some Descirption...
@@ -30,11 +30,11 @@ class NaverMapperTest {
         val ticker = naverItem.toTicker()
 
         // Then
-        assertEquals("005930", ticker.symbol)
-        assertEquals("삼성전자", ticker.name)
-        assertEquals("KOSPI", ticker.marketCode)
-        assertEquals("코스피", ticker.marketName)
-        assertEquals("KOR", ticker.nationCode)
-        assertEquals("대한민국", ticker.nationName)
+        assertThat("005930").isEqualTo(ticker.symbol)
+        assertThat("삼성전자").isEqualTo(ticker.name)
+        assertThat("KOSPI").isEqualTo(ticker.marketCode)
+        assertThat("코스피").isEqualTo(ticker.marketName)
+        assertThat("KOR").isEqualTo(ticker.nationCode)
+        assertThat("대한민국").isEqualTo(ticker.nationName)
     }
 }
