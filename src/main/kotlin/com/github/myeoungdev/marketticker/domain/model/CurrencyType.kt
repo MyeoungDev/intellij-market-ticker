@@ -51,12 +51,7 @@ enum class CurrencyType(
 
     companion object {
         fun of(code: String): CurrencyType {
-            if (code.isBlank()) {
-                return UNKNOWN
-            }
-
-            return entries.find { it.code.equals(code, ignoreCase = true) }
-                ?: UNKNOWN
+            return entries.find { it.code.equals(code, ignoreCase = true) } ?: UNKNOWN
         }
 
         fun fromSymbol(symbol: String): CurrencyType {

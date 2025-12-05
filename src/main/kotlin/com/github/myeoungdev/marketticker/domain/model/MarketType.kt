@@ -19,4 +19,10 @@ enum class MarketType(
     NASDAQ("NASDAQ", "나스닥", ZoneId.of("America/New_York"), Country.USA),
     NYSE("NYSE", "뉴욕증권거래소", ZoneId.of("America/New_York"), Country.USA),
     UNKNOWN("UNKNOWN", "알 수 없음", ZoneId.systemDefault(), Country.UNKNOWN);
+
+    companion object {
+        fun of(type: String): MarketType {
+            return entries.find { it.name == type } ?: UNKNOWN
+        }
+    }
 }

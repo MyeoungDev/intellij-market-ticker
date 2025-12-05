@@ -1,8 +1,6 @@
 package com.github.myeoungdev.marketticker.fixtures.naver
 
-import com.github.myeoungdev.marketticker.infrastructure.naver.CurrencyResponse
-import com.github.myeoungdev.marketticker.infrastructure.naver.NaverStockPrice
-import com.github.myeoungdev.marketticker.infrastructure.naver.StockExchangeType
+import com.github.myeoungdev.marketticker.infrastructure.naver.*
 
 /**
  * Some Descirption...
@@ -11,6 +9,64 @@ import com.github.myeoungdev.marketticker.infrastructure.naver.StockExchangeType
  * @since   : 2025-12-04
  */
 object NaverFixtures {
+
+    /**
+     * NaverSearchItem (검색 결과 단건) 생성 팩토리
+     */
+    fun createNaverSearchItem(
+        code: String = "005930",
+        name: String = "삼성전자",
+        typeCode: String = "KOSPI",
+        typeName: String = "코스피",
+        url: String = "/domestic/stock/005930/total",
+        reutersCode: String = "005930",
+        nationCode: String = "KOR",
+        nationName: String = "대한민국",
+        category: String = "stock"
+    ): NaverSearchItem {
+        return NaverSearchItem(
+            code = code,
+            name = name,
+            typeCode = typeCode,
+            typeName = typeName,
+            url = url,
+            reutersCode = reutersCode,
+            nationCode = nationCode,
+            nationName = nationName,
+            category = category
+        )
+    }
+
+    /**
+     * NaverResponse (공통 래퍼) 생성 팩토리
+     * 제네릭 T를 받아 다양한 Payload를 감쌀 수 있게 함
+     */
+    fun <T> createNaverResponse(
+        result: T?,
+        isSuccess: Boolean = true,
+        message: String = "",
+        detailCode: String = ""
+    ): NaverResponse<T> {
+        return NaverResponse(
+            isSuccess = isSuccess,
+            detailCode = detailCode,
+            message = message,
+            result = result
+        )
+    }
+
+    /**
+     * 검색 결과 Payload 생성 팩토리
+     */
+    fun createSearchResultPayload(
+        query: String = "삼성",
+        items: List<NaverSearchItem> = listOf(createNaverSearchItem())
+    ): NaverSearchResultPayload {
+        return NaverSearchResultPayload(
+            query = query,
+            items = items
+        )
+    }
 
     /**
      * NaverStockPrice (종목 상세 정보) 생성 팩토리

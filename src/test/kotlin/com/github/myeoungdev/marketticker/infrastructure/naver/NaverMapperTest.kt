@@ -32,8 +32,7 @@ class NaverMapperTest {
         // Then
         assertThat("005930").isEqualTo(ticker.symbol)
         assertThat("삼성전자").isEqualTo(ticker.name)
-        assertThat("KOSPI").isEqualTo(ticker.marketCode)
-        assertThat("코스피").isEqualTo(ticker.marketName)
+        assertThat("KOSPI").isEqualTo(ticker.marketType.code)
         assertThat("KOR").isEqualTo(ticker.nationCode)
         assertThat("대한민국").isEqualTo(ticker.nationName)
     }

@@ -58,6 +58,12 @@ class NaverClient(
 
     // TODO: Facade Method 구현
     //  - Ticker 도메인에 marketCode 사용 (MarketCode -> MarketType 으로 형 변경)
+    fun fetchStockPrice(tickers: List<Ticker>): List<TickerPrice> {
+
+
+        return emptyList()
+    }
+
 
     /**
      * 국내 상장 주식 (KOSPI, KOSDAQ) 을 실시간 가격을 조회하는 Naver API 를 호출하는 메서드

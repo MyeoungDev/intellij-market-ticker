@@ -143,6 +143,12 @@ tasks {
     }
 }
 
+// TestCode Default Encoding
+tasks.withType<Test> {
+    useJUnitPlatform()
+    systemProperty("file.encoding", "UTF-8")
+}
+
 intellijPlatformTesting {
     runIde {
         register("runIdeForUiTests") {

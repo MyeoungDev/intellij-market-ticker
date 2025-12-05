@@ -2,8 +2,11 @@ package com.github.myeoungdev.marketticker.infrastructure.naver
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.github.myeoungdev.marketticker.domain.model.MarketType
+import com.github.myeoungdev.marketticker.fixtures.naver.NaverFixtures
 import org.junit.Assert.assertEquals
 import org.junit.Test
+import org.junit.jupiter.api.DisplayName
 
 /**
  * Some Descirption...
@@ -16,68 +19,66 @@ class NaverSearchTest {
     private val mapper = jacksonObjectMapper()
 
     @Test
-    fun `검색 응답 JSON을 DTO로 파싱할 수 있다`() {
-        val json = """
-            {
-              "isSuccess": true,
-              "detailCode": "",
-              "message": "",
-              "result": {
-                "query": "삼성전",
-                "items": [
-                  {
-                    "code": "005930",
-                    "name": "삼성전자",
-                    "typeCode": "KOSPI",
-                    "typeName": "코스피",
-                    "url": "/domestic/stock/005930/total",
-                    "reutersCode": "005930",
-                    "nationCode": "KOR",
-                    "nationName": "대한민국",
-                    "category": "stock"
-                  }
-                ]
-              }
-            }
-        """.trimIndent()
+    @DisplayName("JSON 직렬화/역직렬화가 정상적으로 동작한다")
+    fun `JSON 파싱 테스트`() {
+        // Given
+        val originalItem = NaverFixtures.createNaverSearchItem(
+            code = "035420",
+            name = "NAVER"
+        )
+        val payload = NaverFixtures.createSearchResultPayload(items = listOf(originalItem))
+        val response = NaverFixtures.createNaverResponse(result = payload)
 
-        val wrapper: NaverResponse<NaverSearchResultPayload> =
-            mapper.readValue(json)
+        // When
+        val jsonString = mapper.writeValueAsString(response)
+        val parsedResponse: NaverResponse<NaverSearchResultPayload> = mapper.readValue(jsonString)
 
-        require(wrapper.result != null)
-
-        assertEquals(true, wrapper.isSuccess)
-        assertEquals("삼성전", wrapper.result!!.query)
-        assertEquals(1, wrapper.result!!.items.size)
-
-        val item = wrapper.result!!.items.first()
-        assertEquals("005930", item.code)
-        assertEquals("삼성전자", item.name)
-        assertEquals("KOSPI", item.typeCode)
+        // Then
+        val result = parsedResponse.result!!
+        assertEquals(1, result.items.size)
+        assertEquals("NAVER", result.items[0].name)
+        assertEquals("035420", result.items[0].code)
     }
 
     @Test
-    fun `NaverSearchItem을 Ticker 도메인으로 매핑한다`() {
-        val item = NaverSearchItem(
+    @DisplayName("NaverSearchItem을 Ticker 도메인으로 매핑한다")
+    fun `코스피 주식 도메인 매핑 테스트`() {
+        // Given
+        val item = NaverFixtures.createNaverSearchItem(
             code = "005930",
             name = "삼성전자",
             typeCode = "KOSPI",
-            typeName = "코스피",
-            url = "/domestic/stock/005930/total",
-            reutersCode = "005930",
-            nationCode = "KOR",
-            nationName = "대한민국",
-            category = "stock"
+            nationCode = "KOR"
         )
 
+        // When
         val ticker = item.toTicker()
 
+        // Then
         assertEquals("005930", ticker.symbol)
         assertEquals("삼성전자", ticker.name)
-        assertEquals("KOSPI", ticker.marketCode)
-        assertEquals("코스피", ticker.marketName)
+        assertEquals("KOSPI", ticker.marketType.code)
         assertEquals("KOR", ticker.nationCode)
         assertEquals("대한민국", ticker.nationName)
+    }
+
+    @Test
+    @DisplayName("해외 주식(나스닥)도 올바른 마켓 타입으로 매핑된다")
+    fun `해외주식 매핑 테스트`() {
+        // Given
+        val item = NaverFixtures.createNaverSearchItem(
+            code = "AAPL",
+            name = "Apple Inc",
+            typeCode = "NASDAQ",
+            nationCode = "USA"
+        )
+
+        // When
+        val ticker = item.toTicker()
+
+        // Then
+        assertEquals("AAPL", ticker.symbol)
+        assertEquals(MarketType.NASDAQ, ticker.marketType)
     }
 
 }

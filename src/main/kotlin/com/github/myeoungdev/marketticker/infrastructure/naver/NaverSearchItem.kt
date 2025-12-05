@@ -1,5 +1,6 @@
 package com.github.myeoungdev.marketticker.infrastructure.naver
 
+import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 
 /**
@@ -23,8 +24,7 @@ data class NaverSearchItem(
         return Ticker(
             symbol = code,
             name = name,
-            marketCode = typeCode,
-            marketName = typeName,
+            marketType = MarketType.of(typeCode),
             nationCode = nationCode,
             nationName = nationName
         )

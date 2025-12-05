@@ -1,5 +1,6 @@
 package com.github.myeoungdev.marketticker.application.watch
 
+import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import org.junit.Assert.assertEquals
 import org.junit.Assert.assertTrue
@@ -19,8 +20,7 @@ class WatchlistDataServiceTest {
     private val DEFAULT_TICKER = Ticker(
         "005930",
         "삼성전자",
-        "KOSPI",
-        "코스피",
+        MarketType.KOSPI,
         "KOR",
         "대한민국"
     )
@@ -71,7 +71,7 @@ class WatchlistDataServiceTest {
         val t2 = DEFAULT_TICKER.copy(
             symbol = "NVDA",
             name = "NVIDIA",
-            marketCode = "NASDAQ"
+            MarketType.NASDAQ
         )
 
         service.addTicker(t1)
@@ -88,7 +88,7 @@ class WatchlistDataServiceTest {
 
     @Test
     fun `XML 저장용 상태 객체(State) 로드 테스트`() {
-        // Given: 외부에서 XML 로드된 상황 시뮬레이션
+        // Given
         val loadedState = WatchlistDataService.State()
         loadedState.tickers.add(DEFAULT_TICKER)
 
