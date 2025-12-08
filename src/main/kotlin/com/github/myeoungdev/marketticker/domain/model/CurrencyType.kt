@@ -51,11 +51,11 @@ enum class CurrencyType(
 
     companion object {
         fun of(code: String): CurrencyType {
-            return entries.find { it.code.equals(code, ignoreCase = true) } ?: UNKNOWN
+            return values().find { it.code.equals(code, ignoreCase = true) } ?: UNKNOWN
         }
 
         fun fromSymbol(symbol: String): CurrencyType {
-            return entries.find { it.symbol == symbol } ?: UNKNOWN
+            return values().find { it.symbol == symbol } ?: UNKNOWN
         }
     }
 }

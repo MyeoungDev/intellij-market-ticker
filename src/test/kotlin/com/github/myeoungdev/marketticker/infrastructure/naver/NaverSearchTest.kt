@@ -2,6 +2,7 @@ package com.github.myeoungdev.marketticker.infrastructure.naver
 
 import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.github.myeoungdev.marketticker.common.config.objectMapper
 import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.fixtures.naver.NaverFixtures
 import org.junit.Assert.assertEquals
@@ -30,8 +31,8 @@ class NaverSearchTest {
         val response = NaverFixtures.createNaverResponse(result = payload)
 
         // When
-        val jsonString = mapper.writeValueAsString(response)
-        val parsedResponse: NaverResponse<NaverSearchResultPayload> = mapper.readValue(jsonString)
+        val jsonString = objectMapper.writeValueAsString(response)
+        val parsedResponse: NaverResponse<NaverSearchResultPayload> = objectMapper.readValue(jsonString)
 
         // Then
         val result = parsedResponse.result!!

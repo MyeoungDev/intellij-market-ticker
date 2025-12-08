@@ -22,7 +22,11 @@ enum class MarketType(
 
     companion object {
         fun of(type: String): MarketType {
-            return entries.find { it.name == type } ?: UNKNOWN
+            return values().find { it.name == type } ?: UNKNOWN
         }
+    }
+
+    fun isKoreanMarket(): Boolean {
+        return this == KOSPI || this == KOSDAQ
     }
 }

@@ -36,6 +36,9 @@ dependencies {
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
     testImplementation("org.assertj:assertj-core:3.24.2")
 
+    implementation("io.github.oshai:kotlin-logging-jvm:5.1.0")
+    implementation("ch.qos.logback:logback-classic:1.4.14")
+
 
     // IntelliJ Platform Gradle Plugin Dependencies Extension - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-dependencies-extension.html
     intellijPlatform {

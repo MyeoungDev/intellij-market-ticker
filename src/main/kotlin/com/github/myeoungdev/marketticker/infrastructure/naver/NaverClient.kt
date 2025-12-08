@@ -1,12 +1,13 @@
 package com.github.myeoungdev.marketticker.infrastructure.naver
 
-import com.fasterxml.jackson.module.kotlin.jacksonObjectMapper
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.github.myeoungdev.marketticker.common.config.httpClient
+import com.github.myeoungdev.marketticker.common.config.objectMapper
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.domain.model.TickerPrice
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.net.URI
 import java.net.URLEncoder
-import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
 
@@ -16,111 +17,118 @@ import java.net.http.HttpResponse
  * @author  : 강명관
  * @since   : 2025-11-30
  */
-class NaverClient(
-    private val httpClient: HttpClient = HttpClient.newHttpClient()
-) {
+private val logger = KotlinLogging.logger {}
 
-    val mapper = jacksonObjectMapper()
+class NaverClient {
 
-    inline fun <reified T> parseResponse(json: String): NaverResponse<T> {
-        return mapper.readValue(json)
+    companion object {
+        private const val USER_AGENT_KEY = "User-Agent"
+        private const val USER_AGENT_VALUE = "Mozilla/5.0"
+
+        private const val ACCEPT_KEY = "Accept"
+        private const val ACCEPT_VALUE = "application/json"
+
+        private const val SEARCH_URL =
+            "https://m.stock.naver.com/front-api/search/autoComplete?query=%s&target=stock"
+        private const val DOMESTIC_STOCK_PRICE_URL =
+            "https://polling.finance.naver.com/api/realtime/domestic/stock"
+        private const val WORLD_STOCK_PRICE_URL =
+            "https://polling.finance.naver.com/api/realtime/worldstock/stock"
     }
 
+    /**
+     * Naver 의 주식 종목을 검색하는 Client
+     */
     fun searchStocks(keyword: String): List<NaverSearchItem> {
-        if (keyword.length < 2) return emptyList()
+        val query = keyword.trim()
+        if (query.length < 2) return emptyList()
 
-        val encoded = URLEncoder.encode(keyword, Charsets.UTF_8)
-        val url =
-            "https://m.stock.naver.com/front-api/search/autoComplete?query=$encoded&target=stock"
+        return try {
+            val encodedQuery = URLEncoder.encode(query, Charsets.UTF_8)
+            val url = "$SEARCH_URL?query=$encodedQuery&target=stock"
 
-        val request = HttpRequest.newBuilder()
-            .uri(URI.create(url))
-            .header("User-Agent", "Mozilla/5.0")
-            .header("Accept", "application/json")
-            .GET()
-            .build()
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(url))
+                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+                .header(ACCEPT_KEY, ACCEPT_VALUE)
+                .GET()
+                .build()
 
-        val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
-        if (response.statusCode() != 200) {
-            println("Naver search error: ${response.statusCode()}")
-            return emptyList()
+            val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
+
+            if (response.statusCode() != 200) {
+                logger.error { "Naver search failed. Status: ${response.statusCode()}, URL: $url" }
+                return emptyList()
+            }
+
+            val wrapper: NaverResponse<NaverSearchResultPayload> = objectMapper.readValue(response.body())
+
+            if (!wrapper.isSuccess || wrapper.result == null) {
+                return emptyList()
+            }
+
+            return wrapper.result.items
+
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to search stocks for keyword: $keyword" }
+            emptyList()
         }
-
-        val body = response.body()
-        val wrapper: NaverResponse<NaverSearchResultPayload> = parseResponse(body)
-
-        if (!wrapper.isSuccess || wrapper.result == null) {
-            return emptyList()
-        }
-
-        return wrapper.result.items
     }
 
-    // TODO: Facade Method 구현
-    //  - Ticker 도메인에 marketCode 사용 (MarketCode -> MarketType 으로 형 변경)
+    /**
+     * Ticker 에 대한 Naver 실시간 가격 조회 (Facade) 메서드.
+     */
     fun fetchStockPrice(tickers: List<Ticker>): List<TickerPrice> {
 
-
-        return emptyList()
-    }
-
-
-    /**
-     * 국내 상장 주식 (KOSPI, KOSDAQ) 을 실시간 가격을 조회하는 Naver API 를 호출하는 메서드
-     */
-    private fun fetchDomesticStockPrice(tickers: List<Ticker>): List<NaverRealTimeStockPriceResponse> {
-
         if (tickers.isEmpty()) {
             return emptyList()
         }
 
-        val encoded = URLEncoder.encode(tickers.joinToString { "," }, Charsets.UTF_8)
-        val url = "https://polling.finance.naver.com/api/realtime/domestic/stock/${encoded}"
+        val (domesticTickers, worldTickers) = tickers.partition { it.marketType.isKoreanMarket() }
 
-        val request = HttpRequest.newBuilder()
-            .uri(URI.create(url))
-            .header("User-Agent", "Mozilla/5.0")
-            .header("Accept", "application/json")
-            .GET()
-            .build()
+        val domesticResult = fetchPricesInternal(domesticTickers, DOMESTIC_STOCK_PRICE_URL)
+        val worldResult = fetchPricesInternal(worldTickers, WORLD_STOCK_PRICE_URL)
 
-        val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
-        if (response.statusCode() != 200) {
-            println("Naver search error: ${response.statusCode()}")
-            return emptyList()
-        }
-
-        val body = response.body()
-
-        return emptyList()
+        return (domesticResult.datas + worldResult.datas).map { it.toTickerPrice() }
     }
 
     /**
-     * 해외주식 (NASDAQ, NYSE) 을 실시간 가격을 조회하는 Naver API 를 호출하는 메서드
+     * 내부에서 사용될 Naver 가격 조회 메서드.
      */
-    private fun fetchWorldStockPrice(tickers: List<Ticker>): List<NaverRealTimeStockPriceResponse> {
-
+    private fun fetchPricesInternal(
+        tickers: List<Ticker>,
+        baseUrl: String
+    ): NaverRealTimeStockPriceResponse {
         if (tickers.isEmpty()) {
-            return emptyList()
+            return NaverRealTimeStockPriceResponse()
         }
 
-        val encoded = URLEncoder.encode(tickers.joinToString { "," }, Charsets.UTF_8)
-        val url = "https://polling.finance.naver.com/api/realtime/worldstock/stock/${encoded}"
+        return try {
+            val joinedCodes = tickers.joinToString(",") { it.symbol }
+            val encodedCodes = URLEncoder.encode(joinedCodes, Charsets.UTF_8)
+            val fullUrl = "$baseUrl/$encodedCodes"
 
-        val request = HttpRequest.newBuilder()
-            .uri(URI.create(url))
-            .header("User-Agent", "Mozilla/5.0")
-            .header("Accept", "application/json")
-            .GET()
-            .build()
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(fullUrl))
+                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+                .header(ACCEPT_KEY, ACCEPT_VALUE)
+                .GET()
+                .build()
 
-        val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
-        if (response.statusCode() != 200) {
-            println("Naver search error: ${response.statusCode()}")
-            return emptyList()
+            val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
+
+            if (response.statusCode() != 200) {
+                logger.error { "Naver API Error [${response.statusCode()}]: $fullUrl" }
+                return NaverRealTimeStockPriceResponse()
+            }
+
+            return objectMapper.readValue(response.body())
+
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to fetch stock prices $e " }
+            return NaverRealTimeStockPriceResponse()
         }
-
-        val body = response.body()
-        return emptyList()
     }
+
+
 }

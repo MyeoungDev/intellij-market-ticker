@@ -17,7 +17,7 @@ enum class MarketStatus {
 
     companion object {
         fun of(status: String): MarketStatus {
-            return MarketStatus.valueOf(status)
+            return values().find { it.name == status } ?: UNKNOWN
         }
     }
 }
