@@ -1,16 +1,21 @@
 package com.github.myeoungdev.marketticker.ui.view
 
+import com.github.myeoungdev.marketticker.application.price.NaverPriceProvider
+import com.github.myeoungdev.marketticker.application.price.PriceProvider
 import com.github.myeoungdev.marketticker.application.search.NaverSearchProvider
 import com.github.myeoungdev.marketticker.application.search.SearchProvider
 import com.github.myeoungdev.marketticker.application.watch.WatchlistDataService
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.ui.rendener.SearchResultRenderer
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
+import com.intellij.openapi.util.Disposer
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
+import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import java.awt.BorderLayout
 import javax.swing.DefaultListModel
@@ -25,8 +30,13 @@ import javax.swing.event.DocumentListener
  * @author  : 강명관
  * @since   : 2025-12-01
  */
+
+private val logger = KotlinLogging.logger {}
+
 class MarketTickerView(
-    private val searchProvider: SearchProvider = NaverSearchProvider()
+    private val searchProvider: SearchProvider = NaverSearchProvider(),
+    private val priceProvider: PriceProvider = NaverPriceProvider(),
+    private val watchlistService: WatchlistDataService = WatchlistDataService()
 ) : Disposable {
 
     val searchPanel = JPanel(BorderLayout())
@@ -35,6 +45,7 @@ class MarketTickerView(
     private val searchResultList = JBList(searchListModel)
 
     private val watchlistView = WatchlistView()
+
 
     // 서비스 및 코루틴 스코프
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
@@ -47,6 +58,8 @@ class MarketTickerView(
     init {
         setupUI()
         setupListeners()
+
+        fetchPrices()
     }
 
     private fun setupUI() {
@@ -122,6 +135,28 @@ class MarketTickerView(
             withContext(Dispatchers.Main) {
                 searchListModel.clear()
                 tickerList.forEach { ticker -> searchListModel.addElement(ticker) }
+            }
+        }
+    }
+
+    private fun fetchPrices() {
+        val savedTickers = watchlistService.getWatchlist()
+        if (savedTickers.isEmpty()) return
+
+        ApplicationManager.getApplication().executeOnPooledThread {
+            try {
+                val prices = priceProvider.fetchPrices(savedTickers)
+
+                ApplicationManager.getApplication().invokeLater {
+                    if (!Disposer.isDisposed(this)) {
+                        prices.forEach { price ->
+//                            watchlistView.updatePrice(price)
+                        }
+                    }
+                }
+            } catch (e: Exception) {
+                logger.error { "Error occur in fetchPrice $e" }
+
             }
         }
     }

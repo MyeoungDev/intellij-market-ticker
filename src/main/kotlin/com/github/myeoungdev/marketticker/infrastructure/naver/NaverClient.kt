@@ -28,8 +28,7 @@ class NaverClient {
         private const val ACCEPT_KEY = "Accept"
         private const val ACCEPT_VALUE = "application/json"
 
-        private const val SEARCH_URL =
-            "https://m.stock.naver.com/front-api/search/autoComplete?query=%s&target=stock"
+        private const val SEARCH_BASE_URL = "https://m.stock.naver.com/front-api/search/autoComplete"
         private const val DOMESTIC_STOCK_PRICE_URL =
             "https://polling.finance.naver.com/api/realtime/domestic/stock"
         private const val WORLD_STOCK_PRICE_URL =
@@ -45,7 +44,7 @@ class NaverClient {
 
         return try {
             val encodedQuery = URLEncoder.encode(query, Charsets.UTF_8)
-            val url = "$SEARCH_URL?query=$encodedQuery&target=stock"
+            val url = "$SEARCH_BASE_URL?query=$encodedQuery&target=stock"
 
             val request = HttpRequest.newBuilder()
                 .uri(URI.create(url))
@@ -56,12 +55,15 @@ class NaverClient {
 
             val response = httpClient.send(request, HttpResponse.BodyHandlers.ofString())
 
+            val jsonString = response.body()
+            logger.info { "Response JSON: $jsonString" }
+
             if (response.statusCode() != 200) {
                 logger.error { "Naver search failed. Status: ${response.statusCode()}, URL: $url" }
                 return emptyList()
             }
 
-            val wrapper: NaverResponse<NaverSearchResultPayload> = objectMapper.readValue(response.body())
+            val wrapper: NaverSearchResponse = objectMapper.readValue(response.body())
 
             if (!wrapper.isSuccess || wrapper.result == null) {
                 return emptyList()
@@ -99,6 +101,7 @@ class NaverClient {
         tickers: List<Ticker>,
         baseUrl: String
     ): NaverRealTimeStockPriceResponse {
+
         if (tickers.isEmpty()) {
             return NaverRealTimeStockPriceResponse()
         }

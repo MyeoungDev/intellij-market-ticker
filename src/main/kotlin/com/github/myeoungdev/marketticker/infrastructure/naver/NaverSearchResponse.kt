@@ -1,14 +1,29 @@
 package com.github.myeoungdev.marketticker.infrastructure.naver
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 
 /**
- * 네이버의 종목 검색에 대한 Item 정의 클래스
+ * Naver 에서 사용되는 공통 응답 Wrapper
  *
  * @author  : 강명관
  * @since   : 2025-11-30
  */
+data class NaverSearchResponse(
+    val isSuccess: Boolean,
+    val detailCode: String?,
+    val message: String?,
+    val result: SearchResultPayload?
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class SearchResultPayload(
+    val query: String,
+    val items: List<NaverSearchItem> = emptyList()
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
 data class NaverSearchItem(
     val code: String,        // "005930"
     val name: String,        // "삼성전자"

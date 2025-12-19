@@ -46,8 +46,8 @@ object NaverFixtures {
         isSuccess: Boolean = true,
         message: String = "",
         detailCode: String = ""
-    ): NaverResponse<T> {
-        return NaverResponse(
+    ): NaverSearchResponse<T> {
+        return NaverSearchResponse(
             isSuccess = isSuccess,
             detailCode = detailCode,
             message = message,

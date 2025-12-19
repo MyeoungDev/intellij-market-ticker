@@ -31,14 +31,15 @@ repositories {
 
 // Dependencies are managed with Gradle version catalog - read more: https://docs.gradle.org/current/userguide/platforms.html#sub:version-catalog
 dependencies {
+
+    implementation("io.github.oshai:kotlin-logging-jvm:5.1.0")
+    implementation("ch.qos.logback:logback-classic:1.4.14")
+    implementation("com.fasterxml.jackson.module:jackson-module-kotlin:2.15.2")
+
     testImplementation(libs.junit)
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
     testImplementation("org.assertj:assertj-core:3.24.2")
-
-    implementation("io.github.oshai:kotlin-logging-jvm:5.1.0")
-    implementation("ch.qos.logback:logback-classic:1.4.14")
-
 
     // IntelliJ Platform Gradle Plugin Dependencies Extension - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-dependencies-extension.html
     intellijPlatform {

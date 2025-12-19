@@ -32,7 +32,7 @@ class NaverSearchTest {
 
         // When
         val jsonString = objectMapper.writeValueAsString(response)
-        val parsedResponse: NaverResponse<NaverSearchResultPayload> = objectMapper.readValue(jsonString)
+        val parsedResponse: NaverSearchResponse<NaverSearchResultPayload> = objectMapper.readValue(jsonString)
 
         // Then
         val result = parsedResponse.result!!
