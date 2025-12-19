@@ -28,11 +28,11 @@ class NaverSearchTest {
             name = "NAVER"
         )
         val payload = NaverFixtures.createSearchResultPayload(items = listOf(originalItem))
-        val response = NaverFixtures.createNaverResponse(result = payload)
+        val response = NaverFixtures.createNaverSearchResponse(result = payload)
 
         // When
         val jsonString = objectMapper.writeValueAsString(response)
-        val parsedResponse: NaverSearchResponse<NaverSearchResultPayload> = objectMapper.readValue(jsonString)
+        val parsedResponse: NaverSearchResponse = objectMapper.readValue(jsonString)
 
         // Then
         val result = parsedResponse.result!!

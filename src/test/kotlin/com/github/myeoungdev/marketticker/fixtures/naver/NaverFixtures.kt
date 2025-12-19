@@ -11,7 +11,39 @@ import com.github.myeoungdev.marketticker.infrastructure.naver.*
 object NaverFixtures {
 
     /**
-     * NaverSearchItem (검색 결과 단건) 생성 팩토리
+     * NaverSearchResponse (최상위 응답 래퍼) 생성 팩토리
+     */
+    fun createNaverSearchResponse(
+        isSuccess: Boolean = true,
+        detailCode: String? = null,
+        message: String? = null,
+        result: SearchResultPayload? = createSearchResultPayload()
+    ): NaverSearchResponse {
+        return NaverSearchResponse(
+            isSuccess = isSuccess,
+            detailCode = detailCode,
+            message = message,
+            result = result
+        )
+    }
+
+    /**
+     * SearchResultPayload (검색 결과 컨테이너) 생성 팩토리
+     * - items에 빈 리스트나 커스텀 리스트를 넣어 테스트 가능
+     */
+    fun createSearchResultPayload(
+        query: String = "삼성",
+        items: List<NaverSearchItem> = listOf(createNaverSearchItem())
+    ): SearchResultPayload {
+        return SearchResultPayload(
+            query = query,
+            items = items
+        )
+    }
+
+    /**
+     * NaverSearchItem (개별 종목 정보) 생성 팩토리
+     * - 자주 쓰이는 삼성전자(KOSPI)를 기본값으로 설정
      */
     fun createNaverSearchItem(
         code: String = "005930",
@@ -20,8 +52,8 @@ object NaverFixtures {
         typeName: String = "코스피",
         url: String = "/domestic/stock/005930/total",
         reutersCode: String = "005930",
-        nationCode: String = "KOR",
-        nationName: String = "대한민국",
+        nationCode: String? = "KOR",
+        nationName: String? = "대한민국",
         category: String = "stock"
     ): NaverSearchItem {
         return NaverSearchItem(
@@ -37,41 +69,10 @@ object NaverFixtures {
         )
     }
 
-    /**
-     * NaverResponse (공통 래퍼) 생성 팩토리
-     * 제네릭 T를 받아 다양한 Payload를 감쌀 수 있게 함
-     */
-    fun <T> createNaverResponse(
-        result: T?,
-        isSuccess: Boolean = true,
-        message: String = "",
-        detailCode: String = ""
-    ): NaverSearchResponse<T> {
-        return NaverSearchResponse(
-            isSuccess = isSuccess,
-            detailCode = detailCode,
-            message = message,
-            result = result
-        )
-    }
+    // -------------------------------------------------------------------------
+    // 아래는 시세(Price) 관련 Fixture (기존 코드 유지 및 필요시 사용)
+    // -------------------------------------------------------------------------
 
-    /**
-     * 검색 결과 Payload 생성 팩토리
-     */
-    fun createSearchResultPayload(
-        query: String = "삼성",
-        items: List<NaverSearchItem> = listOf(createNaverSearchItem())
-    ): NaverSearchResultPayload {
-        return NaverSearchResultPayload(
-            query = query,
-            items = items
-        )
-    }
-
-    /**
-     * NaverStockPrice (종목 상세 정보) 생성 팩토리
-     * - 자주 변하는 값(가격, 이름)만 매개변수로 노출하고 나머지는 기본값 처리
-     */
     fun createNaverStockPrice(
         itemCode: String = "005930",
         stockName: String = "삼성전자",
@@ -83,7 +84,6 @@ object NaverFixtures {
         marketStatus: String = "OPEN",
         stockExchangeType: StockExchangeType = createStockExchangeType(),
         currencyType: CurrencyResponse = createCurrencyResponse(),
-
         openPrice: String = "69,000",
         highPrice: String = "71,000",
         lowPrice: String = "69,000",
@@ -107,9 +107,6 @@ object NaverFixtures {
         )
     }
 
-    /**
-     * StockExchangeType (거래소 정보) 생성 팩토리
-     */
     fun createStockExchangeType(
         code: String = "KS",
         nameKor: String = "코스피",
@@ -134,9 +131,6 @@ object NaverFixtures {
         )
     }
 
-    /**
-     * CurrencyResponse (통화 정보) 생성 팩토리
-     */
     fun createCurrencyResponse(
         code: String = "KRW",
         text: String = "Won",
@@ -148,6 +142,4 @@ object NaverFixtures {
             name = name
         )
     }
-
-
 }
