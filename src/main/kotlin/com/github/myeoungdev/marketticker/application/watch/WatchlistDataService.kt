@@ -5,6 +5,9 @@ import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
+import com.intellij.util.xmlb.annotations.XCollection
+import fleet.util.logging.logger
+import io.github.oshai.kotlinlogging.KotlinLogging
 
 /**
  * Some Descirption...
@@ -12,6 +15,8 @@ import com.intellij.openapi.components.Storage
  * @author  : 강명관
  * @since   : 2025-12-01
  */
+private val logger = KotlinLogging.logger {}
+
 @State(
     name = "MarketTickerWatchlist",
     storages = [Storage("market_ticker_watchlist.xml")]
@@ -20,7 +25,8 @@ import com.intellij.openapi.components.Storage
 class WatchlistDataService : PersistentStateComponent<WatchlistDataService.State> {
 
     data class State(
-        var tickers: MutableList<Ticker> = mutableListOf()
+        @get:XCollection(style = XCollection.Style.v2) // 컬렉션 직렬화 방식 지정
+        var tickers: MutableList<Ticker> = ArrayList()
     )
 
     private var watchlistState = State()
@@ -40,6 +46,7 @@ class WatchlistDataService : PersistentStateComponent<WatchlistDataService.State
     fun addTicker(ticker: Ticker) {
         // 중복 체크
         if (watchlistState.tickers.none { it.symbol == ticker.symbol }) {
+            logger.info { "save ticker ${ticker}" }
             watchlistState.tickers.add(ticker)
         }
     }

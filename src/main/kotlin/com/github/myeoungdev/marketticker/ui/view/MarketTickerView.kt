@@ -8,9 +8,7 @@ import com.github.myeoungdev.marketticker.application.watch.WatchlistDataService
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.ui.rendener.SearchResultRenderer
 import com.intellij.openapi.Disposable
-import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
-import com.intellij.openapi.util.Disposer
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
@@ -35,8 +33,7 @@ private val logger = KotlinLogging.logger {}
 
 class MarketTickerView(
     private val searchProvider: SearchProvider = NaverSearchProvider(),
-    private val priceProvider: PriceProvider = NaverPriceProvider(),
-    private val watchlistService: WatchlistDataService = WatchlistDataService()
+    private val priceProvider: PriceProvider = NaverPriceProvider()
 ) : Disposable {
 
     val searchPanel = JPanel(BorderLayout())
@@ -46,10 +43,12 @@ class MarketTickerView(
 
     private val watchlistView = WatchlistView()
 
-
     // 서비스 및 코루틴 스코프
+    private val watchlistService = service<WatchlistDataService>()
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var searchJob: Job? = null
+
+    private var pollingJob: Job? = null
 
     override fun dispose() {
         scope.cancel()
@@ -59,7 +58,7 @@ class MarketTickerView(
         setupUI()
         setupListeners()
 
-        fetchPrices()
+        startRealTimeUpdates()
     }
 
     private fun setupUI() {
@@ -107,6 +106,7 @@ class MarketTickerView(
                     service.addTicker(ticker)
 
                     watchlistView.refreshList()
+                    fetchPricesOnce()
 
                     searchField.text = ""
                     searchListModel.clear()
@@ -139,25 +139,51 @@ class MarketTickerView(
         }
     }
 
-    private fun fetchPrices() {
-        val savedTickers = watchlistService.getWatchlist()
-        if (savedTickers.isEmpty()) return
+    private fun startRealTimeUpdates() {
+        pollingJob?.cancel() // 기존 잡 정리
 
-        ApplicationManager.getApplication().executeOnPooledThread {
-            try {
-                val prices = priceProvider.fetchPrices(savedTickers)
+        pollingJob = scope.launch {
+            while (isActive) { // 코루틴이 살아있는 동안 반복
+                logger.info { "Realtime Price Polling Start" }
+                updatePrices()
 
-                ApplicationManager.getApplication().invokeLater {
-                    if (!Disposer.isDisposed(this)) {
-                        prices.forEach { price ->
-//                            watchlistView.updatePrice(price)
-                        }
-                    }
-                }
-            } catch (e: Exception) {
-                logger.error { "Error occur in fetchPrice $e" }
-
+                delay(5000) // 2초 대기 (API 제한 고려하여 조절)
             }
         }
     }
+
+    private suspend fun updatePrices() {
+
+        val savedTickers = watchlistService.getWatchlist()
+
+        logger.info { "savedTickers: ${savedTickers}}" }
+
+        if (savedTickers.isEmpty()) {
+            return
+        }
+
+        try {
+            // 1. 가격 가져오기 (IO 작업)
+            val prices = priceProvider.fetchPrices(savedTickers)
+
+            // 2. UI 업데이트 (Main Thread)
+            withContext(Dispatchers.Main) {
+                prices.forEach { price ->
+                    watchlistView.updatePrice(price)
+                }
+            }
+        } catch (e: Exception) {
+            // 로그 처리 (너무 잦은 에러 로그는 피하는 게 좋음)
+            logger.warn { "Failed to update prices: ${e.message}" }
+        }
+    }
+
+    // [요청하신 메서드 구현] 즉시 가격 조회 트리거
+    // - 리스너 등에서 호출할 수 있도록 private을 풀거나 내부에서만 쓴다면 private 유지
+    private fun fetchPricesOnce() {
+        scope.launch {
+            updatePrices() // 공통 로직 호출
+        }
+    }
+
 }
