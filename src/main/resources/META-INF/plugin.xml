@@ -9,10 +9,16 @@
     <resource-bundle>messages.MyBundle</resource-bundle>
 
     <extensions defaultExtensionNs="com.intellij">
-<!--        <toolWindow factoryClass="com.github.myeoungdev.marketticker.ui.toolwindow.MyToolWindowFactory" id="MyToolWindow"/>-->
         <toolWindow
                 id="Market Ticker"
                 anchor="right"
                 factoryClass="com.github.myeoungdev.marketticker.ui.toolwindow.MarketTickerToolWindowFactory"/>
+
+        <statusBarWidgetFactory
+                id="Market Ticker Status Bar"
+                implementation="com.github.myeoungdev.marketticker.ui.statusbar.MarketTickerStatusBarWidgetFactory"/>
     </extensions>
+
+
+
 </idea-plugin>

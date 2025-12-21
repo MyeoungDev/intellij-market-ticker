@@ -1,6 +1,6 @@
 package com.github.myeoungdev.marketticker.fixtures.naver
 
-import com.github.myeoungdev.marketticker.infrastructure.naver.*
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.*
 
 /**
  * Some Descirption...

@@ -1,5 +1,6 @@
 package com.github.myeoungdev.marketticker.infrastructure.naver
 
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverSearchItem
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 

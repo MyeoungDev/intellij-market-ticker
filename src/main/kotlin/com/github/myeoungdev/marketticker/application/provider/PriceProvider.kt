@@ -1,4 +1,4 @@
-package com.github.myeoungdev.marketticker.application.price
+package com.github.myeoungdev.marketticker.application.provider
 
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.domain.model.TickerPrice

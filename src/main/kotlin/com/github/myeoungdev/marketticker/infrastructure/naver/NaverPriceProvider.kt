@@ -1,8 +1,8 @@
-package com.github.myeoungdev.marketticker.application.price
+package com.github.myeoungdev.marketticker.infrastructure.naver
 
+import com.github.myeoungdev.marketticker.application.provider.PriceProvider
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.domain.model.TickerPrice
-import com.github.myeoungdev.marketticker.infrastructure.naver.NaverClient
 
 /**
  * Some Descirption...

@@ -1,12 +1,11 @@
 package com.github.myeoungdev.marketticker.ui.view
 
-import com.github.myeoungdev.marketticker.application.watch.WatchlistDataService
 import com.github.myeoungdev.marketticker.domain.model.TickerPrice
-import com.intellij.openapi.components.service
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.JBUI
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.awt.BorderLayout
 import java.awt.Component
 import javax.swing.JPanel
@@ -21,10 +20,13 @@ import javax.swing.table.DefaultTableModel
  * @author  : 강명관
  * @since   : 2025-12-02
  */
+
+private val logger = KotlinLogging.logger {}
+
 class WatchlistView {
+
     val panel = JPanel(BorderLayout())
 
-    // 테이블 모델 설정 (수정 불가)
     private val tableModel = object : DefaultTableModel(arrayOf("종목명", "현재가", "등락률"), 0) {
         override fun isCellEditable(row: Int, column: Int) = false
     }
@@ -35,52 +37,62 @@ class WatchlistView {
         emptyText.text = "관심 종목이 없습니다. 검색을 통해 추가하세요."
     }
 
-    private val watchlistDataService = service<WatchlistDataService>()
-
-    // 종목 코드로 행(Row) 위치를 찾기 위한 매핑
-    private val rowIndexMap = mutableMapOf<String, Int>()
-
     init {
         setupUI()
-        refreshList()
     }
 
     private fun setupUI() {
-        // 커스텀 렌더러 적용 (색상 처리)
         tickerTable.setDefaultRenderer(Object::class.java, PriceCellRenderer())
 
         panel.add(JBScrollPane(tickerTable), BorderLayout.CENTER)
         panel.border = JBUI.Borders.empty(5)
     }
 
-    fun refreshList() {
-        tableModel.rowCount = 0
-        rowIndexMap.clear()
-
-        val tickers = watchlistDataService.getWatchlist()
-        tickers.forEachIndexed { index, ticker ->
-            // 초기값은 로딩 중(-)
-            tableModel.addRow(arrayOf(ticker.name, "-", "-"))
-            rowIndexMap[ticker.symbol] = index
-        }
-    }
-
-    // 실시간 가격 업데이트 메서드
-    fun updatePrice(price: TickerPrice) {
-        val row = rowIndexMap[price.symbol] ?: return
-
+    fun updateWith(prices: List<TickerPrice>) {
         SwingUtilities.invokeLater {
-            if (row < tableModel.rowCount) {
-                tableModel.setValueAt(price.currentPrice, row, 1)
 
-                val sign = if (price.changeRate > 0) "+" else ""
-                val percentText = "$sign${price.changeRate}%"
-                tableModel.setValueAt(percentText, row, 2)
+            logger.info { "Rendering table with ${prices.size} items" }
+
+            tableModel.rowCount = 0
+
+            if (prices.isEmpty()) {
+                return@invokeLater
             }
+
+            if (tableModel.rowCount != prices.size) {
+                tableModel.rowCount = 0
+                prices.forEach {
+                    tableModel.addRow(arrayOf(it.name, "-", "-"))
+                }
+            }
+
+            prices.forEachIndexed { index, price ->
+                val sign = if (price.changeRate > 0) "+" else ""
+                val rateText = "$sign${price.changeRate}%"
+
+                if (tableModel.getValueAt(index, 1) != price.currentPrice) {
+                    tableModel.setValueAt(price.currentPrice, index, 1)
+                    tableModel.setValueAt(rateText, index, 2)
+                }
+
+                if (tableModel.getValueAt(index, 0) != price.name) {
+                    tableModel.setValueAt(price.name, index, 0)
+                }
+            }
+
+//            prices.forEach { price ->
+//                val sign = when {
+//                    price.changeRate > 0 -> "+"
+//                    price.changeRate < 0 -> ""
+//                    else -> ""
+//                }
+//
+//                val changeText = "$sign${price.changeRate}%"
+//                tableModel.addRow(arrayOf(price.name, price.currentPrice, changeText))
+//            }
         }
     }
 
-    // 내부 클래스: 색상 렌더러
     private class PriceCellRenderer : DefaultTableCellRenderer() {
         override fun getTableCellRendererComponent(
             table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int

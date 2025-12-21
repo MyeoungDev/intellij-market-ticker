@@ -1,4 +1,4 @@
-package com.github.myeoungdev.marketticker.application.watch
+package com.github.myeoungdev.marketticker.application.repository
 
 import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
@@ -7,15 +7,9 @@ import org.junit.Assert.assertTrue
 import org.junit.Before
 import org.junit.Test
 
-/**
- * 사용자가 등록해둔 관심 종목에 대해서 관리하는 서비스 클래스입니다.
- *
- * @author  : 강명관
- * @since   : 2025-12-01
- */
-class WatchlistDataServiceTest {
+class WatchlistRepositoryTest {
 
-    private lateinit var service: WatchlistDataService
+    private lateinit var service: WatchlistRepository
 
     private val DEFAULT_TICKER = Ticker(
         "005930",
@@ -27,12 +21,12 @@ class WatchlistDataServiceTest {
 
     @Before
     fun setUp() {
-        service = WatchlistDataService()
+        service = WatchlistRepository()
     }
 
     @Test
     fun `초기 상태는 비어있다`() {
-        assertTrue(service.getWatchlist().isEmpty())
+        assertTrue(service.getTickers().isEmpty())
     }
 
     @Test
@@ -41,7 +35,7 @@ class WatchlistDataServiceTest {
         service.addTicker(DEFAULT_TICKER)
 
         // Then
-        val list = service.getWatchlist()
+        val list = service.getTickers()
         assertEquals(1, list.size)
         assertEquals(DEFAULT_TICKER.name, list[0].name)
     }
@@ -54,12 +48,14 @@ class WatchlistDataServiceTest {
         service.addTicker(ticker)
 
         // When (같은 심볼 추가 시도)
-        service.addTicker(DEFAULT_TICKER.copy(
-            name = "삼성전자(중복)"
-        ))
+        service.addTicker(
+            DEFAULT_TICKER.copy(
+                name = "삼성전자(중복)"
+            )
+        )
 
         // Then
-        val list = service.getWatchlist()
+        val list = service.getTickers()
         assertEquals(1, list.size)
         assertEquals(DEFAULT_TICKER.name, list[0].name)
     }
@@ -81,7 +77,7 @@ class WatchlistDataServiceTest {
         service.removeTicker(t1.symbol)
 
         // Then
-        val list = service.getWatchlist()
+        val list = service.getTickers()
         assertEquals(1, list.size)
         assertEquals(t2.name, list[0].name)
     }
@@ -89,14 +85,22 @@ class WatchlistDataServiceTest {
     @Test
     fun `XML 저장용 상태 객체(State) 로드 테스트`() {
         // Given
-        val loadedState = WatchlistDataService.State()
-        loadedState.tickers.add(DEFAULT_TICKER)
+        val loadedState = WatchlistRepository.State()
+        loadedState.tickers.add(
+            WatchlistRepository.SavedTicker(
+                DEFAULT_TICKER.name,
+                DEFAULT_TICKER.symbol,
+                DEFAULT_TICKER.marketType.name,
+                DEFAULT_TICKER.nationCode,
+                DEFAULT_TICKER.nationName
+            )
+        )
 
         // When
         service.loadState(loadedState)
 
         // Then
-        val list = service.getWatchlist()
+        val list = service.getTickers()
         assertEquals(1, list.size)
         assertEquals(DEFAULT_TICKER.name, list[0].name)
     }

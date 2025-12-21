@@ -1,7 +1,6 @@
 package com.github.myeoungdev.marketticker.ui.rendener
 
 import com.github.myeoungdev.marketticker.domain.model.Ticker
-import com.github.myeoungdev.marketticker.infrastructure.naver.NaverSearchItem
 import com.intellij.ui.ColoredListCellRenderer
 import com.intellij.ui.SimpleTextAttributes
 import javax.swing.JList

@@ -5,6 +5,9 @@ import com.github.myeoungdev.marketticker.common.config.httpClient
 import com.github.myeoungdev.marketticker.common.config.objectMapper
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.domain.model.TickerPrice
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverRealTimeStockPriceResponse
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverSearchItem
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverSearchResponse
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.net.URI
 import java.net.URLEncoder
@@ -88,8 +91,12 @@ class NaverClient {
 
         val (domesticTickers, worldTickers) = tickers.partition { it.marketType.isKoreanMarket() }
 
+        logger.info { "Requesting Domestic: ${domesticTickers.size}, World: ${worldTickers.size}" }
+
         val domesticResult = fetchPricesInternal(domesticTickers, DOMESTIC_STOCK_PRICE_URL)
         val worldResult = fetchPricesInternal(worldTickers, WORLD_STOCK_PRICE_URL)
+
+        logger.info { "Result Domestic: ${domesticResult.datas.size}, World: ${worldResult.datas.size}" }
 
         return (domesticResult.datas + worldResult.datas).map { it.toTickerPrice() }
     }

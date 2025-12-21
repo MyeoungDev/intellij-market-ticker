@@ -1,0 +1,120 @@
+package com.github.myeoungdev.marketticker.ui.statusbar
+
+/**
+ * Some description here.
+ *
+ * @author : 강명관
+ * @since : 1.0
+ **/
+import com.github.myeoungdev.marketticker.application.manager.MarketTickerManager
+import com.github.myeoungdev.marketticker.domain.model.PriceStatus
+import com.github.myeoungdev.marketticker.domain.model.TickerPrice
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.wm.StatusBar
+import com.intellij.openapi.wm.StatusBarWidget
+import com.intellij.util.Consumer
+import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.*
+import java.awt.event.MouseEvent
+
+private val logger = KotlinLogging.logger {}
+
+class MarketTickerStatusBarWidget(
+    private val project: Project
+) : StatusBarWidget, StatusBarWidget.TextPresentation {
+
+    companion object {
+        const val ID = "MarketTickerStatusBarWidget"
+    }
+
+    private var statusBar: StatusBar? = null
+
+    private val marketTickerManager = service<MarketTickerManager>()
+
+    private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
+
+    @Volatile
+    private var prices: List<TickerPrice> = emptyList()
+
+    @Volatile
+    private var index: Int = 0
+
+    private var collectJob: Job? = null
+    private var rotateJob: Job? = null
+
+    override fun ID(): String = ID
+    override fun getPresentation(): StatusBarWidget.WidgetPresentation = this
+    override fun getAlignment(): Float = 0.5f
+
+    override fun install(statusBar: StatusBar) {
+        this.statusBar = statusBar
+
+        // 1) 가격 스트림 구독
+        collectJob = scope.launch {
+            logger.info { "Start collecting prices..." }
+            marketTickerManager.currentPrices.collect { newPrices ->
+                logger.info { "Received prices: ${prices.size}" }
+
+                prices = newPrices
+                if (index >= prices.size) index = 0
+                updateWidget()
+            }
+        }
+
+        // 2) 로테이션 루프 (표시만 바꿈)
+        rotateJob = scope.launch {
+            while (isActive) {
+                if (prices.isNotEmpty()) {
+                    index = (index + 1) % prices.size
+                    updateWidget()
+                }
+                delay(3_000L)
+            }
+        }
+    }
+
+    override fun dispose() {
+        collectJob?.cancel()
+        rotateJob?.cancel()
+        scope.cancel()
+        statusBar = null
+    }
+
+    override fun getText(): String {
+        val list = prices
+        if (list.isEmpty()) return "Market Ticker: watchlist empty"
+
+        val tickerPrice = list.getOrNull(index) ?: return "Market Ticker: loading..."
+
+        val arrow = when (tickerPrice.priceStatus) {
+            PriceStatus.RISING -> "▲"
+            PriceStatus.FALLING -> "▼"
+            PriceStatus.STEADY -> "–"
+        }
+
+        val sign = if (tickerPrice.changeRate > 0) "+" else ""
+        val currency = tickerPrice.currency.name // KRW/USD 등
+
+        // 예: "AAPL 195.12 USD ▲ (+1.23%)"
+        return "${tickerPrice.name} ${formatPrice(tickerPrice.currentPrice)} $currency $arrow ($sign${formatRate(tickerPrice.changeRate)}%)"
+    }
+
+    override fun getTooltipText(): String = "Market Ticker (click to open)"
+    override fun getClickConsumer(): Consumer<MouseEvent>? = Consumer {
+        // TODO: ToolWindow 열기 or 설정 화면 열기 액션 연결
+    }
+
+    private fun updateWidget() {
+        ApplicationManager.getApplication().invokeLater {
+            statusBar?.updateWidget(ID)
+        }
+    }
+
+    private fun formatPrice(v: Double): String =
+        if (v >= 1000) "%,.0f".format(v) else "%.2f".format(v)
+
+    private fun formatRate(v: Double): String =
+        "%.2f".format(v)
+}

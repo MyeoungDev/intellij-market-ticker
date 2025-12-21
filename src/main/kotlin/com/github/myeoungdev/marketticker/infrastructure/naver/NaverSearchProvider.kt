@@ -1,7 +1,7 @@
-package com.github.myeoungdev.marketticker.application.search
+package com.github.myeoungdev.marketticker.infrastructure.naver
 
+import com.github.myeoungdev.marketticker.application.provider.SearchProvider
 import com.github.myeoungdev.marketticker.domain.model.Ticker
-import com.github.myeoungdev.marketticker.infrastructure.naver.NaverClient
 
 /**
  * Some Descirption...

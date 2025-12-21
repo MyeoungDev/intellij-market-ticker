@@ -1,5 +1,6 @@
-package com.github.myeoungdev.marketticker.infrastructure.naver
+package com.github.myeoungdev.marketticker.infrastructure.naver.dto
 
+import com.fasterxml.jackson.annotation.JsonAlias
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 import com.github.myeoungdev.marketticker.common.extenion.parseCommaToDouble
 import com.github.myeoungdev.marketticker.common.extenion.parseCommaToLong
@@ -21,6 +22,7 @@ data class NaverRealTimeStockPriceResponse(
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class NaverStockPrice(
     // 종목 코드 (005930)
+    @JsonAlias("symbolCode")
     val itemCode: String,
 
     // 종목명 (삼성전자)

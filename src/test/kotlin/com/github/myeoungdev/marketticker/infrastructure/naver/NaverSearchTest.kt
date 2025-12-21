@@ -5,6 +5,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.github.myeoungdev.marketticker.common.config.objectMapper
 import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.fixtures.naver.NaverFixtures
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverSearchResponse
 import org.junit.Assert.assertEquals
 import org.junit.Test
 import org.junit.jupiter.api.DisplayName
