@@ -114,7 +114,7 @@ class NaverClient {
         }
 
         return try {
-            val joinedCodes = tickers.joinToString(",") { it.symbol }
+            val joinedCodes = tickers.joinToString(",") { it.tradingSymbol }
             val encodedCodes = URLEncoder.encode(joinedCodes, Charsets.UTF_8)
             val fullUrl = "$baseUrl/$encodedCodes"
 

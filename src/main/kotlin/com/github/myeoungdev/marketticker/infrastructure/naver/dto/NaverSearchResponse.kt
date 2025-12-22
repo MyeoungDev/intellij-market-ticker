@@ -30,7 +30,6 @@ data class NaverSearchItem(
     val typeCode: String,    // "KOSPI"
     val typeName: String,    // "코스피"
     val url: String,         // "/domestic/stock/005930/total"
-    // TODO: 해외 주식의 경우 이 reutersCode 를 사용해야 함
     val reutersCode: String, // "005930"
     val nationCode: String?,  // "KOR"
     val nationName: String?,  // "대한민국"
@@ -39,6 +38,7 @@ data class NaverSearchItem(
     fun toTicker(): Ticker {
         return Ticker(
             symbol = code,
+            tradingSymbol = reutersCode,
             name = name,
             marketType = MarketType.of(typeCode),
             nationCode = nationCode,

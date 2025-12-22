@@ -1,12 +1,7 @@
 package com.github.myeoungdev.marketticker.ui.statusbar
 
-/**
- * Some description here.
- *
- * @author : 강명관
- * @since : 1.0
- **/
 import com.github.myeoungdev.marketticker.application.manager.MarketTickerManager
+import com.github.myeoungdev.marketticker.common.extenion.toCommaString
 import com.github.myeoungdev.marketticker.domain.model.PriceStatus
 import com.github.myeoungdev.marketticker.domain.model.TickerPrice
 import com.intellij.openapi.application.ApplicationManager
@@ -14,6 +9,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.openapi.wm.StatusBar
 import com.intellij.openapi.wm.StatusBarWidget
+import com.intellij.openapi.wm.ToolWindowManager
 import com.intellij.util.Consumer
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
@@ -95,15 +91,22 @@ class MarketTickerStatusBarWidget(
         }
 
         val sign = if (tickerPrice.changeRate > 0) "+" else ""
-        val currency = tickerPrice.currency.name // KRW/USD 등
+        val currency = tickerPrice.currency.name
 
         // 예: "AAPL 195.12 USD ▲ (+1.23%)"
-        return "${tickerPrice.name} ${formatPrice(tickerPrice.currentPrice)} $currency $arrow ($sign${formatRate(tickerPrice.changeRate)}%)"
+        return "${tickerPrice.name} " +
+                "${tickerPrice.currentPrice.toCommaString()} " +
+                "$currency " +
+                "$arrow " +
+                "($sign${tickerPrice.changeRate.toCommaString()}%)"
     }
 
     override fun getTooltipText(): String = "Market Ticker (click to open)"
+
     override fun getClickConsumer(): Consumer<MouseEvent>? = Consumer {
-        // TODO: ToolWindow 열기 or 설정 화면 열기 액션 연결
+        ToolWindowManager.getInstance(project).getToolWindow("MarketTicker")?.show {
+            logger.info { "Market Ticker ToolWindow Open" }
+        }
     }
 
     private fun updateWidget() {
@@ -112,9 +115,4 @@ class MarketTickerStatusBarWidget(
         }
     }
 
-    private fun formatPrice(v: Double): String =
-        if (v >= 1000) "%,.0f".format(v) else "%.2f".format(v)
-
-    private fun formatRate(v: Double): String =
-        "%.2f".format(v)
 }

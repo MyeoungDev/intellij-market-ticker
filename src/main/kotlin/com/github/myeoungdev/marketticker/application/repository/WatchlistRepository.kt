@@ -16,6 +16,7 @@ class WatchlistRepository : PersistentStateComponent<WatchlistRepository.State> 
 
     data class SavedTicker(
         var symbol: String = "",
+        val tradingSymbol: String,
         var name: String = "",
         var marketType: String = "UNKNOWN",
         var nationCode: String? = "",
@@ -36,14 +37,14 @@ class WatchlistRepository : PersistentStateComponent<WatchlistRepository.State> 
     override fun getState(): State = marketTickerState
 
     override fun loadState(state: State) {
-//        marketTickerState = state
-         marketTickerState.tickers.clear()
+        marketTickerState = state
     }
 
     fun getTickers(): List<Ticker> {
         return marketTickerState.tickers.map {
             Ticker(
                 it.symbol,
+                it.tradingSymbol,
                 it.name,
                 MarketType.valueOf(it.marketType),
                 it.nationCode,
@@ -58,13 +59,14 @@ class WatchlistRepository : PersistentStateComponent<WatchlistRepository.State> 
         }
 
         if (exists) {
-            logger.info("Ticker ${ticker.name} (${ticker.symbol}) is already in watchlist.")
+            logger.info { "Ticker ${ticker.name} (${ticker.symbol}) is already in watchlist." }
             return
         }
 
         marketTickerState.tickers.add(
             SavedTicker(
                 ticker.symbol,
+                ticker.tradingSymbol,
                 ticker.name,
                 ticker.marketType.name,
                 ticker.nationCode,

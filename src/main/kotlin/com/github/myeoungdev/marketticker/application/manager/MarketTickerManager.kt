@@ -33,8 +33,12 @@ class MarketTickerManager(private val cs: CoroutineScope) {
     private val _currentPrices = MutableStateFlow<List<TickerPrice>>(emptyList())
     val currentPrices: StateFlow<List<TickerPrice>> = _currentPrices.asStateFlow()
 
+    companion object {
+        const val POLLING_INTERVAL_MS = 60_000L
+    }
+
     init {
-        logger.info { "Service Initialized. Starting polling..." }
+        logger.info{ "Service Initialized. Starting polling..." }
         startPolling()
     }
 
@@ -42,7 +46,7 @@ class MarketTickerManager(private val cs: CoroutineScope) {
         cs.launch {
             while (isActive) {
                 refreshPrices()
-                delay(60_000)
+                delay(POLLING_INTERVAL_MS)
             }
         }
     }

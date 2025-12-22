@@ -8,7 +8,7 @@ package com.github.myeoungdev.marketticker.domain.model
  */
 data class Ticker(
     val symbol: String,
-    val reutersCode:String,
+    val tradingSymbol: String,
     val name: String,
     val marketType: MarketType,
     val nationCode: String?,

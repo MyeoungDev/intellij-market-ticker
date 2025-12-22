@@ -13,6 +13,7 @@ class WatchlistRepositoryTest {
 
     private val DEFAULT_TICKER = Ticker(
         "005930",
+        "005930",
         "삼성전자",
         MarketType.KOSPI,
         "KOR",
@@ -67,7 +68,7 @@ class WatchlistRepositoryTest {
         val t2 = DEFAULT_TICKER.copy(
             symbol = "NVDA",
             name = "NVIDIA",
-            MarketType.NASDAQ
+            marketType = MarketType.NASDAQ
         )
 
         service.addTicker(t1)
@@ -89,6 +90,7 @@ class WatchlistRepositoryTest {
         loadedState.tickers.add(
             WatchlistRepository.SavedTicker(
                 DEFAULT_TICKER.name,
+                DEFAULT_TICKER.tradingSymbol,
                 DEFAULT_TICKER.symbol,
                 DEFAULT_TICKER.marketType.name,
                 DEFAULT_TICKER.nationCode,
