@@ -17,6 +17,9 @@
         <statusBarWidgetFactory
                 id="Market Ticker Status Bar"
                 implementation="com.github.myeoungdev.marketticker.ui.statusbar.MarketTickerStatusBarWidgetFactory"/>
+
+        <notificationGroup id="Market Ticker Notification"
+                           displayType="BALLOON"/>
     </extensions>
 
 

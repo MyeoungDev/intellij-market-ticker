@@ -4,10 +4,10 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.github.myeoungdev.marketticker.common.config.httpClient
 import com.github.myeoungdev.marketticker.common.config.objectMapper
 import com.github.myeoungdev.marketticker.domain.model.Ticker
-import com.github.myeoungdev.marketticker.domain.model.TickerPrice
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverRealTimeStockPriceResponse
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverSearchItem
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverSearchResponse
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverStockPrice
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.net.URI
 import java.net.URLEncoder
@@ -26,7 +26,8 @@ class NaverClient {
 
     companion object {
         private const val USER_AGENT_KEY = "User-Agent"
-        private const val USER_AGENT_VALUE = "Mozilla/5.0"
+        private const val USER_AGENT_VALUE = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " +
+                "(KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
 
         private const val ACCEPT_KEY = "Accept"
         private const val ACCEPT_VALUE = "application/json"
@@ -83,7 +84,7 @@ class NaverClient {
     /**
      * Ticker 에 대한 Naver 실시간 가격 조회 (Facade) 메서드.
      */
-    fun fetchStockPrice(tickers: List<Ticker>): List<TickerPrice> {
+    fun fetchStockPrice(tickers: List<Ticker>): List<NaverStockPrice> {
 
         if (tickers.isEmpty()) {
             return emptyList()
@@ -98,7 +99,7 @@ class NaverClient {
 
         logger.info { "Result Domestic: ${domesticResult.datas.size}, World: ${worldResult.datas.size}" }
 
-        return (domesticResult.datas + worldResult.datas).map { it.toTickerPrice() }
+        return (domesticResult.datas + worldResult.datas)
     }
 
     /**

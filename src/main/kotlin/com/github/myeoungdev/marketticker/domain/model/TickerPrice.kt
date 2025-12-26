@@ -8,6 +8,7 @@ package com.github.myeoungdev.marketticker.domain.model
  */
 data class TickerPrice(
     val symbol: String,                         // 종목 코드 (005930, AAPL)
+    val tradingSymbol: String,
     val name: String,                           // 종목명 (삼성전자, Apple Inc.)
     val previousClosePrice: Double = 0.0,               // 전일 종가
     val openPrice: Double = 0.0,                // 시가
@@ -22,4 +23,6 @@ data class TickerPrice(
     val marketStatus: MarketStatus,             // 장 상태 (OPEN, CLOSED)
     val marketType: MarketType,                 // 시장 (KOREA, USA, COIN)
     val currency: CurrencyType,                       // 통화 (KRW, USD)
+    val nationCode: String?,
+    val nationName: String?
 )

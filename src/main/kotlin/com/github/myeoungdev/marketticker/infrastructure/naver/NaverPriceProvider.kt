@@ -14,7 +14,7 @@ class NaverPriceProvider(
     private val client: NaverClient = NaverClient()
 ) : PriceProvider {
 
-    override fun fetchPrices(tickers: List<Ticker>): List<TickerPrice> {
-        return client.fetchStockPrice(tickers)
+    override fun getPrices(tickers: List<Ticker>): List<TickerPrice> {
+        return client.fetchStockPrice(tickers).map { it.toTickerPrice() }
     }
 }

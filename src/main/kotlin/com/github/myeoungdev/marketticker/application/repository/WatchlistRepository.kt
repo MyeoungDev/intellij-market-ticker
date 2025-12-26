@@ -1,8 +1,11 @@
 package com.github.myeoungdev.marketticker.application.repository
 
-import com.intellij.openapi.components.*
-import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.domain.model.MarketType
+import com.github.myeoungdev.marketticker.domain.model.Ticker
+import com.intellij.openapi.components.PersistentStateComponent
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.State
+import com.intellij.openapi.components.Storage
 import io.github.oshai.kotlinlogging.KotlinLogging
 
 private val logger = KotlinLogging.logger {}
@@ -16,7 +19,7 @@ class WatchlistRepository : PersistentStateComponent<WatchlistRepository.State> 
 
     data class SavedTicker(
         var symbol: String = "",
-        val tradingSymbol: String,
+        val tradingSymbol: String = "",
         var name: String = "",
         var marketType: String = "UNKNOWN",
         var nationCode: String? = "",
@@ -28,20 +31,20 @@ class WatchlistRepository : PersistentStateComponent<WatchlistRepository.State> 
         var updateIntervalSec: Long = 60L
     )
 
-    companion object {
-        fun getInstance(): WatchlistRepository = service()
-    }
-
     private var marketTickerState = State()
 
-    override fun getState(): State = marketTickerState
+    override fun getState(): State? = null
 
     override fun loadState(state: State) {
         marketTickerState = state
+
+        // NOTE: 개발용 State 초기화
+//        noStateLoaded()
     }
 
     fun getTickers(): List<Ticker> {
         return marketTickerState.tickers.map {
+            logger.info { "it ${it}" }
             Ticker(
                 it.symbol,
                 it.tradingSymbol,

@@ -10,5 +10,5 @@ import com.github.myeoungdev.marketticker.domain.model.TickerPrice
  * @since   : 2025-12-09
  */
 interface PriceProvider {
-    fun fetchPrices(tickers: List<Ticker>): List<TickerPrice>
+    fun getPrices(tickers: List<Ticker>): List<TickerPrice>
 }

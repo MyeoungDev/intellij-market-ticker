@@ -5,6 +5,7 @@ import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.ui.rendener.SearchResultRenderer
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
@@ -27,7 +28,7 @@ import javax.swing.event.DocumentListener
 
 private val logger = KotlinLogging.logger {}
 
-class MarketTickerView : Disposable {
+class MarketTickerView(private val project: Project) : Disposable {
 
     // 서비스 및 코루틴 스코프
     private val appService = service<MarketTickerManager>()
@@ -39,7 +40,7 @@ class MarketTickerView : Disposable {
     private val searchListModel = DefaultListModel<Ticker>()
     private val searchResultList = JBList(searchListModel)
 
-    private val watchlistView = WatchlistView()
+    private val watchlistView = WatchlistView(project)
 
 
     override fun dispose() {
@@ -49,8 +50,6 @@ class MarketTickerView : Disposable {
     init {
         setupUI()
         setupListeners()
-
-//        startRealTimeUpdates()
         observeWatchlistChanges()
     }
 
@@ -82,7 +81,7 @@ class MarketTickerView : Disposable {
     }
 
     private fun setupListeners() {
-        // 검색창 입력 리스너 (디바운스 적용)
+        // 검색창 입력 리스너
         searchField.document.addDocumentListener(object : DocumentListener {
             override fun insertUpdate(e: DocumentEvent) = onQueryChanged()
             override fun removeUpdate(e: DocumentEvent) = onQueryChanged()

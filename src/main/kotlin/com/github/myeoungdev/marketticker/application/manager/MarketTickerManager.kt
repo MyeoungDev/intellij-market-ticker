@@ -1,18 +1,28 @@
 package com.github.myeoungdev.marketticker.application.manager
 
+import com.github.myeoungdev.marketticker.application.listener.TickerUpdateListener
 import com.github.myeoungdev.marketticker.application.provider.PriceProvider
 import com.github.myeoungdev.marketticker.application.provider.SearchProvider
 import com.github.myeoungdev.marketticker.application.repository.WatchlistRepository
+import com.github.myeoungdev.marketticker.application.service.PriceAlertService
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.domain.model.TickerPrice
 import com.github.myeoungdev.marketticker.infrastructure.naver.NaverPriceProvider
 import com.github.myeoungdev.marketticker.infrastructure.naver.NaverSearchProvider
+import com.intellij.ide.BrowserUtil
+import com.intellij.notification.NotificationAction
+import com.intellij.notification.NotificationGroupManager
+import com.intellij.notification.NotificationType
 import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
+import com.intellij.openapi.project.ProjectManager
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Some description here.
@@ -24,28 +34,39 @@ import kotlinx.coroutines.flow.asStateFlow
 private val logger = KotlinLogging.logger {}
 
 @Service(Service.Level.APP)
-class MarketTickerManager(private val cs: CoroutineScope) {
+class MarketTickerManager(
+    private val cs: CoroutineScope,
+) {
+
+    private val priceAlertService = service<PriceAlertService>()
+    private val watchlistRepository = service<WatchlistRepository>()
 
     private val priceProvider: PriceProvider = NaverPriceProvider()
     private val searchProvider: SearchProvider = NaverSearchProvider()
-    private val watchlistRepository = WatchlistRepository.getInstance()
 
     private val _currentPrices = MutableStateFlow<List<TickerPrice>>(emptyList())
     val currentPrices: StateFlow<List<TickerPrice>> = _currentPrices.asStateFlow()
 
+    private val lastAlertTimeMap = ConcurrentHashMap<String, Long>()
+    private val ALERT_COOLDOWN_MS = 5 * 60 * 1000L
+
     companion object {
-        const val POLLING_INTERVAL_MS = 60_000L
+        const val POLLING_INTERVAL_MS = 6000L
     }
 
     init {
-        logger.info{ "Service Initialized. Starting polling..." }
+        logger.info { "Service Initialized. Starting polling..." }
         startPolling()
     }
 
     private fun startPolling() {
         cs.launch {
             while (isActive) {
-                refreshPrices()
+                try {
+                    refreshPrices()
+                } catch (e: Exception) {
+                    logger.error(e) { "Error during polling" }
+                }
                 delay(POLLING_INTERVAL_MS)
             }
         }
@@ -68,6 +89,12 @@ class MarketTickerManager(private val cs: CoroutineScope) {
         }
     }
 
+    fun forceRefresh() {
+        cs.launch {
+            refreshPrices()
+        }
+    }
+
     fun removeTickerFromWatchlist(symbol: String) {
         watchlistRepository.removeTicker(symbol)
 
@@ -76,19 +103,92 @@ class MarketTickerManager(private val cs: CoroutineScope) {
         }
     }
 
-    suspend fun refreshPrices() {
+    private suspend fun refreshPrices() {
         val savedTickers = watchlistRepository.getTickers()
-        logger.info { "Saved tickers count: ${savedTickers.size}" }
-        logger.info { "Saved tickers : ${savedTickers.toString()}" }
 
-        if (savedTickers.isNotEmpty()) {
-            val prices = priceProvider.fetchPrices(savedTickers)
+        if (savedTickers.isEmpty()) return
+
+        try {
+            val prices = priceProvider.getPrices(savedTickers)
+            logger.info { "Fetched prices count: ${prices.size}" }
+
             _currentPrices.emit(prices)
+
+            checkAlerts(prices)
+
+            ProjectManager.getInstance().openProjects.forEach { project ->
+                if (!project.isDisposed) {
+                    project.messageBus.syncPublisher(TickerUpdateListener.TOPIC).onTickerUpdated(prices)
+                }
+            }
+
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to refresh prices" }
+        }
+    }
+
+    private fun checkAlerts(prices: List<TickerPrice>) {
+        prices.forEach { price ->
+            if (priceAlertService.shouldTriggerAlert(price)) {
+                sendNotification(null, price)
+            }
+        }
+    }
+
+    private fun sendNotification(project: Project?, price: TickerPrice) {
+        val now = System.currentTimeMillis()
+        val lastTime = lastAlertTimeMap.getOrDefault(price.tradingSymbol, 0L)
+
+        if (now - lastTime < ALERT_COOLDOWN_MS) {
+            return
         }
 
-        val prices = priceProvider.fetchPrices(savedTickers)
-        logger.info { "Fetched prices count: ${prices.size}" }
+        lastAlertTimeMap[price.tradingSymbol] = now
 
-        _currentPrices.emit(prices)
+        val group = NotificationGroupManager.getInstance()
+            .getNotificationGroup("Market Ticker Notification")
+
+        if (group == null) {
+            logger.error { "Notification group not found!" }
+            return
+        }
+
+        val isRising = price.changeRate > 0
+        val colorHex = if (isRising) "#FF5252" else "#448AFF"
+        val arrow = if (isRising) "▲" else "▼"
+
+        val title = "${price.name} $arrow ${price.changeRate}%"
+        val sign = if (price.changeAmount > 0) "+" else ""
+        val changeText = "$sign${price.changeAmount} ${price.currency.symbol}"
+
+        val content = """
+        <html>
+        <body>
+            <div style="margin-top: 4px;">
+                <b>${price.currentPrice}</b>
+                <span style="color:$colorHex;">($changeText)</span>
+            </div>
+        </body>
+        </html>
+        """.trimIndent()
+
+        val notification = group.createNotification(
+            title,
+            content,
+            NotificationType.INFORMATION
+        )
+
+        notification.addAction(
+            NotificationAction.createSimple("상세 보기") {
+                val url = "https://finance.naver.com/item/main.nhn?code=${price.symbol}"
+                BrowserUtil.browse(url)
+            }
+        )
+
+        val targetProject = project ?: ProjectManager.getInstance().openProjects.firstOrNull { !it.isDisposed }
+
+        notification.notify(targetProject)
     }
+
+
 }

@@ -21,12 +21,16 @@ data class NaverRealTimeStockPriceResponse(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class NaverStockPrice(
-    // 종목 코드 (005930)
+
+    // 종목 코드 (국내: 005930) (해외: APPL)
     @JsonAlias("symbolCode")
     val itemCode: String,
 
     // 종목명 (삼성전자)
     val stockName: String,
+
+    // 해외 검색을 위한 Code (해외: APPL.O)
+    val reutersCode: String?,
 
     // 주식에 대한 정보
     val stockExchangeType: StockExchangeType,
@@ -67,6 +71,7 @@ data class NaverStockPrice(
     fun toTickerPrice(): TickerPrice {
         return TickerPrice(
             symbol = itemCode,
+            tradingSymbol = reutersCode ?: itemCode,
             name = stockName,
             previousClosePrice = closePrice.parseCommaToDouble() - compareToPreviousClosePrice.parseCommaToDouble(),
             openPrice = openPrice.parseCommaToDouble(),
@@ -80,7 +85,9 @@ data class NaverStockPrice(
             tradeValue = accumulatedTradingValue.parseCommaToDouble(),
             marketStatus = MarketStatus.of(marketStatus),
             marketType = stockExchangeType.toMarketType(),
-            currency = CurrencyType.of(currencyType.code)
+            currency = CurrencyType.of(currencyType.code),
+            nationCode = stockExchangeType.nationCode,
+            nationName = stockExchangeType.nationName
         )
     }
 
