@@ -10,6 +10,8 @@ data class AlertRule(
     var symbol: String = "",
     var tradingSymbol: String = "",
     var targetPrice: Double? = null,
+    var isTargetPriceEnabled: Boolean = false,
     var volatilityPercentage: Double = 5.0,
+    var isVolatilityEnabled: Boolean = true,
     var isEnabled: Boolean = true
 )

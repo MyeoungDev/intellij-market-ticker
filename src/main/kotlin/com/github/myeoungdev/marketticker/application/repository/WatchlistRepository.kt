@@ -36,10 +36,10 @@ class WatchlistRepository : PersistentStateComponent<WatchlistRepository.State> 
     override fun getState(): State? = null
 
     override fun loadState(state: State) {
-        marketTickerState = state
+//        marketTickerState = state
 
         // NOTE: 개발용 State 초기화
-//        noStateLoaded()
+        noStateLoaded()
     }
 
     fun getTickers(): List<Ticker> {

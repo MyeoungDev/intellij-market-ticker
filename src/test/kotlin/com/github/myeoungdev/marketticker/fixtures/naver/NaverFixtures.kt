@@ -76,6 +76,7 @@ object NaverFixtures {
     fun createNaverStockPrice(
         itemCode: String = "005930",
         stockName: String = "삼성전자",
+        reutersCode: String = "005930",
         closePrice: String = "70,000",
         compareToPreviousClosePrice: String = "1,000",
         fluctuationsRatio: String = "1.45",
@@ -92,6 +93,7 @@ object NaverFixtures {
         return NaverStockPrice(
             itemCode = itemCode,
             stockName = stockName,
+            reutersCode = reutersCode,
             stockExchangeType = stockExchangeType,
             openPrice = openPrice,
             highPrice = highPrice,

@@ -50,7 +50,7 @@ class PriceAlertService : PersistentStateComponent<PriceAlertService.State> {
     }
 
     fun shouldTriggerAlert(price: TickerPrice): Boolean {
-        val rule = getAlert(price.tradingSymbol) ?: return false
+        val rule = getAlert(price.symbol) ?: return false
 
         logger.info { "Checking alert: rate=${price.changeRate}, rule=${rule.volatilityPercentage}" }
 
@@ -58,17 +58,17 @@ class PriceAlertService : PersistentStateComponent<PriceAlertService.State> {
             return false
         }
 
-        // 1. 목표가 체크 (설정된 경우만)
-        if (rule.targetPrice != null) {
-            // 현재가가 목표가에 도달했는지 체크 (오차범위 0.5% 내 진입 시)
+        // NOTE: 목표가 알람 체크
+        if (rule.isTargetPriceEnabled && rule.targetPrice != null) {
             val gap = abs(price.currentPrice - rule.targetPrice!!)
             val threshold = rule.targetPrice!! * 0.005
-            if (gap <= threshold) return true
+            if (gap <= threshold) {
+                return true
+            }
         }
 
-        // 2. 변동률 체크
-        // 절대값 비교: abs(등락률) >= 설정한 변동률
-        if (abs(price.changeRate) >= rule.volatilityPercentage) {
+        // NOTE: 변동률 알람 체크
+        if (rule.isVolatilityEnabled && (abs(price.changeRate) >= rule.volatilityPercentage)) {
             return true
         }
 

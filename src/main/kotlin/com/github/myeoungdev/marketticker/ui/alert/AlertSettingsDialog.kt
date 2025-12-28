@@ -5,12 +5,8 @@ import com.github.myeoungdev.marketticker.domain.model.AlertRule
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.intellij.openapi.components.service
 import com.intellij.openapi.ui.DialogWrapper
-import com.intellij.ui.components.JBTextField
-import com.intellij.ui.dsl.builder.bindText
-import com.intellij.ui.dsl.builder.columns
-import com.intellij.ui.dsl.builder.panel
+import com.intellij.ui.dsl.builder.*
 import io.github.oshai.kotlinlogging.KotlinLogging
-import javax.swing.JButton
 import javax.swing.JComponent
 
 /**
@@ -28,28 +24,34 @@ class AlertSettingsDialog(
     private val priceAlertService = service<PriceAlertService>()
 
     private data class AlertViewModel(
-        var targetPrice: Double = 0.0,
-        var volatility: Double = 5.0
+        var useTargetPrice: Boolean = false,
+        var targetPriceStr: String = "",
+        var volatilityStr: String = "5",
+        var useVolatility: Boolean = true,
     )
 
     private val model = AlertViewModel()
 
-    private val targetPriceField = JBTextField()
-    private val volatilityField = JBTextField("5.0")
-    private val saveButton = JButton("알람 저장")
-
     init {
         title = "${ticker.name} 알람 설정"
-        loadExistingSettings()
+        initSetting()
         init()
     }
 
-    private fun loadExistingSettings() {
-        val existing = priceAlertService.getAlert(ticker.tradingSymbol)
-        if (existing != null) {
-            model.targetPrice = existing.targetPrice ?: 0.0
-            model.volatility = existing.volatilityPercentage
+    private fun initSetting() {
+        val alert = priceAlertService.getAlert(ticker.symbol)
+
+        logger.info { "Saved Alert ${alert}" }
+
+        if (alert == null) {
+            return
         }
+
+        model.targetPriceStr = alert.targetPrice?.toString() ?: ""
+        model.useTargetPrice = alert.isTargetPriceEnabled
+        model.volatilityStr = alert.volatilityPercentage.toString()
+        model.useVolatility = alert.isVolatilityEnabled
+
     }
 
     override fun createCenterPanel(): JComponent {
@@ -62,14 +64,18 @@ class AlertSettingsDialog(
             separator()
 
             row("종목명:") {
-                label(ticker.name)
+                label(ticker.name).bold()
             }
-            row("목표가:") {
+
+            row {
+                val targetPriceCheckBoxValue = checkBox("목표가 알림")
+                    .bindSelected(model::useTargetPrice)
+                    .component
+
+                cell()
+
                 textField()
-                    .bindText(
-                        { model.targetPrice?.toString() ?: "" },
-                        { model.volatility = it.toDoubleOrNull() ?: 0.0 }
-                    )
+                    .bindText(model::targetPriceStr)
                     .columns(10)
                     .validationOnInput {
                         if (it.text.toDoubleOrNull() == null && it.text.isNotEmpty()) {
@@ -77,15 +83,22 @@ class AlertSettingsDialog(
                         }
                         null
                     }
+                    .onChanged {
+                        targetPriceCheckBoxValue.isSelected = it.text.isNotEmpty()
+                    }
             }
 
+            separator()
 
-            row("변동률 알람(±%):") {
+            row {
+                val volatilityCheckboxValue = checkBox("변동률 알림")
+                    .bindSelected(model::useVolatility)
+                    .component
+
+                cell()
+
                 textField()
-                    .bindText(
-                        { model.targetPrice?.toString() ?: "" },
-                        { model.volatility = it.toDoubleOrNull() ?: 0.0 }
-                    )
+                    .bindText(model::volatilityStr)
                     .columns(10)
                     .validationOnInput {
                         if (it.text.toDoubleOrNull() == null && it.text.isNotEmpty()) {
@@ -93,6 +106,11 @@ class AlertSettingsDialog(
                         }
                         null
                     }
+                    .onChanged {
+                        volatilityCheckboxValue.isSelected = it.text.isNotEmpty()
+                    }
+
+                label("%").gap(RightGap.SMALL)
             }
 
             row {
@@ -101,6 +119,7 @@ class AlertSettingsDialog(
                     close(OK_EXIT_CODE)
                 }
             }.enabled(isExistingAlert())
+
         }.apply {
             withPreferredWidth(400)
         }
@@ -109,14 +128,18 @@ class AlertSettingsDialog(
     override fun doOKAction() {
         super.doOKAction()
 
-        val targetPrice = model.targetPrice
-        val volatility = model.volatility ?: 5.0
+        logger.info { "targetPriceStr ${model.targetPriceStr}" }
+        logger.info { "volatilityStr ${model.volatilityStr}" }
 
-        logger.info { "Saving Alert: symbol=${ticker.symbol}, targetPrice=$targetPrice vol=$volatility" }
+        val targetPrice = model.targetPriceStr.toDoubleOrNull()
+        val volatility = model.volatilityStr.toDoubleOrNull() ?: 5.0
+
+        logger.info { "Saving Alert: symbol=${ticker.symbol}, targetPrice=$targetPrice volatility=$volatility" }
+
         val rule = AlertRule(
             symbol = ticker.symbol,
             tradingSymbol = ticker.tradingSymbol.ifBlank { ticker.symbol },
-            targetPrice = model.targetPrice,
+            targetPrice = targetPrice,
             volatilityPercentage = volatility,
             isEnabled = true
         )
@@ -125,13 +148,11 @@ class AlertSettingsDialog(
     }
 
     private fun deleteAlert() {
-        val key = ticker.tradingSymbol.ifBlank { ticker.symbol }
-        priceAlertService.removeAlert(key)
+        priceAlertService.removeAlert(ticker.symbol)
     }
 
     private fun isExistingAlert(): Boolean {
-        val key = ticker.tradingSymbol.ifBlank { ticker.symbol }
-        return priceAlertService.getAlert(key) != null
+        return priceAlertService.getAlert(ticker.symbol) != null
     }
 
 }

@@ -92,12 +92,12 @@ class NaverClient {
 
         val (domesticTickers, worldTickers) = tickers.partition { it.marketType.isKoreanMarket() }
 
-        logger.info { "Requesting Domestic: ${domesticTickers.size}, World: ${worldTickers.size}" }
+        logger.debug { "Requesting Domestic: ${domesticTickers.size}, World: ${worldTickers.size}" }
 
         val domesticResult = fetchPricesInternal(domesticTickers, DOMESTIC_STOCK_PRICE_URL)
         val worldResult = fetchPricesInternal(worldTickers, WORLD_STOCK_PRICE_URL)
 
-        logger.info { "Result Domestic: ${domesticResult.datas.size}, World: ${worldResult.datas.size}" }
+        logger.debug { "Result Domestic: ${domesticResult.datas.size}, World: ${worldResult.datas.size}" }
 
         return (domesticResult.datas + worldResult.datas)
     }
