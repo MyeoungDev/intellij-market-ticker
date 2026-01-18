@@ -39,7 +39,6 @@ class MarketTickerManager(
     private val cs: CoroutineScope,
 ) {
 
-    private val priceAlertService = service<PriceAlertService>()
     private val watchlistRepository = service<WatchlistRepository>()
     private val notificationService = service<NotificationService>()
 
@@ -48,9 +47,6 @@ class MarketTickerManager(
 
     private val _currentPrices = MutableStateFlow<List<TickerPrice>>(emptyList())
     val currentPrices: StateFlow<List<TickerPrice>> = _currentPrices.asStateFlow()
-
-    private val lastAlertTimeMap = ConcurrentHashMap<String, Long>()
-    private val ALERT_COOLDOWN_MS = 5 * 60 * 1000L
 
     companion object {
         const val POLLING_INTERVAL_MS = 6000L
