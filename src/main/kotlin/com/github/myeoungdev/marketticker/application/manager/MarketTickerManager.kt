@@ -112,6 +112,8 @@ class MarketTickerManager(
             val prices = priceProvider.getPrices(savedTickers)
             logger.info { "Fetched prices count: ${prices.size}" }
 
+            prices.forEach { logger.info { "tickerPrice : ${it}" } }
+
             _currentPrices.emit(prices)
 
             checkAlerts(prices)

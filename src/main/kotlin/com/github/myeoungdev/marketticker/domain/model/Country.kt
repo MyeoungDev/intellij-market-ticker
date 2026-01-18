@@ -12,5 +12,6 @@ enum class Country(
 ) {
     KOREA("KR", "대한민국"),
     USA("US", "미국"),
+    JAPAN("JP", "일본"),
     UNKNOWN("XX", "기타")
 }

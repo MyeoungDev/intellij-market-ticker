@@ -18,6 +18,7 @@ enum class MarketType(
     KOSDAQ("KOSDAQ", "코스닥", ZoneId.of("Asia/Seoul"), Country.KOREA),
     NASDAQ("NASDAQ", "나스닥", ZoneId.of("America/New_York"), Country.USA),
     NYSE("NYSE", "뉴욕증권거래소", ZoneId.of("America/New_York"), Country.USA),
+    TOKYO("TSE", "도쿄증권거래소", ZoneId.of("Asia/Tokyo"), Country.JAPAN),
     UNKNOWN("UNKNOWN", "알 수 없음", ZoneId.systemDefault(), Country.UNKNOWN);
 
     companion object {
