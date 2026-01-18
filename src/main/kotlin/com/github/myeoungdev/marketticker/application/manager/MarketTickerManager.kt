@@ -4,6 +4,7 @@ import com.github.myeoungdev.marketticker.application.listener.TickerUpdateListe
 import com.github.myeoungdev.marketticker.application.provider.PriceProvider
 import com.github.myeoungdev.marketticker.application.provider.SearchProvider
 import com.github.myeoungdev.marketticker.application.repository.WatchlistRepository
+import com.github.myeoungdev.marketticker.application.service.NotificationService
 import com.github.myeoungdev.marketticker.application.service.PriceAlertService
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.domain.model.TickerPrice
@@ -40,6 +41,7 @@ class MarketTickerManager(
 
     private val priceAlertService = service<PriceAlertService>()
     private val watchlistRepository = service<WatchlistRepository>()
+    private val notificationService = service<NotificationService>()
 
     private val priceProvider: PriceProvider = NaverPriceProvider()
     private val searchProvider: SearchProvider = NaverSearchProvider()
@@ -116,7 +118,7 @@ class MarketTickerManager(
 
             _currentPrices.emit(prices)
 
-            checkAlerts(prices)
+            notificationService.checkAndNotify(prices)
 
             ProjectManager.getInstance().openProjects.forEach { project ->
                 if (!project.isDisposed) {
@@ -128,69 +130,5 @@ class MarketTickerManager(
             logger.error(e) { "Failed to refresh prices" }
         }
     }
-
-    private fun checkAlerts(prices: List<TickerPrice>) {
-        prices.forEach { price ->
-            if (priceAlertService.shouldTriggerAlert(price)) {
-                sendNotification(null, price)
-            }
-        }
-    }
-
-    private fun sendNotification(project: Project?, price: TickerPrice) {
-        val now = System.currentTimeMillis()
-        val lastTime = lastAlertTimeMap.getOrDefault(price.tradingSymbol, 0L)
-
-        if (now - lastTime < ALERT_COOLDOWN_MS) {
-            return
-        }
-
-        lastAlertTimeMap[price.tradingSymbol] = now
-
-        val group = NotificationGroupManager.getInstance()
-            .getNotificationGroup("Market Ticker Notification")
-
-        if (group == null) {
-            logger.error { "Notification group not found!" }
-            return
-        }
-
-        val isRising = price.changeRate > 0
-        val colorHex = if (isRising) "#FF5252" else "#448AFF"
-        val arrow = if (isRising) "▲" else "▼"
-
-        val title = "${price.name} $arrow ${price.changeRate}%"
-        val sign = if (price.changeAmount > 0) "+" else ""
-        val changeText = "$sign${price.changeAmount} ${price.currency.symbol}"
-
-        val content = """
-        <html>
-        <body>
-            <div style="margin-top: 4px;">
-                <b>${price.currentPrice}</b>
-                <span style="color:$colorHex;">($changeText)</span>
-            </div>
-        </body>
-        </html>
-        """.trimIndent()
-
-        val notification = group.createNotification(
-            title,
-            content,
-            NotificationType.INFORMATION
-        )
-
-        notification.addAction(
-            NotificationAction.createSimple("상세 보기") {
-                val url = "https://finance.naver.com/item/main.nhn?code=${price.symbol}"
-                BrowserUtil.browse(url)
-            }
-        )
-
-        val targetProject = project ?: ProjectManager.getInstance().openProjects.firstOrNull { !it.isDisposed }
-
-        notification.notify(targetProject)
-    }
-
 
 }
