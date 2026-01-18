@@ -5,25 +5,18 @@ import com.github.myeoungdev.marketticker.application.provider.PriceProvider
 import com.github.myeoungdev.marketticker.application.provider.SearchProvider
 import com.github.myeoungdev.marketticker.application.repository.WatchlistRepository
 import com.github.myeoungdev.marketticker.application.service.NotificationService
-import com.github.myeoungdev.marketticker.application.service.PriceAlertService
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.domain.model.TickerPrice
 import com.github.myeoungdev.marketticker.infrastructure.naver.NaverPriceProvider
 import com.github.myeoungdev.marketticker.infrastructure.naver.NaverSearchProvider
-import com.intellij.ide.BrowserUtil
-import com.intellij.notification.NotificationAction
-import com.intellij.notification.NotificationGroupManager
-import com.intellij.notification.NotificationType
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
-import com.intellij.openapi.project.Project
 import com.intellij.openapi.project.ProjectManager
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.*
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
-import java.util.concurrent.ConcurrentHashMap
 
 /**
  * Some description here.
