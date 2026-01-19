@@ -1,6 +1,6 @@
 package com.github.myeoungdev.marketticker.ui.view
 
-import com.github.myeoungdev.marketticker.application.manager.MarketTickerManager
+import com.github.myeoungdev.marketticker.application.service.MarketDataService
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.ui.rendener.SearchResultRenderer
 import com.intellij.openapi.Disposable
@@ -28,10 +28,11 @@ import javax.swing.event.DocumentListener
 
 private val logger = KotlinLogging.logger {}
 
-class MarketTickerView(private val project: Project) : Disposable {
+class MarketTickerView(
+    private val project: Project
+) : Disposable {
 
-    // 서비스 및 코루틴 스코프
-    private val appService = service<MarketTickerManager>()
+    private val marketDataService = service<MarketDataService>()
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var searchJob: Job = Job()
 
@@ -92,7 +93,7 @@ class MarketTickerView(private val project: Project) : Disposable {
             override fun mouseClicked(e: java.awt.event.MouseEvent) {
                 if (e.clickCount == 2) {
                     val ticker = searchResultList.selectedValue ?: return
-                    appService.addTickerToWatchlist(ticker)
+                    marketDataService.addTicker(ticker)
 
                     searchField.text = ""
                     searchListModel.clear()
@@ -110,7 +111,7 @@ class MarketTickerView(private val project: Project) : Disposable {
         searchJob = scope.launch {
             delay(300) // 300ms 디바운스 (입력 대기)
 
-            val tickerList = appService.search(query)
+            val tickerList = marketDataService.search(query)
 
             withContext(Dispatchers.Main) {
                 searchListModel.clear()
@@ -121,7 +122,7 @@ class MarketTickerView(private val project: Project) : Disposable {
 
     private fun observeWatchlistChanges() {
         scope.launch {
-            appService.currentPrices.collect { prices ->
+            marketDataService.currentPrices.collect { prices ->
                 logger.info { "View received prices: ${prices.size}" }
 
                 withContext(Dispatchers.Main) {

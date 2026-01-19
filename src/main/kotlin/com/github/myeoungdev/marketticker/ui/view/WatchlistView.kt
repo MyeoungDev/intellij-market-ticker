@@ -1,7 +1,7 @@
 package com.github.myeoungdev.marketticker.ui.view
 
 import com.github.myeoungdev.marketticker.application.listener.TickerUpdateListener
-import com.github.myeoungdev.marketticker.application.manager.MarketTickerManager
+import com.github.myeoungdev.marketticker.application.service.MarketDataService
 import com.github.myeoungdev.marketticker.application.service.PriceAlertService
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.domain.model.TickerPrice
@@ -19,7 +19,6 @@ import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
-import java.util.*
 import javax.swing.JPanel
 import javax.swing.JTable
 import javax.swing.SwingUtilities
@@ -37,7 +36,7 @@ private val logger = KotlinLogging.logger {}
 
 class WatchlistView(private val project: Project) {
 
-    private val marketTickerManager = service<MarketTickerManager>()
+    private val marketDataService = service<MarketDataService>()
     private val alertService = service<PriceAlertService>()
 
     private var currentPrices: List<TickerPrice> = emptyList()
@@ -61,14 +60,14 @@ class WatchlistView(private val project: Project) {
     }
 
     private fun loadInitialData() {
-        val currentData = marketTickerManager.currentPrices.value
+        val currentData = marketDataService.currentPrices.value
 
         if (currentData.isNotEmpty()) {
             logger.info { "Loading initial data from cache: ${currentData.size}" }
             updateTable(currentData)
         } else {
             logger.info { "Cache empty. Requesting force refresh..." }
-            marketTickerManager.forceRefresh()
+            marketDataService.forceRefresh()
         }
     }
 

@@ -11,14 +11,14 @@ import com.intellij.openapi.project.ProjectManager
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.util.concurrent.ConcurrentHashMap
 
+private val logger = KotlinLogging.logger {}
+
 /**
  * Notification 기능을 담당하는 서비스 클래스 입니다.
  *
  * @author : 강명관
  * @since : 2026-01-18
  **/
-private val logger = KotlinLogging.logger {}
-
 @Service(Service.Level.APP)
 class NotificationService {
 

@@ -10,14 +10,14 @@ import com.intellij.util.xmlb.XmlSerializerUtil
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlin.math.abs
 
+private val logger = KotlinLogging.logger {}
+
 /**
  * Ticker 에 대한 알람을 관리하는 클래스 입니다.
  *
  * @author  : 강명관
  * @since   : 2025-12-23
  */
-private val logger = KotlinLogging.logger {}
-
 @State(
     name = "PriceAlertService",
     storages = [Storage("market_ticker_alerts.xml")]

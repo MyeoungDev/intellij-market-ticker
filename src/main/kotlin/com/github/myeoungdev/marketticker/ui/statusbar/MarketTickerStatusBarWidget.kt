@@ -1,6 +1,6 @@
 package com.github.myeoungdev.marketticker.ui.statusbar
 
-import com.github.myeoungdev.marketticker.application.manager.MarketTickerManager
+import com.github.myeoungdev.marketticker.application.service.MarketDataService
 import com.github.myeoungdev.marketticker.common.extenion.toCommaString
 import com.github.myeoungdev.marketticker.domain.model.PriceStatus
 import com.github.myeoungdev.marketticker.domain.model.TickerPrice
@@ -27,7 +27,7 @@ class MarketTickerStatusBarWidget(
 
     private var statusBar: StatusBar? = null
 
-    private val marketTickerManager = service<MarketTickerManager>()
+    private val marketDataService = service<MarketDataService>()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -50,7 +50,7 @@ class MarketTickerStatusBarWidget(
         // 1) 가격 스트림 구독
         collectJob = scope.launch {
             logger.info { "Start collecting prices..." }
-            marketTickerManager.currentPrices.collect { newPrices ->
+            marketDataService.currentPrices.collect { newPrices ->
                 logger.info { "Received prices: ${prices.size}" }
 
                 prices = newPrices
