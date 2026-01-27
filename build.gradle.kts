@@ -40,6 +40,7 @@ dependencies {
 
     testImplementation("org.junit.jupiter:junit-jupiter:5.10.1")
     testImplementation("org.assertj:assertj-core:3.24.2")
+    testImplementation("org.wiremock:wiremock-standalone:3.3.1")
 
     // IntelliJ Platform Gradle Plugin Dependencies Extension - read more: https://plugins.jetbrains.com/docs/intellij/tools-intellij-platform-gradle-plugin-dependencies-extension.html
     intellijPlatform {

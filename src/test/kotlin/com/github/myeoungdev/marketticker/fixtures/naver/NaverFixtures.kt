@@ -11,9 +11,9 @@ import com.github.myeoungdev.marketticker.infrastructure.naver.dto.*
 object NaverFixtures {
 
     /**
-     * NaverSearchResponse (최상위 응답 래퍼) 생성 팩토리
+     * NaverSearchResponse (최상위 검색 응답 래퍼) 생성
      */
-    fun createNaverSearchResponse(
+    fun createSearchResponse(
         isSuccess: Boolean = true,
         detailCode: String? = null,
         message: String? = null,
@@ -28,12 +28,11 @@ object NaverFixtures {
     }
 
     /**
-     * SearchResultPayload (검색 결과 컨테이너) 생성 팩토리
-     * - items에 빈 리스트나 커스텀 리스트를 넣어 테스트 가능
+     * SearchResultPayload (검색 결과 컨테이너) 생성
      */
     fun createSearchResultPayload(
         query: String = "삼성",
-        items: List<NaverSearchItem> = listOf(createNaverSearchItem())
+        items: List<NaverSearchItem> = listOf(createSearchItem())
     ): SearchResultPayload {
         return SearchResultPayload(
             query = query,
@@ -42,10 +41,9 @@ object NaverFixtures {
     }
 
     /**
-     * NaverSearchItem (개별 종목 정보) 생성 팩토리
-     * - 자주 쓰이는 삼성전자(KOSPI)를 기본값으로 설정
+     * NaverSearchItem (개별 종목 정보) 생성 - 기본값: 삼성전자(KOSPI)
      */
-    fun createNaverSearchItem(
+    fun createSearchItem(
         code: String = "005930",
         name: String = "삼성전자",
         typeCode: String = "KOSPI",
@@ -69,25 +67,39 @@ object NaverFixtures {
         )
     }
 
-    // -------------------------------------------------------------------------
-    // 아래는 시세(Price) 관련 Fixture (기존 코드 유지 및 필요시 사용)
-    // -------------------------------------------------------------------------
+    /**
+     * NaverRealTimeStockPriceResponse (시세 조회 응답 래퍼) 생성
+     */
+    fun createStockPriceResponse(
+        pollingInterval: Long = 10000,
+        time: String = "20260123100000",
+        datas: List<NaverStockPrice> = listOf(createStockPrice())
+    ): NaverRealTimeStockPriceResponse {
+        return NaverRealTimeStockPriceResponse(
+            pollingInterval = pollingInterval,
+            time = time,
+            datas = datas
+        )
+    }
 
-    fun createNaverStockPrice(
+    /**
+     * NaverStockPrice (개별 종목 시세) 생성 - 기본값: 삼성전자
+     */
+    fun createStockPrice(
         itemCode: String = "005930",
         stockName: String = "삼성전자",
         reutersCode: String = "005930",
-        closePrice: String = "70,000",
-        compareToPreviousClosePrice: String = "1,000",
-        fluctuationsRatio: String = "1.45",
-        accumulatedTradingVolume: String = "15,000,000",
-        accumulatedTradingValue: String = "1,000,000백만",
+        closePrice: String = "70,000", // 현재가
+        compareToPreviousClosePrice: String = "1,000", // 변동액
+        fluctuationsRatio: String = "1.45", // 변동률
         marketStatus: String = "OPEN",
         stockExchangeType: StockExchangeType = createStockExchangeType(),
         currencyType: CurrencyResponse = createCurrencyResponse(),
         openPrice: String = "69,000",
         highPrice: String = "71,000",
         lowPrice: String = "69,000",
+        accumulatedTradingVolume: String = "10,000,000",
+        accumulatedTradingValue: String = "700,000",
         isinCode: String? = "KR7005930003"
     ): NaverStockPrice {
         return NaverStockPrice(
@@ -109,39 +121,272 @@ object NaverFixtures {
         )
     }
 
+    /**
+     * StockExchangeType (거래소 정보) 생성 - 기본값: 코스피
+     */
     fun createStockExchangeType(
         code: String = "KS",
-        nameKor: String = "코스피",
         nameEng: String = "KOSPI",
-        zoneId: String = "Asia/Seoul",
-        nationType: String = "KOR"
+        nameKor: String = "코스피",
+        nationCode: String = "KR",
+        nationName: String = "대한민국"
     ): StockExchangeType {
         return StockExchangeType(
             code = code,
-            zoneId = zoneId,
-            nationType = nationType,
+            nameEng = nameEng,
+            nameKor = "코스피",
+            zoneId = "Asia/Seoul",
+            nationType = "KOR",
             delayTime = 0,
             startTime = "0900",
             endTime = "1530",
             closePriceSendTime = "1630",
-            nameKor = nameKor,
-            nameEng = nameEng,
-            nationCode = "KR",
-            nationName = "Korea",
+            nationCode = nationCode,
+            nationName = nationName,
             stockType = "domestic",
             name = nameEng
         )
     }
 
-    fun createCurrencyResponse(
-        code: String = "KRW",
-        text: String = "Won",
-        name: String = "Won"
-    ): CurrencyResponse {
+    fun createCurrencyResponse(code: String = "KRW"): CurrencyResponse {
         return CurrencyResponse(
             code = code,
-            text = text,
-            name = name
+            text = "Won",
+            name = "Won"
         )
     }
+
+    /** 검색 결과 - 삼성전자 */
+    val SEARCH_ITEM_SAMSUNG = createSearchItem()
+
+    /** 검색 결과 - 애플 (NASDAQ) */
+    val SEARCH_ITEM_APPLE = createSearchItem(
+        code = "AAPL",
+        name = "Apple Inc",
+        typeCode = "NASDAQ",
+        typeName = "나스닥",
+        reutersCode = "AAPL.O",
+        nationCode = "USA",
+        nationName = "미국"
+    )
+
+    /** 시세 - 삼성전자 (상승) */
+    val PRICE_SAMSUNG_RISING = createStockPrice(
+        itemCode = "005930",
+        closePrice = "72,000",
+        fluctuationsRatio = "2.85", // +2.85%
+        marketStatus = "OPEN"
+    )
+
+    /** 시세 - 테슬라 (하락, 나스닥) */
+    val PRICE_TESLA_FALLING = createStockPrice(
+        itemCode = "TSLA",
+        stockName = "Tesla",
+        reutersCode = "TSLA.O",
+        closePrice = "180.50",
+        fluctuationsRatio = "-5.2", // -5.2%
+        stockExchangeType = createStockExchangeType("NS", "NASDAQ", "US", "미국"),
+        currencyType = createCurrencyResponse("USD")
+    )
+
+    const val JSON_SEARCH_SUCCESS_SAMSUNG = """
+    {
+      "isSuccess": true,
+      "detailCode": "",
+      "message": "",
+      "result": {
+        "query": "삼성",
+        "items": [
+          {
+            "code": "005930",
+            "name": "삼성전자",
+            "typeCode": "KOSPI",
+            "typeName": "코스피",
+            "url": "/domestic/stock/005930/total",
+            "reutersCode": "005930",
+            "nationCode": "KOR",
+            "nationName": "대한민국",
+            "category": "stock"
+          }
+        ]
+      }
+    }
+    """
+
+    const val JSON_SEARCH_EMPTY = """
+    {
+      "isSuccess": true,
+      "result": {
+        "query": "없는종목",
+        "items": []
+      }
+    }
+    """
+
+    const val JSON_PRICE_DOMESTIC_SUCCESS = """
+    {
+       "pollingInterval":7000,
+       "datas":[
+          {
+             "itemCode":"005930",
+             "stockName":"삼성전자",
+             "stockExchangeType":{
+                "code":"KS",
+                "zoneId":"Asia/Seoul",
+                "nationType":"KOR",
+                "delayTime":0,
+                "startTime":"0900",
+                "endTime":"1530",
+                "closePriceSendTime":"1630",
+                "nameKor":"코스피",
+                "nameEng":"KOSPI",
+                "nationCode":"KOR",
+                "nationName":"대한민국",
+                "stockType":"domestic",
+                "name":"KOSPI"
+             },
+             "closePrice":"103,400",
+             "compareToPreviousClosePrice":"2,600",
+             "compareToPreviousPrice":{
+                "code":"2",
+                "text":"상승",
+                "name":"RISING"
+             },
+             "fluctuationsRatio":"2.58",
+             "tradeStopType":{
+                "code":"1",
+                "text":"운영.Trading",
+                "name":"TRADING"
+             },
+             "openPrice":"101,200",
+             "highPrice":"103,500",
+             "lowPrice":"101,000",
+             "accumulatedTradingVolume":"10,079,219",
+             "accumulatedTradingValue":"1,032,919백만",
+             "marketStatus":"OPEN",
+             "localTradedAt":"2025-12-02T13:48:08.504191+09:00",
+             "overMarketPriceInfo":{
+                "tradingSessionType":"REGULAR_MARKET",
+                "overMarketStatus":"OPEN",
+                "overPrice":"103,400",
+                "openPrice":"101,000",
+                "highPrice":"103,400",
+                "lowPrice":"100,800",
+                "compareToPreviousPrice":{
+                   "code":"2",
+                   "text":"상승",
+                   "name":"RISING"
+                },
+                "compareToPreviousClosePrice":"2,600",
+                "fluctuationsRatio":"2.58",
+                "localTradedAt":"2025-12-02T13:48:08.504209+09:00",
+                "tradeStopType":{
+                   "code":"1",
+                   "text":"운영.Trading",
+                   "name":"TRADING"
+                },
+                "accumulatedTradingVolume":"4,763,607",
+                "accumulatedTradingValue":"487,008백만"
+             },
+             "integratedPriceInfo":{
+                "openPrice":"101,000",
+                "highPrice":"103,500",
+                "lowPrice":"100,800",
+                "accumulatedTradingVolume":"14,842,826",
+                "accumulatedTradingValue":"1,519,927백만"
+             },
+             "isinCode":"KR7005930003",
+             "myDataCode":null,
+             "stockEndUrl":null,
+             "symbolCode":"005930",
+             "currencyType":{
+                "code":"KRW",
+                "text":"Republic of Korea won",
+                "name":"KRW"
+             }
+          }
+       ]
+    }
+    """
+
+    const val JSON_PRICE_WORLD_SUCCESS = """
+        {
+           "pollingInterval":70000,
+           "datas":[
+              {
+                 "reutersCode":"AAPL.O",
+                 "stockName":"애플",
+                 "symbolCode":"AAPL",
+                 "stockExchangeType":{
+                    "code":"NSQ",
+                    "zoneId":"EST5EDT",
+                    "nationType":"USA",
+                    "delayTime":0,
+                    "startTime":"0930",
+                    "endTime":"1600",
+                    "closePriceSendTime":"2031",
+                    "nameKor":"나스닥 증권거래소",
+                    "nameEng":"NASDAQ Stock Exchange",
+                    "nationCode":"USA",
+                    "nationName":"미국",
+                    "stockType":"worldstock",
+                    "name":"NASDAQ"
+                 },
+                 "closePrice":"284.15",
+                 "compareToPreviousClosePrice":"-2.04",
+                 "compareToPreviousPrice":{
+                    "code":"5",
+                    "text":"하락",
+                    "name":"FALLING"
+                 },
+                 "fluctuationsRatio":"-0.71",
+                 "tradeStopType":{
+                    "code":"1",
+                    "text":"운영.Trading",
+                    "name":"TRADING"
+                 },
+                 "openPrice":"286.20",
+                 "highPrice":"288.62",
+                 "lowPrice":"283.30",
+                 "accumulatedTradingVolume":"43,538,687",
+                 "accumulatedTradingValue":"124억 USD",
+                 "localTradedAt":"2025-12-03T16:00:00-05:00",
+                 "marketStatus":"CLOSE",
+                 "overMarketPriceInfo":{
+                    "tradingSessionType":"AFTER_MARKET",
+                    "overMarketStatus":"CLOSE",
+                    "overPrice":"284.22",
+                    "compareToPreviousPrice":{
+                       "code":"2",
+                       "text":"상승",
+                       "name":"RISING"
+                    },
+                    "compareToPreviousClosePrice":"0.07",
+                    "fluctuationsRatio":"0.02",
+                    "localTradedAt":"2025-12-03T20:00:00-05:00"
+                 },
+                 "currencyType":{
+                    "code":"USD",
+                    "text":"US dollar",
+                    "name":"USD"
+                 },
+                 "isinCode":"US0378331005",
+                 "myDataCode":null,
+                 "stockEndUrl":null,
+                 "marketValueFull":"4,198,700,704,950",
+                 "marketValueHangeul":"4조 1,987억 USD",
+                 "marketValueKrwHangeul":"6,187조 6,252억원"
+              }
+           ],
+           "time":"20251204131306"
+        }
+    """
+
+    const val JSON_PRICE_EMPTY_SUCCESS = """
+    {
+       "pollingInterval":7000,
+       "datas":[]
+    }
+    """
+
 }
