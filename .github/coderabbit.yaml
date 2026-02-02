@@ -1,0 +1,90 @@
+version: 1.0
+
+language:
+  primary: kotlin
+  secondary:
+    - java
+
+reviews:
+  profile: assertive
+  high_level_summary: true
+  review_status: true
+
+  auto_review:
+    enabled: true
+    drafts: false
+
+  # PR에서 집중적으로 볼 포인트
+  focus:
+    - correctness
+    - performance
+    - security
+    - maintainability
+    - user_experience
+
+  # IntelliJ Plugin 특화 체크
+  custom_guidelines:
+    - Ensure all UI updates run on IntelliJ EDT (Event Dispatch Thread)
+    - Avoid blocking calls on UI thread (network, IO, API calls)
+    - Use IntelliJ Platform APIs instead of raw Swing when possible
+    - Verify plugin compatibility with supported IntelliJ versions
+    - Avoid memory leaks caused by listeners or services
+    - Check proper disposal of resources (Disposer, Disposable)
+    - Validate plugin.xml consistency with code
+
+  # 주식 / 외부 API 관련
+  domain_checks:
+    - Validate external stock API error handling
+    - Check retry/backoff logic for rate-limited APIs
+    - Ensure API keys or secrets are not hardcoded
+    - Confirm time-zone correctness for market hours
+    - Verify numerical precision for price/volume calculations
+
+  # Kotlin/Java 코드 스타일
+  code_style:
+    kotlin:
+      prefer_immutable_collections: true
+      avoid_nullable_chains: true
+      encourage_data_classes: true
+    java:
+      avoid_optional_abuse: true
+      prefer_streams_when_readable: true
+
+  # 테스트 관련
+  tests:
+    require_tests_for:
+      - business_logic
+      - api_integration
+    allow_skip_for:
+      - ui_layout
+      - experimental_features
+
+comments:
+  inline: true
+  summary: true
+  tone: constructive
+
+# 파일별 리뷰 강도 조절
+path_filters:
+  include:
+    - src/**
+    - resources/**
+    - plugin.xml
+  exclude:
+    - .github/**
+    - gradle/**
+    - build/**
+    - "*.md"
+
+# PR 크기 제한 경고
+limits:
+  max_changed_files: 25
+  max_lines_changed: 800
+
+# 자동으로 질문 던지게
+questions:
+  enabled: true
+  examples:
+    - "이 API 실패 시 사용자에게 어떻게 안내하나요?"
+    - "이 로직은 실시간 주가 변동에 대해 성능 문제가 없을까요?"
+    - "IDE 재시작 시 이 상태는 어떻게 복구되나요?"
