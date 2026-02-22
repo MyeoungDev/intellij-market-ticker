@@ -1,6 +1,5 @@
 package com.github.myeoungdev.marketticker.application.repository
 
-import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.Service
@@ -17,43 +16,32 @@ private val logger = KotlinLogging.logger {}
 @Service(Service.Level.APP)
 class WatchlistRepository : PersistentStateComponent<WatchlistRepository.State> {
 
-    data class SavedTicker(
+    data class WatchlistEntry(
         var symbol: String = "",
-        val tradingSymbol: String = "",
+        var tradingSymbol: String = "",
         var name: String = "",
         var marketType: String = "UNKNOWN",
         var nationCode: String? = "",
-        var nationName: String? = ""
+        var nationName: String? = "",
+        var purchasePrice: Double? = null,
+        var quantity: Double? = null
     )
 
     data class State(
-        var tickers: MutableList<SavedTicker> = mutableListOf(),
+        var tickers: MutableList<WatchlistEntry> = mutableListOf(), // Changed type here
         var updateIntervalSec: Long = 60L
     )
 
     private var marketTickerState = State()
 
-    override fun getState(): State? = null
+    override fun getState(): State = marketTickerState
 
     override fun loadState(state: State) {
-//        marketTickerState = state
-
-        // NOTE: 개발용 State 초기화
-        noStateLoaded()
+        marketTickerState = state
     }
 
-    fun getTickers(): List<Ticker> {
-        return marketTickerState.tickers.map {
-            logger.info { "it ${it}" }
-            Ticker(
-                it.symbol,
-                it.tradingSymbol,
-                it.name,
-                MarketType.valueOf(it.marketType),
-                it.nationCode,
-                it.nationName
-            )
-        }
+    fun getWatchlistEntries(): List<WatchlistEntry> {
+        return marketTickerState.tickers.map { it }
     }
 
     fun addTicker(ticker: Ticker) {
@@ -67,19 +55,36 @@ class WatchlistRepository : PersistentStateComponent<WatchlistRepository.State> 
         }
 
         marketTickerState.tickers.add(
-            SavedTicker(
+            WatchlistEntry(
                 ticker.symbol,
                 ticker.tradingSymbol,
                 ticker.name,
                 ticker.marketType.name,
                 ticker.nationCode,
-                ticker.nationName
+                ticker.nationName,
+                null,
+                null
             )
         )
     }
 
     fun removeTicker(symbol: String) {
         marketTickerState.tickers.removeIf { it.symbol == symbol }
+    }
+
+    fun updateWatchlistEntryPortfolio(updatedEntry: WatchlistEntry) {
+        val index = marketTickerState.tickers.indexOfFirst {
+            it.symbol == updatedEntry.symbol && it.marketType == updatedEntry.marketType
+        }
+
+        if (index != -1) {
+            val watchlistEntry = marketTickerState.tickers[index]
+            watchlistEntry.purchasePrice = updatedEntry.purchasePrice
+            watchlistEntry.quantity = updatedEntry.quantity
+            logger.info { "Updated portfolio for ${watchlistEntry.symbol}: purchasePrice=${watchlistEntry.purchasePrice}, quantity=${watchlistEntry.quantity}" } // Corrected logging variable
+        } else {
+            logger.warn { "Watchlist entry ${updatedEntry.name} not found in watchlist for portfolio update." }
+        }
     }
 
 }

@@ -17,7 +17,7 @@ class MarketTickerToolWindowFactory : ToolWindowFactory {
     override fun createToolWindowContent(project: Project, toolWindow: ToolWindow) {
         val contentFactory = ContentFactory.getInstance()
         val view = MarketTickerView(project)
-        val content = contentFactory.createContent(view.searchPanel, "", false)
+        val content = contentFactory.createContent(view.mainPanel, "", false)
         toolWindow.contentManager.addContent(content)
     }
 }
