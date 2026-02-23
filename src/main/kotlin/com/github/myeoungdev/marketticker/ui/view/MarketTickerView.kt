@@ -15,6 +15,7 @@ import kotlinx.coroutines.*
 import java.awt.BorderLayout
 import javax.swing.DefaultListModel
 import javax.swing.JPanel
+import javax.swing.JTabbedPane
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
@@ -42,7 +43,11 @@ class MarketTickerView(
     private val searchResultList = JBList(searchListModel)
 
     private val watchlistView = WatchlistView(project)
+    private val portfolioView = PortfolioView()
 
+    private val heatmapView = HeatmapView()
+
+    val mainPanel = JPanel(BorderLayout())
 
     override fun dispose() {
         scope.cancel()
@@ -62,23 +67,35 @@ class MarketTickerView(
         // 리스트 설정
         searchResultList.cellRenderer = SearchResultRenderer()
 
-        // 레이아웃 배치
-        searchPanel.add(searchField, BorderLayout.NORTH)
-
-        // 수직 분할, 비율 4:6
-        val splitter = com.intellij.ui.JBSplitter(true, 0.4f)
-
-        splitter.firstComponent = JBScrollPane(searchResultList).apply {
+        val searchResultPanel = JBScrollPane(searchResultList).apply {
             border = javax.swing.BorderFactory.createTitledBorder("검색 결과")
         }
 
-        splitter.secondComponent = watchlistView.panel.apply {
-            border = javax.swing.BorderFactory.createTitledBorder("관심 종목")
+        // 관심종목/포트폴리오 탭
+        val watchlistPortfolioTabbedPane = JTabbedPane().apply {
+            addTab("관심종목", watchlistView.panel)
+            addTab("포트폴리오", portfolioView.panel)
+        }
+
+        val topSplitter = com.intellij.ui.JBSplitter(true, 0.4f).apply {
+            firstComponent = searchResultPanel
+            secondComponent = watchlistPortfolioTabbedPane
         }
 
         searchPanel.add(searchField, BorderLayout.NORTH)
-        searchPanel.add(splitter, BorderLayout.CENTER)
+        searchPanel.add(topSplitter, BorderLayout.CENTER)
 
+        // 하단 탭 패널 (차트 및 히트맵)
+        val bottomTabbedPane = JTabbedPane().apply {
+            addTab("히트맵", heatmapView)
+        }
+
+        // 메인 패널 레이아웃 (상단: 검색/관심종목, 하단: 차트/상세정보 또는 히트맵)
+        val mainSplitter = com.intellij.ui.JBSplitter(true, 0.6f).apply {
+            firstComponent = searchPanel
+            secondComponent = bottomTabbedPane
+        }
+        mainPanel.add(mainSplitter, BorderLayout.CENTER)
     }
 
     private fun setupListeners() {
@@ -128,6 +145,8 @@ class MarketTickerView(
                 withContext(Dispatchers.Main) {
                     logger.info { "Updating WatchlistView on Main Thread" }
                     watchlistView.updateWith(prices)
+                    portfolioView.updateWith(prices)
+                    heatmapView.updateHeatmap(prices) // 히트맵 업데이트 추가
                 }
             }
         }

@@ -27,7 +27,7 @@ class WatchlistRepositoryTest {
 
     @Test
     fun `초기 상태는 비어있다`() {
-        assertTrue(service.getTickers().isEmpty())
+        assertTrue(service.getWatchlistEntries().isEmpty())
     }
 
     @Test
@@ -36,7 +36,7 @@ class WatchlistRepositoryTest {
         service.addTicker(DEFAULT_TICKER)
 
         // Then
-        val list = service.getTickers()
+        val list = service.getWatchlistEntries()
         assertEquals(1, list.size)
         assertEquals(DEFAULT_TICKER.name, list[0].name)
     }
@@ -56,7 +56,7 @@ class WatchlistRepositoryTest {
         )
 
         // Then
-        val list = service.getTickers()
+        val list = service.getWatchlistEntries()
         assertEquals(1, list.size)
         assertEquals(DEFAULT_TICKER.name, list[0].name)
     }
@@ -78,7 +78,7 @@ class WatchlistRepositoryTest {
         service.removeTicker(t1.symbol)
 
         // Then
-        val list = service.getTickers()
+        val list = service.getWatchlistEntries()
         assertEquals(1, list.size)
         assertEquals(t2.name, list[0].name)
     }
@@ -88,10 +88,10 @@ class WatchlistRepositoryTest {
         // Given
         val loadedState = WatchlistRepository.State()
         loadedState.tickers.add(
-            WatchlistRepository.SavedTicker(
-                DEFAULT_TICKER.name,
-                DEFAULT_TICKER.tradingSymbol,
+            WatchlistRepository.WatchlistEntry(
                 DEFAULT_TICKER.symbol,
+                DEFAULT_TICKER.tradingSymbol,
+                DEFAULT_TICKER.name,
                 DEFAULT_TICKER.marketType.name,
                 DEFAULT_TICKER.nationCode,
                 DEFAULT_TICKER.nationName
@@ -102,7 +102,7 @@ class WatchlistRepositoryTest {
         service.loadState(loadedState)
 
         // Then
-        val list = service.getTickers()
+        val list = service.getWatchlistEntries()
         assertEquals(1, list.size)
         assertEquals(DEFAULT_TICKER.name, list[0].name)
     }
