@@ -1,0 +1,39 @@
+curl 'https://polling.finance.naver.com/api/realtime/coin/price?fqnfTickers=BTC_KRW_UPBIT' \
+-H 'accept: application/json, text/javascript, */*; q=0.01' \
+-H 'accept-language: ko-KR,ko;q=0.9' \
+-H 'origin: https://stock.naver.com' \
+-H 'priority: u=1, i' \
+-H 'referer: https://stock.naver.com/crypto/UPBIT/BTC' \
+-H 'sec-ch-ua: "Not)A;Brand";v="99", "Google Chrome";v="127", "Chromium";v="127"' \
+-H 'sec-ch-ua-mobile: ?1' \
+-H 'sec-ch-ua-platform: "Android"' \
+-H 'sec-fetch-dest: empty' \
+-H 'sec-fetch-mode: cors' \
+-H 'sec-fetch-site: same-site' \
+-H 'user-agent: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36'
+
+
+{
+  "pollingInterval": 7000,
+  "datas": [
+    {
+      "fqnfTicker": "BTC_KRW_UPBIT",
+      "openPrice": 1.17616E+8,
+      "highPrice": 1.185E+8,
+      "lowPrice": 1.1555E+8,
+      "tradePrice": 1.1667E+8,
+      "previousClosePrice": 1.17616E+8,
+      "change": "FALLING",
+      "changeRate": -0.8,
+      "changeValue": -9.46E+5,
+      "highest52weekPrice": 1.79869E+8,
+      "lowest52weekPrice": 1.11659E+8,
+      "accumulatedTradingVolume": 4504.27473724,
+      "accumulatedTradingValue": 530609631827.4375,
+      "koreaTradedAt": "2026-02-01T18:52:40",
+      "krwPremiumRate": 2.11,
+      "marketCap": 2283049596327847
+    }
+  ],
+  "time": "20260201185242"
+}

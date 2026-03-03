@@ -1,0 +1,222 @@
+package com.github.myeoungdev.marketticker.ui.view
+
+import com.github.myeoungdev.marketticker.application.service.LocalizationService
+import com.github.myeoungdev.marketticker.application.service.PriceHistoryService
+import com.github.myeoungdev.marketticker.domain.model.MarketType
+import com.github.myeoungdev.marketticker.domain.model.Ticker
+import com.github.myeoungdev.marketticker.infrastructure.naver.NaverClient
+import com.intellij.openapi.application.ApplicationManager
+import com.intellij.openapi.components.service
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.launch
+import java.awt.BasicStroke
+import java.awt.BorderLayout
+import java.awt.Color
+import java.awt.Graphics
+import java.awt.Graphics2D
+import java.awt.RenderingHints
+import java.time.LocalDateTime
+import java.time.ZoneId
+import javax.swing.JComboBox
+import javax.swing.JLabel
+import javax.swing.JPanel
+
+/**
+ * 선택된 종목의 히스토리 데이터를 캔들/거래량/이동평균으로 렌더링하는 뷰입니다.
+ */
+class ChartView : JPanel(BorderLayout()) {
+
+    private val historyService = service<PriceHistoryService>()
+    private val localizationService = service<LocalizationService>()
+    private val naverClient = NaverClient()
+    private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+
+    private var selectedTicker: Ticker? = null
+    private var period: PriceHistoryService.Period = PriceHistoryService.Period.DAY
+    private var candles: List<PriceHistoryService.Candle> = emptyList()
+    private var ma5: List<Double?> = emptyList()
+    private var ma20: List<Double?> = emptyList()
+
+    private val titleLabel = JLabel(localizationService.text("차트: 종목을 선택하세요", "Chart: select a symbol"))
+    private val periodCombo = JComboBox(PriceHistoryService.Period.values())
+    private val canvas = ChartCanvas()
+
+    init {
+        val topPanel = JPanel(BorderLayout())
+        topPanel.add(titleLabel, BorderLayout.WEST)
+        topPanel.add(periodCombo, BorderLayout.EAST)
+
+        periodCombo.addActionListener {
+            val selected = periodCombo.selectedItem as? PriceHistoryService.Period ?: PriceHistoryService.Period.DAY
+            period = selected
+            refreshChart()
+        }
+
+        add(topPanel, BorderLayout.NORTH)
+        add(canvas, BorderLayout.CENTER)
+    }
+
+    /**
+     * 차트 대상 종목을 변경하고 즉시 갱신합니다.
+     */
+    fun updateSelection(ticker: Ticker) {
+        selectedTicker = ticker
+        titleLabel.text = localizationService.text("차트", "Chart") + ": ${ticker.name} (${ticker.symbol})"
+        refreshChart()
+    }
+
+    /**
+     * 현재 선택된 종목과 기간 기준으로 차트 데이터를 다시 계산합니다.
+     */
+    fun refreshChart() {
+        val ticker = selectedTicker ?: return
+        val marketType = MarketType.of(ticker.marketType.name)
+
+        scope.launch {
+            val data = if (marketType.isCryptoMarket()) {
+                val from = when (period) {
+                    PriceHistoryService.Period.DAY -> LocalDateTime.now().minusDays(1)
+                    PriceHistoryService.Period.WEEK -> LocalDateTime.now().minusDays(7)
+                    PriceHistoryService.Period.MONTH -> LocalDateTime.now().minusDays(30)
+                }
+
+                naverClient.fetchCryptoChartCandles(
+                    exchangeType = marketType.name,
+                    nfTicker = ticker.symbol,
+                    marketType = "KRW",
+                    from = from
+                ).map { it.toPriceHistoryCandle() }
+            } else {
+                val zoneId: ZoneId = marketType.zoneId
+                historyService.buildCandles(ticker.symbol, ticker.marketType.name, period, zoneId)
+            }
+
+            ApplicationManager.getApplication().invokeLater {
+                candles = data.takeLast(80)
+                ma5 = historyService.movingAverage(candles, 5)
+                ma20 = historyService.movingAverage(candles, 20)
+                canvas.repaint()
+            }
+        }
+    }
+
+    override fun removeNotify() {
+        super.removeNotify()
+        scope.cancel()
+    }
+
+    private inner class ChartCanvas : JPanel() {
+        override fun paintComponent(g: Graphics) {
+            super.paintComponent(g)
+            val g2 = g as Graphics2D
+            g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON)
+
+            val width = width
+            val height = height
+
+            g2.color = Color(36, 36, 36)
+            g2.fillRect(0, 0, width, height)
+
+            if (candles.isEmpty()) {
+                g2.color = Color.LIGHT_GRAY
+                g2.drawString(localizationService.text("차트 데이터가 없습니다.", "No chart data yet."), 16, 24)
+                return
+            }
+
+            val topPadding = 20
+            val bottomPadding = 100
+            val leftPadding = 40
+            val rightPadding = 20
+
+            val chartTop = topPadding
+            val chartBottom = height - bottomPadding
+            val chartHeight = chartBottom - chartTop
+            val chartWidth = width - leftPadding - rightPadding
+
+            val maxPrice = candles.maxOf { it.high }
+            val minPrice = candles.minOf { it.low }
+            val priceRange = (maxPrice - minPrice).coerceAtLeast(0.0001)
+
+            val maxVolume = candles.maxOf { it.volume }.coerceAtLeast(1)
+            val candleWidth = (chartWidth / candles.size.toDouble()).coerceAtLeast(3.0)
+
+            candles.forEachIndexed { index, candle ->
+                val x = (leftPadding + index * candleWidth).toInt()
+                val centerX = (x + candleWidth / 2).toInt()
+
+                fun y(price: Double): Int {
+                    return (chartBottom - ((price - minPrice) / priceRange) * chartHeight).toInt()
+                }
+
+                val openY = y(candle.open)
+                val closeY = y(candle.close)
+                val highY = y(candle.high)
+                val lowY = y(candle.low)
+
+                val isUp = candle.close >= candle.open
+                g2.color = if (isUp) Color(244, 67, 54) else Color(66, 133, 244)
+
+                g2.drawLine(centerX, highY, centerX, lowY)
+
+                val bodyTop = minOf(openY, closeY)
+                val bodyHeight = kotlin.math.abs(closeY - openY).coerceAtLeast(2)
+                g2.fillRect(x + 1, bodyTop, candleWidth.toInt().coerceAtLeast(2) - 2, bodyHeight)
+
+                val volumeTop = height - 70
+                val volumeHeight = ((candle.volume.toDouble() / maxVolume) * 55.0).toInt().coerceAtLeast(1)
+                g2.color = if (isUp) Color(255, 138, 128) else Color(130, 177, 255)
+                g2.fillRect(x + 1, volumeTop + (55 - volumeHeight), candleWidth.toInt().coerceAtLeast(2) - 2, volumeHeight)
+            }
+
+            drawMa(g2, ma5, candles, leftPadding, candleWidth, chartBottom, minPrice, priceRange, chartHeight, Color(255, 193, 7))
+            drawMa(g2, ma20, candles, leftPadding, candleWidth, chartBottom, minPrice, priceRange, chartHeight, Color(0, 230, 118))
+
+            g2.color = Color(200, 200, 200)
+            g2.drawString("MA5", leftPadding, height - 28)
+            g2.drawString("MA20", leftPadding + 55, height - 28)
+            g2.color = Color(255, 193, 7)
+            g2.fillRect(leftPadding + 30, height - 36, 18, 4)
+            g2.color = Color(0, 230, 118)
+            g2.fillRect(leftPadding + 95, height - 36, 18, 4)
+
+            g2.color = Color(180, 180, 180)
+            g2.drawString(localizationService.text("거래량", "Volume"), leftPadding, height - 74)
+        }
+
+        private fun drawMa(
+            g2: Graphics2D,
+            ma: List<Double?>,
+            candles: List<PriceHistoryService.Candle>,
+            leftPadding: Int,
+            candleWidth: Double,
+            chartBottom: Int,
+            minPrice: Double,
+            priceRange: Double,
+            chartHeight: Int,
+            color: Color
+        ) {
+            g2.color = color
+            g2.stroke = BasicStroke(1.8f)
+
+            var prevX: Int? = null
+            var prevY: Int? = null
+
+            ma.forEachIndexed { index, value ->
+                if (value == null) return@forEachIndexed
+                if (index >= candles.size) return@forEachIndexed
+
+                val x = (leftPadding + index * candleWidth + candleWidth / 2).toInt()
+                val y = (chartBottom - ((value - minPrice) / priceRange) * chartHeight).toInt()
+
+                if (prevX != null && prevY != null) {
+                    g2.drawLine(prevX!!, prevY!!, x, y)
+                }
+                prevX = x
+                prevY = y
+            }
+        }
+    }
+}

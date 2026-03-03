@@ -1,52 +1,86 @@
-# intellij-market-ticker
+# Market Ticker (IntelliJ Plugin)
 
-![Build](https://github.com/MyeoungDev/intellij-market-ticker/workflows/Build/badge.svg)
-[![Version](https://img.shields.io/jetbrains/plugin/v/MARKETPLACE_ID.svg)](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID)
-[![Downloads](https://img.shields.io/jetbrains/plugin/d/MARKETPLACE_ID.svg)](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID)
+IntelliJ IDE 안에서 관심 종목을 검색/등록하고, 실시간 시세와 포트폴리오 손익을 확인할 수 있는 플러그인입니다.
 
-## Template ToDo list
-- [x] Create a new [IntelliJ Platform Plugin Template][template] project.
-- [ ] Get familiar with the [template documentation][template].
-- [ ] Adjust the [pluginGroup](./gradle.properties) and [pluginName](./gradle.properties), as well as the [id](./src/main/resources/META-INF/plugin.xml) and [sources package](./src/main/kotlin).
-- [ ] Adjust the plugin description in `README` (see [Tips][docs:plugin-description])
-- [ ] Review the [Legal Agreements](https://plugins.jetbrains.com/docs/marketplace/legal-agreements.html?from=IJPluginTemplate).
-- [ ] [Publish a plugin manually](https://plugins.jetbrains.com/docs/intellij/publishing-plugin.html?from=IJPluginTemplate) for the first time.
-- [ ] Set the `MARKETPLACE_ID` in the above README badges. You can obtain it once the plugin is published to JetBrains Marketplace.
-- [ ] Set the [Plugin Signing](https://plugins.jetbrains.com/docs/intellij/plugin-signing.html?from=IJPluginTemplate) related [secrets](https://github.com/JetBrains/intellij-platform-plugin-template#environment-variables).
-- [ ] Set the [Deployment Token](https://plugins.jetbrains.com/docs/marketplace/plugin-upload.html?from=IJPluginTemplate).
-- [ ] Click the <kbd>Watch</kbd> button on the top of the [IntelliJ Platform Plugin Template][template] to be notified about releases containing new features and fixes.
-- [ ] Configure the [CODECOV_TOKEN](https://docs.codecov.com/docs/quick-start) secret for automated test coverage reports on PRs
+## 주요 기능
+
+- 종목 검색: Naver 모바일 주식 검색 API 기반 자동완성 검색
+- 관심종목 관리: 더블클릭으로 추가, 컨텍스트 메뉴로 삭제
+- 실시간 시세 갱신: `자동(장중/비장중 분리)` / `고정(3·6·10초)` / `수동` 지원
+- 가격 알림: 목표가/변동률 + 반복 간격 + 1회성/지속 + 장중만 + 소리 옵션
+- 포트폴리오: 목표비중/편차, 실현손익/미실현손익/총손익 분리 표시
+- 종목 그룹/태그: 국내/해외 기본 분류 + 사용자 태그 편집 + 그룹 필터
+- 차트: 일/주/월 전환, 캔들, 거래량, MA5/MA20
+- Heatmap: 등락률 기반 컬러 시각화
+- 다국어/로케일: KO/EN 전환 및 숫자 포맷 통일
+- 상태바 위젯: 관심종목 가격 순환 표시 및 ToolWindow 연동
 
 <!-- Plugin description -->
-This Fancy IntelliJ Platform Plugin is going to be your implementation of the brilliant ideas that you have.
+Market Ticker is an IntelliJ Platform plugin that lets you track watchlist symbols in real time, review portfolio PnL, and receive price alerts directly inside your IDE.
 
-This specific section is a source for the [plugin.xml](/src/main/resources/META-INF/plugin.xml) file which will be extracted by the [Gradle](/build.gradle.kts) during the build process.
-
-To keep everything working, do not remove `<!-- ... -->` sections. 
+It provides watchlist search/add/remove, periodic price refresh, target/volatility alerts, status bar ticker, and heatmap visualization.
 <!-- Plugin description end -->
 
-## Installation
+## 기술 스택
 
-- Using the IDE built-in plugin system:
-  
-  <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>Marketplace</kbd> > <kbd>Search for "intellij-market-ticker"</kbd> >
-  <kbd>Install</kbd>
-  
-- Using JetBrains Marketplace:
+- Kotlin, Coroutines, StateFlow
+- IntelliJ Platform SDK (2024.3.x)
+- Gradle (IntelliJ Platform Gradle Plugin 2.x)
+- Jackson, Java HttpClient
+- JUnit 5, AssertJ, WireMock
 
-  Go to [JetBrains Marketplace](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID) and install it by clicking the <kbd>Install to ...</kbd> button in case your IDE is running.
+## 개발 환경
 
-  You can also download the [latest release](https://plugins.jetbrains.com/plugin/MARKETPLACE_ID/versions) from JetBrains Marketplace and install it manually using
-  <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>⚙️</kbd> > <kbd>Install plugin from disk...</kbd>
+- JDK 21
+- IntelliJ IDEA 2024.3+
+- macOS/Linux/Windows (Gradle Wrapper 사용)
 
-- Manually:
+### SDKMAN 사용 예시 (세션 한정 JDK 21)
 
-  Download the [latest release](https://github.com/MyeoungDev/intellij-market-ticker/releases/latest) and install it manually using
-  <kbd>Settings/Preferences</kbd> > <kbd>Plugins</kbd> > <kbd>⚙️</kbd> > <kbd>Install plugin from disk...</kbd>
+```bash
+source "$HOME/.sdkman/bin/sdkman-init.sh"
+sdk use java 21.0.9-tem
+./gradlew test
+```
 
+## 로컬 실행
 
----
-Plugin based on the [IntelliJ Platform Plugin Template][template].
+```bash
+./gradlew runIde
+```
 
-[template]: https://github.com/JetBrains/intellij-platform-plugin-template
-[docs:plugin-description]: https://plugins.jetbrains.com/docs/intellij/plugin-user-experience.html#plugin-description-and-presentation
+실행 후 샌드박스 IDE에서 `Market Ticker` ToolWindow를 열어 기능을 확인할 수 있습니다.
+
+## 테스트
+
+```bash
+./gradlew test
+```
+
+최근 확인 결과: Java 21 세션에서 `BUILD SUCCESSFUL`.
+
+## 저장 데이터
+
+플러그인은 IDE 설정 디렉터리에 다음 상태 파일을 저장합니다.
+
+- `market_ticker_watchlist.xml`
+- `market_ticker_alerts.xml`
+
+## 프로젝트 구조
+
+```text
+src/main/kotlin/com/github/myeoungdev/marketticker
+├── application      # 서비스/리스너/리포지토리/포트
+├── domain           # 도메인 모델
+├── infrastructure   # 외부 API 연동(Naver)
+└── ui               # ToolWindow/StatusBar/View
+```
+
+## 배포 전 체크리스트
+
+- `plugin.xml`의 표시 이름/설명/벤더 최종 점검
+- JetBrains Marketplace ID 반영
+- 플러그인 서명/배포 토큰 CI 시크릿 구성
+- Plugin Verifier 결과 확인
+
+## 라이선스

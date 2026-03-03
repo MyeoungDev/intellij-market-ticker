@@ -22,10 +22,7 @@ class TickerSchedulerService(
     private val cs: CoroutineScope
 ) {
     private val marketDataService = service<MarketDataService>()
-
-    companion object {
-        const val POLLING_INTERVAL_MS = 6000L
-    }
+    private val appSettingsService = service<AppSettingsService>()
 
     init {
         logger.info { "Scheduler Started." }
@@ -36,11 +33,29 @@ class TickerSchedulerService(
         cs.launch {
             while (isActive) {
                 try {
-                    marketDataService.refreshPrices()
+                    when (appSettingsService.getRefreshMode()) {
+                        AppSettingsService.RefreshMode.MANUAL -> delay(500L)
+                        AppSettingsService.RefreshMode.FIXED -> {
+                            marketDataService.refreshPrices()
+                            delay(appSettingsService.getFixedIntervalSec() * 1000L)
+                        }
+                        AppSettingsService.RefreshMode.AUTO -> {
+                            marketDataService.refreshPrices()
+                            val hasOpenMarket = marketDataService.currentPrices.value.any {
+                                it.marketStatus.name == "OPEN" || it.marketStatus.name == "EXTENDED"
+                            }
+                            val intervalSec = if (hasOpenMarket) {
+                                appSettingsService.getOpenIntervalSec()
+                            } else {
+                                appSettingsService.getClosedIntervalSec()
+                            }
+                            delay(intervalSec * 1000L)
+                        }
+                    }
                 } catch (e: Exception) {
                     logger.error(e) { "Error during polling loop" }
+                    delay(3_000L)
                 }
-                delay(POLLING_INTERVAL_MS)
             }
         }
     }

@@ -1,20 +1,22 @@
 package com.github.myeoungdev.marketticker.ui.alert
 
+import com.github.myeoungdev.marketticker.application.service.LocalizationService
 import com.github.myeoungdev.marketticker.application.service.PriceAlertService
+import com.github.myeoungdev.marketticker.domain.model.AlertMode
 import com.github.myeoungdev.marketticker.domain.model.AlertRule
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.intellij.openapi.components.service
 import com.intellij.openapi.ui.DialogWrapper
-import com.intellij.ui.dsl.builder.*
+import com.intellij.ui.dsl.builder.AlignX
+import com.intellij.ui.dsl.builder.bindSelected
+import com.intellij.ui.dsl.builder.bindText
+import com.intellij.ui.dsl.builder.columns
+import com.intellij.ui.dsl.builder.panel
+import com.intellij.ui.dsl.builder.text
 import io.github.oshai.kotlinlogging.KotlinLogging
+import javax.swing.JComboBox
 import javax.swing.JComponent
 
-/**
- * Some Descirption...
- *
- * @author  : 강명관
- * @since   : 2025-12-23
- */
 private val logger = KotlinLogging.logger {}
 
 class AlertSettingsDialog(
@@ -22,53 +24,54 @@ class AlertSettingsDialog(
 ) : DialogWrapper(true) {
 
     private val priceAlertService = service<PriceAlertService>()
+    private val localizationService = service<LocalizationService>()
 
     private data class AlertViewModel(
         var useTargetPrice: Boolean = false,
         var targetPriceStr: String = "",
         var volatilityStr: String = "5",
         var useVolatility: Boolean = true,
+        var marketHoursOnly: Boolean = false,
+        var soundEnabled: Boolean = false,
+        var repeatIntervalMinutesStr: String = "5",
+        var alertMode: AlertMode = AlertMode.REPEATING,
     )
 
     private val model = AlertViewModel()
+    private val modeCombo = JComboBox(AlertMode.values())
 
     init {
-        title = "${ticker.name} 알람 설정"
+        title = localizationService.text("${ticker.name} 알림 설정", "${ticker.name} Alert Settings")
         initSetting()
+        modeCombo.selectedItem = model.alertMode
         init()
     }
 
     private fun initSetting() {
-        val alert = priceAlertService.getAlert(ticker.symbol)
-
-        logger.info { "Saved Alert ${alert}" }
-
-        if (alert == null) {
-            return
-        }
+        val alert = priceAlertService.getAlert(ticker.symbol) ?: return
 
         model.targetPriceStr = alert.targetPrice?.toString() ?: ""
         model.useTargetPrice = alert.isTargetPriceEnabled
         model.volatilityStr = alert.volatilityPercentage.toString()
         model.useVolatility = alert.isVolatilityEnabled
-
+        model.marketHoursOnly = alert.marketHoursOnly
+        model.soundEnabled = alert.soundEnabled
+        model.repeatIntervalMinutesStr = alert.repeatIntervalMinutes.toString()
+        model.alertMode = AlertMode.of(alert.alertMode)
     }
 
     override fun createCenterPanel(): JComponent {
         return panel {
             row {
-                label("알림 조건을 설정하면 우측 하단에 알림이 표시됩니다.")
-                    .comment("목표가 도달 시 또는 급격한 변동 발생 시 알림")
+                text(localizationService.text("조건 충족 시 우측 하단 알림을 표시합니다.", "When conditions match, notifications appear at the bottom-right."))
             }
 
-            separator()
-
-            row("종목명:") {
-                label(ticker.name).bold()
+            row(localizationService.text("종목", "Symbol")) {
+                text(ticker.name)
             }
 
             row {
-                val targetPriceCheckBoxValue = checkBox("목표가 알림")
+                val targetPriceCheckBox = checkBox(localizationService.text("목표가", "Target price"))
                     .bindSelected(model::useTargetPrice)
                     .component
 
@@ -77,21 +80,13 @@ class AlertSettingsDialog(
                 textField()
                     .bindText(model::targetPriceStr)
                     .columns(10)
-                    .validationOnInput {
-                        if (it.text.toDoubleOrNull() == null && it.text.isNotEmpty()) {
-                            return@validationOnInput error("올바른 숫자를 입력하세요")
-                        }
-                        null
-                    }
                     .onChanged {
-                        targetPriceCheckBoxValue.isSelected = it.text.isNotEmpty()
+                        targetPriceCheckBox.isSelected = it.text.isNotEmpty()
                     }
             }
 
-            separator()
-
             row {
-                val volatilityCheckboxValue = checkBox("변동률 알림")
+                val volatilityCheckBox = checkBox(localizationService.text("변동률", "Volatility"))
                     .bindSelected(model::useVolatility)
                     .component
 
@@ -100,59 +95,70 @@ class AlertSettingsDialog(
                 textField()
                     .bindText(model::volatilityStr)
                     .columns(10)
-                    .validationOnInput {
-                        if (it.text.toDoubleOrNull() == null && it.text.isNotEmpty()) {
-                            return@validationOnInput error("올바른 숫자를 입력하세요")
-                        }
-                        null
-                    }
                     .onChanged {
-                        volatilityCheckboxValue.isSelected = it.text.isNotEmpty()
+                        volatilityCheckBox.isSelected = it.text.isNotEmpty()
                     }
 
-                label("%").gap(RightGap.SMALL)
+                text("%")
+            }
+
+            row(localizationService.text("알림 방식", "Alert mode")) {
+                cell(modeCombo).align(AlignX.FILL)
+            }
+
+            row(localizationService.text("반복 간격(분)", "Repeat interval (min)")) {
+                textField()
+                    .bindText(model::repeatIntervalMinutesStr)
+                    .columns(6)
             }
 
             row {
-                button("알람 삭제") {
-                    deleteAlert()
+                checkBox(localizationService.text("장중에만 알림", "Only during market hours"))
+                    .bindSelected(model::marketHoursOnly)
+            }
+
+            row {
+                checkBox(localizationService.text("알림 소리", "Sound on alert"))
+                    .bindSelected(model::soundEnabled)
+            }
+
+            row {
+                button(localizationService.text("알림 삭제", "Delete alert")) {
+                    priceAlertService.removeAlert(ticker.symbol)
                     close(OK_EXIT_CODE)
                 }
             }.enabled(isExistingAlert())
-
-        }.apply {
-            withPreferredWidth(400)
         }
     }
 
     override fun doOKAction() {
-        super.doOKAction()
-
-        logger.info { "targetPriceStr ${model.targetPriceStr}" }
-        logger.info { "volatilityStr ${model.volatilityStr}" }
-
         val targetPrice = model.targetPriceStr.toDoubleOrNull()
         val volatility = model.volatilityStr.toDoubleOrNull() ?: 5.0
-
-        logger.info { "Saving Alert: symbol=${ticker.symbol}, targetPrice=$targetPrice volatility=$volatility" }
+        val repeatInterval = model.repeatIntervalMinutesStr.toIntOrNull()?.coerceIn(1, 240) ?: 5
+        val selectedMode = modeCombo.selectedItem as? AlertMode ?: AlertMode.REPEATING
 
         val rule = AlertRule(
             symbol = ticker.symbol,
             tradingSymbol = ticker.tradingSymbol.ifBlank { ticker.symbol },
             targetPrice = targetPrice,
+            isTargetPriceEnabled = model.useTargetPrice,
             volatilityPercentage = volatility,
-            isEnabled = true
+            isVolatilityEnabled = model.useVolatility,
+            isEnabled = true,
+            alertMode = selectedMode.name,
+            repeatIntervalMinutes = repeatInterval,
+            marketHoursOnly = model.marketHoursOnly,
+            soundEnabled = model.soundEnabled,
+            triggeredOnce = false
         )
 
+        logger.info { "Saving alert for ${ticker.symbol}: mode=$selectedMode, repeat=$repeatInterval" }
         priceAlertService.addAlert(rule)
-    }
 
-    private fun deleteAlert() {
-        priceAlertService.removeAlert(ticker.symbol)
+        super.doOKAction()
     }
 
     private fun isExistingAlert(): Boolean {
         return priceAlertService.getAlert(ticker.symbol) != null
     }
-
 }

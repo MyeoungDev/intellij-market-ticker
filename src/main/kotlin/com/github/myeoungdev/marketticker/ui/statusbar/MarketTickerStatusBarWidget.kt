@@ -104,7 +104,7 @@ class MarketTickerStatusBarWidget(
     override fun getTooltipText(): String = "Market Ticker (click to open)"
 
     override fun getClickConsumer(): Consumer<MouseEvent>? = Consumer {
-        ToolWindowManager.getInstance(project).getToolWindow("MarketTicker")?.show {
+        ToolWindowManager.getInstance(project).getToolWindow("Market Ticker")?.show {
             logger.info { "Market Ticker ToolWindow Open" }
         }
     }

@@ -1,5 +1,6 @@
 package com.github.myeoungdev.marketticker.application.service
 
+import com.github.myeoungdev.marketticker.domain.model.AlertMode
 import com.github.myeoungdev.marketticker.domain.model.TickerPrice
 import com.intellij.ide.BrowserUtil
 import com.intellij.notification.NotificationAction
@@ -9,6 +10,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.ProjectManager
 import io.github.oshai.kotlinlogging.KotlinLogging
+import java.awt.Toolkit
 import java.util.concurrent.ConcurrentHashMap
 
 private val logger = KotlinLogging.logger {}
@@ -25,7 +27,6 @@ class NotificationService {
     private val priceAlertService = service<PriceAlertService>()
 
     private val lastAlertTimeMap = ConcurrentHashMap<String, Long>()
-    private val ALERT_COOLDOWN_FIVE_MINUTE = 5 * 60 * 1000L
 
     /**
      * Ticker 의 현재 가격을 통해 등록된 알람 기준에 맞는지 판별하고
@@ -35,9 +36,21 @@ class NotificationService {
      */
     fun checkAndNotify(prices: List<TickerPrice>) {
         prices.forEach { price ->
-            // 1. 규칙 위반 여부 확인 (PriceAlertService 위임)
-            if (priceAlertService.shouldTriggerAlert(price)) {
-                sendNotification(price)
+            val rule = priceAlertService.getAlert(price.symbol) ?: return@forEach
+            if (!priceAlertService.shouldTriggerAlert(price)) return@forEach
+
+            val now = System.currentTimeMillis()
+            val lastTime = lastAlertTimeMap.getOrDefault(price.symbol, 0L)
+            val minIntervalMs = (rule.repeatIntervalMinutes.coerceAtLeast(1) * 60 * 1000).toLong()
+
+            if (AlertMode.of(rule.alertMode) == AlertMode.REPEATING && now - lastTime < minIntervalMs) {
+                return@forEach
+            }
+
+            sendNotification(price, rule.soundEnabled)
+            lastAlertTimeMap[price.symbol] = now
+            if (AlertMode.of(rule.alertMode) == AlertMode.ONCE) {
+                priceAlertService.markTriggered(price.symbol)
             }
         }
     }
@@ -47,14 +60,7 @@ class NotificationService {
      *
      * @param tickerPrice TickerPrice
      */
-    private fun sendNotification(tickerPrice: TickerPrice) {
-        // NOTE: 알림 쿨다운 체크
-        val now = System.currentTimeMillis()
-        val lastTime = lastAlertTimeMap.getOrDefault(tickerPrice.symbol, 0L)
-        if (now - lastTime < ALERT_COOLDOWN_FIVE_MINUTE) return
-
-        lastAlertTimeMap[tickerPrice.symbol] = now
-
+    private fun sendNotification(tickerPrice: TickerPrice, withSound: Boolean) {
         // NOTE: 알림 생성
         val group = NotificationGroupManager.getInstance()
             .getNotificationGroup("Market Ticker Notification")
@@ -99,5 +105,9 @@ class NotificationService {
         // NOTE: 활성화된 Project 에 알림 발송
         val targetProject = ProjectManager.getInstance().openProjects.firstOrNull { !it.isDisposed }
         notification.notify(targetProject)
+
+        if (withSound) {
+            Toolkit.getDefaultToolkit().beep()
+        }
     }
 }

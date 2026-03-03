@@ -1,6 +1,7 @@
 package com.github.myeoungdev.marketticker.fixtures.domain
 
 import com.github.myeoungdev.marketticker.domain.model.AlertRule
+import com.github.myeoungdev.marketticker.domain.model.AlertMode
 
 /**
  * Some Descirption...
@@ -20,7 +21,11 @@ object AlertRuleFixtures {
         isTargetPriceEnabled: Boolean = false,
         volatilityPercentage: Double = 5.0,
         isVolatilityEnabled: Boolean = true,
-        isEnabled: Boolean = true
+        isEnabled: Boolean = true,
+        alertMode: String = AlertMode.REPEATING.name,
+        repeatIntervalMinutes: Int = 5,
+        marketHoursOnly: Boolean = false,
+        soundEnabled: Boolean = false
     ): AlertRule {
         return AlertRule(
             symbol = symbol,
@@ -29,7 +34,11 @@ object AlertRuleFixtures {
             isTargetPriceEnabled = isTargetPriceEnabled,
             volatilityPercentage = volatilityPercentage,
             isVolatilityEnabled = isVolatilityEnabled,
-            isEnabled = isEnabled
+            isEnabled = isEnabled,
+            alertMode = alertMode,
+            repeatIntervalMinutes = repeatIntervalMinutes,
+            marketHoursOnly = marketHoursOnly,
+            soundEnabled = soundEnabled
         )
     }
 

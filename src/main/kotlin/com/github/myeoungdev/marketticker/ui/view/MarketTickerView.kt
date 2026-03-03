@@ -1,39 +1,53 @@
 package com.github.myeoungdev.marketticker.ui.view
 
+import com.github.myeoungdev.marketticker.application.service.LocalizationService
 import com.github.myeoungdev.marketticker.application.service.MarketDataService
+import com.github.myeoungdev.marketticker.application.service.MarketIndicatorService
+import com.github.myeoungdev.marketticker.application.service.AppSettingsService
+import com.github.myeoungdev.marketticker.application.listener.SettingsUpdateListener
+import com.github.myeoungdev.marketticker.domain.model.IndicatorCategory
+import com.github.myeoungdev.marketticker.domain.model.MarketIndicator
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.ui.rendener.SearchResultRenderer
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
-import io.github.oshai.kotlinlogging.KotlinLogging
-import kotlinx.coroutines.*
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withContext
 import java.awt.BorderLayout
+import java.awt.Color
 import javax.swing.DefaultListModel
+import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTabbedPane
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
-
 /**
- * Market Ticker Plugin Main UI
+ * Market Ticker 메인 화면입니다.
  *
- * @author  : 강명관
- * @since   : 2025-12-01
+ * 기본 화면에는 조회 중심 요소만 노출하고, 사용자 설정은 별도 모달에서 관리합니다.
  */
-
-private val logger = KotlinLogging.logger {}
-
 class MarketTickerView(
     private val project: Project
 ) : Disposable {
 
     private val marketDataService = service<MarketDataService>()
+    private val marketIndicatorService = service<MarketIndicatorService>()
+    private val localizationService = service<LocalizationService>()
+    private val appSettingsService = service<AppSettingsService>()
+
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var searchJob: Job = Job()
 
@@ -44,8 +58,12 @@ class MarketTickerView(
 
     private val watchlistView = WatchlistView(project)
     private val portfolioView = PortfolioView()
-
     private val heatmapView = HeatmapView()
+    private val chartView = ChartView()
+
+    private val marketPulseTicker = MarketPulseTicker()
+    private val bottomTabbedPane = JTabbedPane()
+    private var latestIndicators: List<MarketIndicator> = emptyList()
 
     val mainPanel = JPanel(BorderLayout())
 
@@ -60,21 +78,21 @@ class MarketTickerView(
     }
 
     private fun setupUI() {
-        // 검색창 설정
-        searchField.emptyText.text = "종목명 또는 코드 검색 (예: 삼성전자, NVDA)"
+        searchField.emptyText.text = localizationService.text(
+            "종목명 또는 코드 검색 (예: 삼성전자, NVDA)",
+            "Search symbol or code (e.g., Samsung, NVDA)"
+        )
         searchField.margin = JBUI.insets(5)
 
-        // 리스트 설정
         searchResultList.cellRenderer = SearchResultRenderer()
 
         val searchResultPanel = JBScrollPane(searchResultList).apply {
-            border = javax.swing.BorderFactory.createTitledBorder("검색 결과")
+            border = javax.swing.BorderFactory.createTitledBorder(localizationService.text("검색 결과", "Search Results"))
         }
 
-        // 관심종목/포트폴리오 탭
         val watchlistPortfolioTabbedPane = JTabbedPane().apply {
-            addTab("관심종목", watchlistView.panel)
-            addTab("포트폴리오", portfolioView.panel)
+            addTab(localizationService.text("관심종목", "Watchlist"), watchlistView.panel)
+            addTab(localizationService.text("포트폴리오", "Portfolio"), portfolioView.panel)
         }
 
         val topSplitter = com.intellij.ui.JBSplitter(true, 0.4f).apply {
@@ -82,24 +100,43 @@ class MarketTickerView(
             secondComponent = watchlistPortfolioTabbedPane
         }
 
-        searchPanel.add(searchField, BorderLayout.NORTH)
+        marketPulseTicker.border = JBUI.Borders.empty(3, 2, 6, 2)
+        marketPulseTicker.isVisible = appSettingsService.isMarketPulseVisible()
+        marketPulseTicker.setChunks(
+            listOf(
+                MarketPulseTicker.Chunk(
+                    localizationService.text("지표 로딩 중...", "Loading market pulse..."),
+                    Color(120, 120, 120),
+                    true
+                )
+            )
+        )
+
+        val searchHeaderPanel = JPanel(BorderLayout())
+        searchHeaderPanel.add(searchField, BorderLayout.NORTH)
+        searchHeaderPanel.add(marketPulseTicker, BorderLayout.SOUTH)
+        searchHeaderPanel.border = JBUI.Borders.emptyBottom(4)
+
+        searchPanel.add(searchHeaderPanel, BorderLayout.NORTH)
         searchPanel.add(topSplitter, BorderLayout.CENTER)
 
-        // 하단 탭 패널 (차트 및 히트맵)
-        val bottomTabbedPane = JTabbedPane().apply {
-            addTab("히트맵", heatmapView)
-        }
+        rebuildBottomTabs()
 
-        // 메인 패널 레이아웃 (상단: 검색/관심종목, 하단: 차트/상세정보 또는 히트맵)
         val mainSplitter = com.intellij.ui.JBSplitter(true, 0.6f).apply {
             firstComponent = searchPanel
             secondComponent = bottomTabbedPane
         }
         mainPanel.add(mainSplitter, BorderLayout.CENTER)
+
+        watchlistView.onTickerSelected = { ticker, _ ->
+            chartView.updateSelection(ticker)
+        }
+
+        applyDisplaySettings()
+        subscribeSettingsUpdates()
     }
 
     private fun setupListeners() {
-        // 검색창 입력 리스너
         searchField.document.addDocumentListener(object : DocumentListener {
             override fun insertUpdate(e: DocumentEvent) = onQueryChanged()
             override fun removeUpdate(e: DocumentEvent) = onQueryChanged()
@@ -114,8 +151,59 @@ class MarketTickerView(
 
                     searchField.text = ""
                     searchListModel.clear()
-                    logger.info { "관심 종목 추가 요청: ${ticker.name}" }
                 }
+            }
+        })
+
+    }
+
+    private fun applyDisplaySettings() {
+        marketPulseTicker.isVisible = appSettingsService.isMarketPulseVisible()
+        if (!marketPulseTicker.isVisible) {
+            marketPulseTicker.setChunks(emptyList())
+        } else if (latestIndicators.isEmpty()) {
+            marketPulseTicker.setChunks(
+                listOf(
+                    MarketPulseTicker.Chunk(
+                        localizationService.text("지표 로딩 중...", "Loading market pulse..."),
+                        Color(120, 120, 120),
+                        true
+                    )
+                )
+            )
+        } else {
+            renderMarketPulse()
+        }
+    }
+
+    private fun rebuildBottomTabs() {
+        bottomTabbedPane.removeAll()
+
+        if (appSettingsService.isChartTabVisible()) {
+            bottomTabbedPane.addTab(localizationService.text("차트", "Chart"), chartView)
+        }
+        if (appSettingsService.isHeatmapTabVisible()) {
+            bottomTabbedPane.addTab(localizationService.text("히트맵", "Heatmap"), heatmapView)
+        }
+
+        if (bottomTabbedPane.tabCount == 0) {
+            val emptyPanel = JPanel(BorderLayout()).apply {
+                add(
+                    JLabel(localizationService.text("설정에서 차트/히트맵 탭을 켜주세요.", "Enable chart/heatmap tab in Settings.")),
+                    BorderLayout.NORTH
+                )
+            }
+            bottomTabbedPane.addTab(localizationService.text("보기", "View"), emptyPanel)
+        }
+    }
+
+    private fun subscribeSettingsUpdates() {
+        val connection = ApplicationManager.getApplication().messageBus.connect(this)
+        connection.subscribe(SettingsUpdateListener.TOPIC, object : SettingsUpdateListener {
+            override fun onSettingsUpdated() {
+                applyDisplaySettings()
+                rebuildBottomTabs()
+                renderMarketPulse()
             }
         })
     }
@@ -123,10 +211,10 @@ class MarketTickerView(
     private fun onQueryChanged() {
         val query = searchField.text.trim()
 
-        searchJob?.cancel()
+        searchJob.cancel()
 
         searchJob = scope.launch {
-            delay(300) // 300ms 디바운스 (입력 대기)
+            delay(300)
 
             val tickerList = marketDataService.search(query)
 
@@ -140,16 +228,84 @@ class MarketTickerView(
     private fun observeWatchlistChanges() {
         scope.launch {
             marketDataService.currentPrices.collect { prices ->
-                logger.info { "View received prices: ${prices.size}" }
-
                 withContext(Dispatchers.Main) {
-                    logger.info { "Updating WatchlistView on Main Thread" }
                     watchlistView.updateWith(prices)
                     portfolioView.updateWith(prices)
-                    heatmapView.updateHeatmap(prices) // 히트맵 업데이트 추가
+                    heatmapView.updateHeatmap(prices)
+                    chartView.refreshChart()
+                }
+            }
+        }
+
+        scope.launch {
+            marketIndicatorService.indicators.collect { indicators ->
+                withContext(Dispatchers.Main) {
+                    latestIndicators = indicators
+                    renderMarketPulse()
                 }
             }
         }
     }
 
+    private fun renderMarketPulse() {
+        if (!appSettingsService.isMarketPulseVisible()) {
+            marketPulseTicker.setChunks(emptyList())
+            return
+        }
+        if (latestIndicators.isEmpty()) {
+            marketPulseTicker.setChunks(
+                listOf(
+                    MarketPulseTicker.Chunk(
+                        localizationService.text("지표 로딩 중...", "Loading market pulse..."),
+                        Color(120, 120, 120),
+                        true
+                    )
+                )
+            )
+            return
+        }
+
+        val categoryOrder = listOf(
+            IndicatorCategory.DOMESTIC_INDEX,
+            IndicatorCategory.WORLD_INDEX,
+            IndicatorCategory.METAL,
+            IndicatorCategory.ENERGY
+        )
+
+        val chunks = mutableListOf<MarketPulseTicker.Chunk>()
+        categoryOrder.forEachIndexed { index, category ->
+            val title = when (category) {
+                IndicatorCategory.DOMESTIC_INDEX -> localizationService.text("국내", "KR")
+                IndicatorCategory.WORLD_INDEX -> localizationService.text("해외", "US")
+                IndicatorCategory.METAL -> localizationService.text("금속", "Metal")
+                IndicatorCategory.ENERGY -> localizationService.text("에너지", "Energy")
+            }
+
+            val indicators = latestIndicators.filter { it.category == category }
+            if (indicators.isNotEmpty()) {
+                chunks += MarketPulseTicker.Chunk("[$title] ", Color(140, 140, 140), true)
+                indicators.forEach { indicator ->
+                    val sign = if (indicator.changeRate > 0) "+" else ""
+                    val rateText = "${sign}${localizationService.formatDecimal(indicator.changeRate, 2)}%"
+                    val priceText = localizationService.formatDecimal(indicator.currentPrice, 2)
+                    val unitSuffix = indicator.unit?.let { " $it" } ?: ""
+                    val rateColor = when {
+                        indicator.changeRate > 0 -> Color(217, 48, 37)
+                        indicator.changeRate < 0 -> Color(26, 115, 232)
+                        else -> Color(120, 120, 120)
+                    }
+
+                    chunks += MarketPulseTicker.Chunk("${indicator.name} $priceText$unitSuffix ", Color(200, 200, 200), false)
+                    chunks += MarketPulseTicker.Chunk("$rateText", rateColor, true)
+                    chunks += MarketPulseTicker.Chunk("   ", Color(120, 120, 120), false)
+                }
+            }
+
+            if (index < categoryOrder.lastIndex) {
+                chunks += MarketPulseTicker.Chunk(" | ", Color(100, 100, 100), true)
+            }
+        }
+
+        marketPulseTicker.setChunks(chunks)
+    }
 }
