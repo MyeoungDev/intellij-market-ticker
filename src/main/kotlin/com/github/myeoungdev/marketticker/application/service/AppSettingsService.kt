@@ -102,12 +102,12 @@ class AppSettingsService : PersistentStateComponent<AppSettingsService.State> {
     }
 
     /**
-     * 상단 한 줄 지표 표시 여부를 반환합니다.
+     * 한 줄 지표 표시 여부를 반환합니다.
      */
     fun isMarketPulseVisible(): Boolean = settingsState.showMarketPulse
 
     /**
-     * 상단 한 줄 지표 표시 여부를 저장합니다.
+     * 한 줄 지표 표시 여부를 저장합니다.
      */
     fun setMarketPulseVisible(visible: Boolean) {
         settingsState.showMarketPulse = visible

@@ -5,6 +5,7 @@ import com.github.myeoungdev.marketticker.common.extenion.parseCommaToDouble
 import com.github.myeoungdev.marketticker.domain.model.IndicatorCategory
 import com.github.myeoungdev.marketticker.domain.model.MarketIndicator
 import com.github.myeoungdev.marketticker.domain.model.MarketStatus
+import kotlin.math.abs
 
 /**
  * Naver 시장 지표 풀링 응답입니다.
@@ -37,15 +38,36 @@ data class NaverMarketIndicatorItem(
     fun toMarketIndicator(category: IndicatorCategory): MarketIndicator {
         val code = itemCode ?: symbolCode ?: reutersCode ?: "UNKNOWN"
         val title = stockName ?: name ?: code
+        val close = closePrice.parseCommaToDouble()
+        val ratio = parseChangeRate(close)
 
         return MarketIndicator(
             code = code,
             name = title,
-            currentPrice = closePrice.parseCommaToDouble(),
-            changeRate = fluctuationsRatio.parseCommaToDouble(),
+            currentPrice = close,
+            changeRate = ratio,
             marketStatus = MarketStatus.of(marketStatus),
             category = category,
             unit = unit
         )
+    }
+
+    private fun parseChangeRate(close: Double): Double {
+        val parsedRatio = fluctuationsRatio.parseCommaToDouble()
+        if (parsedRatio != 0.0) {
+            return parsedRatio
+        }
+
+        // fluctuationsRatio 값이 비어있거나 파싱 실패한 경우 전일 대비로 백업 계산
+        val delta = compareToPreviousClosePrice.parseCommaToDouble()
+        if (delta == 0.0) {
+            return 0.0
+        }
+        val previousClose = close - delta
+        if (previousClose == 0.0) {
+            return 0.0
+        }
+        val ratio = (delta / abs(previousClose)) * 100.0
+        return if (ratio.isFinite()) ratio else 0.0
     }
 }

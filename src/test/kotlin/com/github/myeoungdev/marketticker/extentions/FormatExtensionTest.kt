@@ -19,6 +19,8 @@ class FormatExtensionsTest {
         assertThat("1,234.56".parseCommaToDouble()).isEqualTo(1234.56)
         assertThat("-1,234".parseCommaToDouble()).isEqualTo(-1234.0)
         assertThat("1,,234".parseCommaToDouble()).isEqualTo(1234.0)
+        assertThat("+1.23%".parseCommaToDouble()).isEqualTo(1.23)
+        assertThat("−4.34%".parseCommaToDouble()).isEqualTo(-4.34)
 
         // 실패 케이스
         assertThat("invalid".parseCommaToDouble()).isEqualTo(0.0)

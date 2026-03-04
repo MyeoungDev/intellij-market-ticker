@@ -22,8 +22,8 @@ class MarketPulseTicker : JComponent() {
 
     private val chunks: MutableList<Chunk> = mutableListOf()
     private var offsetX: Int = 0
-    private val streamGap = 36
-    private val leftPadding = 8
+    private val streamGap = 40
+    private val leftPadding = 12
 
     private val tickerTimer = Timer(24) {
         if (chunks.isEmpty() || width <= 0) return@Timer
@@ -38,8 +38,8 @@ class MarketPulseTicker : JComponent() {
 
     init {
         isOpaque = false
-        preferredSize = Dimension(200, 28)
-        minimumSize = Dimension(120, 26)
+        preferredSize = Dimension(240, 32)
+        minimumSize = Dimension(140, 30)
     }
 
     /**
@@ -71,23 +71,24 @@ class MarketPulseTicker : JComponent() {
 
         val g2 = g as Graphics2D
         g2.setRenderingHint(RenderingHints.KEY_TEXT_ANTIALIASING, RenderingHints.VALUE_TEXT_ANTIALIAS_ON)
+        val baseFont = font
 
-        val streamWidth = measureStreamWidth(g2)
+        val streamWidth = measureStreamWidth(g2, baseFont)
         if (streamWidth <= 0) return
         val y = (height + g2.fontMetrics.ascent - g2.fontMetrics.descent) / 2
 
         // 화면을 꽉 채우도록 스트림을 반복 렌더링하여 좁은 폭에서도 항상 텍스트가 보이게 합니다.
         var x = offsetX
         while (x < width + streamWidth) {
-            drawStream(g2, x, y)
+            drawStream(g2, x, y, baseFont)
             x += streamWidth + streamGap
         }
     }
 
-    private fun drawStream(g2: Graphics2D, startX: Int, baselineY: Int) {
+    private fun drawStream(g2: Graphics2D, startX: Int, baselineY: Int, baseFont: Font) {
         var x = startX
         chunks.forEach { chunk ->
-            val font = if (chunk.bold) g2.font.deriveFont(Font.BOLD.toFloat()) else g2.font
+            val font = if (chunk.bold) baseFont.deriveFont(Font.BOLD.toFloat()) else baseFont
             g2.font = font
             g2.color = chunk.color
             g2.drawString(chunk.text, x, baselineY)
@@ -95,9 +96,9 @@ class MarketPulseTicker : JComponent() {
         }
     }
 
-    private fun measureStreamWidth(g2: Graphics2D): Int {
+    private fun measureStreamWidth(g2: Graphics2D, baseFont: Font): Int {
         return chunks.sumOf { chunk ->
-            val font = if (chunk.bold) g2.font.deriveFont(Font.BOLD.toFloat()) else g2.font
+            val font = if (chunk.bold) baseFont.deriveFont(Font.BOLD.toFloat()) else baseFont
             g2.font = font
             g2.fontMetrics.stringWidth(chunk.text)
         }

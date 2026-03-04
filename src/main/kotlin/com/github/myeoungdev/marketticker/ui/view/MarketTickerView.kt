@@ -100,7 +100,7 @@ class MarketTickerView(
             secondComponent = watchlistPortfolioTabbedPane
         }
 
-        marketPulseTicker.border = JBUI.Borders.empty(3, 2, 6, 2)
+        marketPulseTicker.border = JBUI.Borders.empty(4, 8)
         marketPulseTicker.isVisible = appSettingsService.isMarketPulseVisible()
         marketPulseTicker.setChunks(
             listOf(
@@ -112,12 +112,7 @@ class MarketTickerView(
             )
         )
 
-        val searchHeaderPanel = JPanel(BorderLayout())
-        searchHeaderPanel.add(searchField, BorderLayout.NORTH)
-        searchHeaderPanel.add(marketPulseTicker, BorderLayout.SOUTH)
-        searchHeaderPanel.border = JBUI.Borders.emptyBottom(4)
-
-        searchPanel.add(searchHeaderPanel, BorderLayout.NORTH)
+        searchPanel.add(searchField, BorderLayout.NORTH)
         searchPanel.add(topSplitter, BorderLayout.CENTER)
 
         rebuildBottomTabs()
@@ -127,6 +122,7 @@ class MarketTickerView(
             secondComponent = bottomTabbedPane
         }
         mainPanel.add(mainSplitter, BorderLayout.CENTER)
+        mainPanel.add(marketPulseTicker, BorderLayout.SOUTH)
 
         watchlistView.onTickerSelected = { ticker, _ ->
             chartView.updateSelection(ticker)
@@ -288,15 +284,15 @@ class MarketTickerView(
                     val sign = if (indicator.changeRate > 0) "+" else ""
                     val rateText = "${sign}${localizationService.formatDecimal(indicator.changeRate, 2)}%"
                     val priceText = localizationService.formatDecimal(indicator.currentPrice, 2)
-                    val unitSuffix = indicator.unit?.let { " $it" } ?: ""
                     val rateColor = when {
                         indicator.changeRate > 0 -> Color(217, 48, 37)
                         indicator.changeRate < 0 -> Color(26, 115, 232)
                         else -> Color(120, 120, 120)
                     }
+                    val displayName = displayIndicatorName(indicator)
 
-                    chunks += MarketPulseTicker.Chunk("${indicator.name} $priceText$unitSuffix ", Color(200, 200, 200), false)
-                    chunks += MarketPulseTicker.Chunk("$rateText", rateColor, true)
+                    chunks += MarketPulseTicker.Chunk("$displayName $priceText ", rateColor, false)
+                    chunks += MarketPulseTicker.Chunk("($rateText) ", rateColor, true)
                     chunks += MarketPulseTicker.Chunk("   ", Color(120, 120, 120), false)
                 }
             }
@@ -307,5 +303,14 @@ class MarketTickerView(
         }
 
         marketPulseTicker.setChunks(chunks)
+    }
+
+    private fun displayIndicatorName(indicator: MarketIndicator): String {
+        return when (indicator.code.uppercase()) {
+            ".INX", "SPX", "S&P500", "S&P 500" -> "S&P500"
+            ".IXIC", "IXIC", "NASDAQ", "NASDAQ COMPOSITE" -> "NASDAQ"
+            ".DJI", "DJI", "DJIA", "DOW JONES" -> "DOW"
+            else -> indicator.name
+        }
     }
 }

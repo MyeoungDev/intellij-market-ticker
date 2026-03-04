@@ -61,7 +61,7 @@ class MarketTickerConfigurable : Configurable {
                 }
 
                 row {
-                    marketPulseCheckBox.text = localizationService.text("상단 한 줄 지표 표시", "Show top market pulse")
+                    marketPulseCheckBox.text = localizationService.text("한 줄 지표 표시", "Show market pulse ticker")
                     cell(marketPulseCheckBox)
                 }
 
