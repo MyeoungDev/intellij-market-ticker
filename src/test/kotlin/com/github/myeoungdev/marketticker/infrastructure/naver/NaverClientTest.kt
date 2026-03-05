@@ -1,7 +1,9 @@
 package com.github.myeoungdev.marketticker.infrastructure.naver
 
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.github.myeoungdev.marketticker.application.service.PriceHistoryService
 import com.github.myeoungdev.marketticker.common.config.objectMapper
+import com.github.myeoungdev.marketticker.domain.model.IndicatorCategory
 import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.fixtures.domain.TickerFixtures
@@ -47,7 +49,9 @@ class NaverClientTest {
             domesticIndexUrl = "$baseUrl/domestic/index",
             worldIndexUrl = "$baseUrl/worldstock/index",
             marketMetalUrl = "$baseUrl/marketindex/metals",
-            marketEnergyUrl = "$baseUrl/marketindex/energy"
+            marketEnergyUrl = "$baseUrl/marketindex/energy",
+            domesticChartUrl = "$baseUrl/chart/domestic/item",
+            foreignChartUrl = "$baseUrl/chart/foreign/item"
         )
     }
 
@@ -125,6 +129,22 @@ class NaverClientTest {
             assertThat(response.isSuccess).isTrue()
             assertThat(response.result?.items).hasSize(1)
             assertThat(response.result?.items?.get(0)?.name).isEqualTo("삼성전자")
+        }
+
+        @Test
+        fun `지표 등락률이 없으면 등락폭으로 퍼센트를 백업 계산한다`() {
+            val item = com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverMarketIndicatorItem(
+                itemCode = "TEST",
+                stockName = "테스트 지표",
+                closePrice = "90.00",
+                fluctuationsRatio = "",
+                compareToPreviousClosePrice = null,
+                fluctuations = "-10.00",
+                marketStatus = "OPEN"
+            )
+
+            val indicator = item.toMarketIndicator(IndicatorCategory.ENERGY)
+            assertThat(indicator.changeRate).isEqualTo(-10.0)
         }
     }
 
@@ -296,6 +316,50 @@ class NaverClientTest {
             assertThat(result.datas).hasSize(1)
             assertThat(result.datas.first().reutersCode).isEqualTo("GCcv1")
             assertThat(result.datas.first().name).isEqualTo("국제 금")
+        }
+
+        @Test
+        fun `국내 주식 차트 API 성공 시 day 캔들 목록을 반환한다`() {
+            wireMockServer.stubFor(
+                get(urlPathMatching("/chart/domestic/item/005930/day.*"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", "application/json")
+                            .withBody(NaverFixtures.JSON_CHART_DOMESTIC_DAY_SUCCESS)
+                    )
+            )
+
+            val result = naverClient.fetchStockChartCandles(
+                ticker = TickerFixtures.SAMSUNG_ELECTRONICS,
+                period = PriceHistoryService.Period.DAY
+            )
+
+            assertThat(result).hasSize(1)
+            assertThat(result.first().localDate).isEqualTo("20260305")
+            assertThat(result.first().closePrice).isEqualTo(9230.0)
+        }
+
+        @Test
+        fun `해외 주식 차트 API 성공 시 year 캔들 목록을 반환한다`() {
+            wireMockServer.stubFor(
+                get(urlPathMatching("/chart/foreign/item/AAPL.O/year.*"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", "application/json")
+                            .withBody(NaverFixtures.JSON_CHART_FOREIGN_YEAR_SUCCESS)
+                    )
+            )
+
+            val result = naverClient.fetchStockChartCandles(
+                ticker = TickerFixtures.APPLE,
+                period = PriceHistoryService.Period.YEAR
+            )
+
+            assertThat(result).hasSize(1)
+            assertThat(result.first().localDate).isEqualTo("20100101")
+            assertThat(result.first().closePrice).isEqualTo(0.385)
         }
     }
 

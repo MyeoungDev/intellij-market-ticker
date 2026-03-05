@@ -54,4 +54,14 @@ class LocalizationService {
     fun formatPercent(value: Double): String {
         return "${formatDecimal(value, 2)}%"
     }
+
+    /**
+     * 현재 로케일에 맞춰 퍼센트 문자열을 고정 소수점으로 생성합니다.
+     */
+    fun formatPercentFixed(value: Double, fractionDigits: Int = 2): String {
+        val nf = NumberFormat.getNumberInstance(currentLocale())
+        nf.maximumFractionDigits = fractionDigits
+        nf.minimumFractionDigits = fractionDigits
+        return "${nf.format(value)}%"
+    }
 }

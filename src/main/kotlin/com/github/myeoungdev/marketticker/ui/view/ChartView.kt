@@ -20,6 +20,7 @@ import java.awt.Graphics2D
 import java.awt.RenderingHints
 import java.time.LocalDateTime
 import java.time.ZoneId
+import java.time.format.DateTimeFormatter
 import javax.swing.JComboBox
 import javax.swing.JLabel
 import javax.swing.JPanel
@@ -81,6 +82,7 @@ class ChartView : JPanel(BorderLayout()) {
                     PriceHistoryService.Period.DAY -> LocalDateTime.now().minusDays(1)
                     PriceHistoryService.Period.WEEK -> LocalDateTime.now().minusDays(7)
                     PriceHistoryService.Period.MONTH -> LocalDateTime.now().minusDays(30)
+                    PriceHistoryService.Period.YEAR -> LocalDateTime.now().minusDays(365)
                 }
 
                 naverClient.fetchCryptoChartCandles(
@@ -91,7 +93,12 @@ class ChartView : JPanel(BorderLayout()) {
                 ).map { it.toPriceHistoryCandle() }
             } else {
                 val zoneId: ZoneId = marketType.zoneId
-                historyService.buildCandles(ticker.symbol, ticker.marketType.name, period, zoneId)
+                val stockChartCandles = naverClient.fetchStockChartCandles(ticker, period)
+                if (stockChartCandles.isNotEmpty()) {
+                    stockChartCandles.map { it.toPriceHistoryCandle(zoneId) }
+                } else {
+                    historyService.buildCandles(ticker.symbol, ticker.marketType.name, period, zoneId)
+                }
             }
 
             ApplicationManager.getApplication().invokeLater {
@@ -127,7 +134,7 @@ class ChartView : JPanel(BorderLayout()) {
             }
 
             val topPadding = 20
-            val bottomPadding = 100
+            val bottomPadding = 124
             val leftPadding = 40
             val rightPadding = 20
 
@@ -142,6 +149,7 @@ class ChartView : JPanel(BorderLayout()) {
 
             val maxVolume = candles.maxOf { it.volume }.coerceAtLeast(1)
             val candleWidth = (chartWidth / candles.size.toDouble()).coerceAtLeast(3.0)
+            val zoneId = selectedTicker?.marketType?.zoneId ?: ZoneId.systemDefault()
 
             candles.forEachIndexed { index, candle ->
                 val x = (leftPadding + index * candleWidth).toInt()
@@ -165,25 +173,63 @@ class ChartView : JPanel(BorderLayout()) {
                 val bodyHeight = kotlin.math.abs(closeY - openY).coerceAtLeast(2)
                 g2.fillRect(x + 1, bodyTop, candleWidth.toInt().coerceAtLeast(2) - 2, bodyHeight)
 
-                val volumeTop = height - 70
-                val volumeHeight = ((candle.volume.toDouble() / maxVolume) * 55.0).toInt().coerceAtLeast(1)
+                val volumeTop = height - 96
+                val volumeHeight = ((candle.volume.toDouble() / maxVolume) * 56.0).toInt().coerceAtLeast(1)
                 g2.color = if (isUp) Color(255, 138, 128) else Color(130, 177, 255)
-                g2.fillRect(x + 1, volumeTop + (55 - volumeHeight), candleWidth.toInt().coerceAtLeast(2) - 2, volumeHeight)
+                g2.fillRect(x + 1, volumeTop + (56 - volumeHeight), candleWidth.toInt().coerceAtLeast(2) - 2, volumeHeight)
             }
 
             drawMa(g2, ma5, candles, leftPadding, candleWidth, chartBottom, minPrice, priceRange, chartHeight, Color(255, 193, 7))
             drawMa(g2, ma20, candles, leftPadding, candleWidth, chartBottom, minPrice, priceRange, chartHeight, Color(0, 230, 118))
 
+            drawAxisLabels(g2, leftPadding, rightPadding, chartBottom, height, maxPrice, minPrice, zoneId)
+
             g2.color = Color(200, 200, 200)
-            g2.drawString("MA5", leftPadding, height - 28)
-            g2.drawString("MA20", leftPadding + 55, height - 28)
+            g2.drawString("MA5", leftPadding, height - 54)
+            g2.drawString("MA20", leftPadding + 60, height - 54)
             g2.color = Color(255, 193, 7)
-            g2.fillRect(leftPadding + 30, height - 36, 18, 4)
+            g2.fillRect(leftPadding + 32, height - 60, 20, 4)
             g2.color = Color(0, 230, 118)
-            g2.fillRect(leftPadding + 95, height - 36, 18, 4)
+            g2.fillRect(leftPadding + 100, height - 60, 20, 4)
 
             g2.color = Color(180, 180, 180)
-            g2.drawString(localizationService.text("거래량", "Volume"), leftPadding, height - 74)
+            g2.drawString(localizationService.text("거래량", "Volume"), leftPadding, height - 102)
+        }
+
+        private fun drawAxisLabels(
+            g2: Graphics2D,
+            leftPadding: Int,
+            rightPadding: Int,
+            chartBottom: Int,
+            canvasHeight: Int,
+            maxPrice: Double,
+            minPrice: Double,
+            zoneId: ZoneId
+        ) {
+            g2.color = Color(160, 160, 160)
+            g2.drawString(localizationService.formatDecimal(maxPrice, 2), 8, 24)
+            g2.drawString(localizationService.formatDecimal(minPrice, 2), 8, chartBottom)
+
+            if (candles.size < 2) return
+
+            val first = candles.first().at.atZone(zoneId)
+            val mid = candles[candles.size / 2].at.atZone(zoneId)
+            val last = candles.last().at.atZone(zoneId)
+            val fmt = if (period == PriceHistoryService.Period.DAY) {
+                DateTimeFormatter.ofPattern("MM-dd HH:mm")
+            } else {
+                DateTimeFormatter.ofPattern("yyyy-MM-dd")
+            }
+
+            val y = canvasHeight - 12
+            val chartWidth = width - leftPadding - rightPadding
+            val xStart = leftPadding
+            val xMid = leftPadding + (chartWidth / 2)
+            val xEnd = leftPadding + chartWidth - 96
+
+            g2.drawString(first.format(fmt), xStart, y)
+            g2.drawString(mid.format(fmt), xMid, y)
+            g2.drawString(last.format(fmt), xEnd.coerceAtLeast(xMid + 40), y)
         }
 
         private fun drawMa(
