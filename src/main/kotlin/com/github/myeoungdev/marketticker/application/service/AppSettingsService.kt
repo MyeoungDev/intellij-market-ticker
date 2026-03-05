@@ -1,0 +1,139 @@
+package com.github.myeoungdev.marketticker.application.service
+
+import com.intellij.openapi.components.PersistentStateComponent
+import com.intellij.openapi.components.Service
+import com.intellij.openapi.components.State
+import com.intellij.openapi.components.Storage
+import com.intellij.util.xmlb.XmlSerializerUtil
+
+/**
+ * Market Ticker 전역 설정을 저장/조회하는 애플리케이션 서비스입니다.
+ *
+ * 업데이트 주기 모드와 언어 설정을 IDE 영속 저장소(`market_ticker_settings.xml`)에 보관합니다.
+ */
+@State(
+    name = "MarketTickerSettings",
+    storages = [Storage("market_ticker_settings.xml")]
+)
+@Service(Service.Level.APP)
+class AppSettingsService : PersistentStateComponent<AppSettingsService.State> {
+
+    /**
+     * 가격 갱신 동작 모드입니다.
+     */
+    enum class RefreshMode {
+        AUTO,
+        FIXED,
+        MANUAL;
+
+        companion object {
+            /**
+             * 문자열 값을 [RefreshMode]로 변환합니다.
+             */
+            fun of(value: String): RefreshMode {
+                return values().find { it.name == value } ?: AUTO
+            }
+        }
+    }
+
+    /**
+     * UI 언어 설정입니다.
+     */
+    enum class UiLanguage {
+        AUTO,
+        KO,
+        EN;
+
+        companion object {
+            /**
+             * 문자열 값을 [UiLanguage]로 변환합니다.
+             */
+            fun of(value: String): UiLanguage {
+                return values().find { it.name == value } ?: AUTO
+            }
+        }
+    }
+
+    /**
+     * 영속화 대상 설정 상태입니다.
+     */
+    data class State(
+        var refreshMode: String = RefreshMode.AUTO.name,
+        var fixedIntervalSec: Long = 6L,
+        var openIntervalSec: Long = 3L,
+        var closedIntervalSec: Long = 10L,
+        var uiLanguage: String = UiLanguage.AUTO.name,
+        var showMarketPulse: Boolean = true,
+        var showChartTab: Boolean = true,
+        var showHeatmapTab: Boolean = true
+    )
+
+    private var settingsState = State()
+
+    override fun getState(): State = settingsState
+
+    override fun loadState(state: State) {
+        XmlSerializerUtil.copyBean(state, settingsState)
+    }
+
+    fun getRefreshMode(): RefreshMode = RefreshMode.of(settingsState.refreshMode)
+    fun setRefreshMode(mode: RefreshMode) {
+        settingsState.refreshMode = mode.name
+    }
+
+    fun getFixedIntervalSec(): Long = settingsState.fixedIntervalSec
+    fun setFixedIntervalSec(value: Long) {
+        settingsState.fixedIntervalSec = value.coerceIn(3L, 10L)
+    }
+
+    fun getOpenIntervalSec(): Long = settingsState.openIntervalSec
+    fun setOpenIntervalSec(value: Long) {
+        settingsState.openIntervalSec = value.coerceIn(3L, 10L)
+    }
+
+    fun getClosedIntervalSec(): Long = settingsState.closedIntervalSec
+    fun setClosedIntervalSec(value: Long) {
+        settingsState.closedIntervalSec = value.coerceIn(3L, 10L)
+    }
+
+    fun getUiLanguage(): UiLanguage = UiLanguage.of(settingsState.uiLanguage)
+    fun setUiLanguage(language: UiLanguage) {
+        settingsState.uiLanguage = language.name
+    }
+
+    /**
+     * 한 줄 지표 표시 여부를 반환합니다.
+     */
+    fun isMarketPulseVisible(): Boolean = settingsState.showMarketPulse
+
+    /**
+     * 한 줄 지표 표시 여부를 저장합니다.
+     */
+    fun setMarketPulseVisible(visible: Boolean) {
+        settingsState.showMarketPulse = visible
+    }
+
+    /**
+     * 차트 탭 표시 여부를 반환합니다.
+     */
+    fun isChartTabVisible(): Boolean = settingsState.showChartTab
+
+    /**
+     * 차트 탭 표시 여부를 저장합니다.
+     */
+    fun setChartTabVisible(visible: Boolean) {
+        settingsState.showChartTab = visible
+    }
+
+    /**
+     * 히트맵 탭 표시 여부를 반환합니다.
+     */
+    fun isHeatmapTabVisible(): Boolean = settingsState.showHeatmapTab
+
+    /**
+     * 히트맵 탭 표시 여부를 저장합니다.
+     */
+    fun setHeatmapTabVisible(visible: Boolean) {
+        settingsState.showHeatmapTab = visible
+    }
+}

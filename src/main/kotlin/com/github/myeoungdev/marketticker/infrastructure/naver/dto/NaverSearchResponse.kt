@@ -11,10 +11,10 @@ import com.github.myeoungdev.marketticker.domain.model.Ticker
  * @since   : 2025-11-30
  */
 data class NaverSearchResponse(
-    val isSuccess: Boolean,
-    val detailCode: String?,
-    val message: String?,
-    val result: SearchResultPayload?
+    val isSuccess: Boolean = true,
+    val detailCode: String? = null,
+    val message: String? = null,
+    val result: SearchResultPayload? = null
 )
 
 @JsonIgnoreProperties(ignoreUnknown = true)

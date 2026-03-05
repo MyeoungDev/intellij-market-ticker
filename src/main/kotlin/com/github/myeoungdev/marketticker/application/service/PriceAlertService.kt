@@ -1,6 +1,8 @@
 package com.github.myeoungdev.marketticker.application.service
 
 import com.github.myeoungdev.marketticker.domain.model.AlertRule
+import com.github.myeoungdev.marketticker.domain.model.AlertMode
+import com.github.myeoungdev.marketticker.domain.model.MarketStatus
 import com.github.myeoungdev.marketticker.domain.model.TickerPrice
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.Service
@@ -43,7 +45,12 @@ class PriceAlertService : PersistentStateComponent<PriceAlertService.State> {
      * @param rule Ticker 의 사용자 지정 알람 규칙
      */
     fun addAlert(rule: AlertRule) {
-        alertState.alerts[rule.symbol.uppercase()] = rule
+        val key = normalize(rule.symbol)
+        val existing = alertState.alerts[key]
+        alertState.alerts[key] = rule.copy(
+            symbol = key,
+            triggeredOnce = existing?.triggeredOnce ?: false
+        )
     }
 
     /**
@@ -53,7 +60,7 @@ class PriceAlertService : PersistentStateComponent<PriceAlertService.State> {
      * @return AlertRule
      */
     fun getAlert(symbol: String): AlertRule? {
-        return alertState.alerts[symbol]
+        return alertState.alerts[normalize(symbol)]
     }
 
     /**
@@ -62,7 +69,7 @@ class PriceAlertService : PersistentStateComponent<PriceAlertService.State> {
      * @param symbol Ticker 구분자
      */
     fun removeAlert(symbol: String) {
-        alertState.alerts.remove(symbol)
+        alertState.alerts.remove(normalize(symbol))
     }
 
     /**
@@ -77,6 +84,14 @@ class PriceAlertService : PersistentStateComponent<PriceAlertService.State> {
         logger.debug { "Checking alert: rate=${price.changeRate}, rule=${rule.volatilityPercentage}" }
 
         if (!rule.isEnabled) {
+            return false
+        }
+
+        if (rule.marketHoursOnly && price.marketStatus != MarketStatus.OPEN) {
+            return false
+        }
+
+        if (AlertMode.of(rule.alertMode) == AlertMode.ONCE && rule.triggeredOnce) {
             return false
         }
 
@@ -96,5 +111,16 @@ class PriceAlertService : PersistentStateComponent<PriceAlertService.State> {
 
         return false
     }
+
+    /**
+     * 1회성 알림이 발송된 종목을 트리거 완료 상태로 표시합니다.
+     */
+    fun markTriggered(symbol: String) {
+        val key = normalize(symbol)
+        val rule = alertState.alerts[key] ?: return
+        rule.triggeredOnce = true
+    }
+
+    private fun normalize(symbol: String): String = symbol.uppercase()
 
 }

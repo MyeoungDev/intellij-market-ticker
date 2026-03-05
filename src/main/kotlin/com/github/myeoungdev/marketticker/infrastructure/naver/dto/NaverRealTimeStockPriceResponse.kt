@@ -95,7 +95,7 @@ data class NaverStockPrice(
         return when (this.code) {
             "KS" -> MarketType.KOSPI
             "KQ" -> MarketType.KOSDAQ
-            "NS" -> MarketType.NASDAQ
+            "NS", "NSQ" -> MarketType.NASDAQ
             "NYS" -> MarketType.NYSE
             else -> MarketType.UNKNOWN
         }

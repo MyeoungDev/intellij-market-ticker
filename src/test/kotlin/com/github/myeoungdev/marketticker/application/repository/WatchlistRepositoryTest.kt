@@ -84,6 +84,21 @@ class WatchlistRepositoryTest {
     }
 
     @Test
+    fun `같은 symbol이라도 marketType을 지정해 삭제하면 해당 시장만 삭제된다`() {
+        val kr = DEFAULT_TICKER.copy(symbol = "ABC", marketType = MarketType.KOSPI)
+        val us = DEFAULT_TICKER.copy(symbol = "ABC", marketType = MarketType.NASDAQ, tradingSymbol = "ABC.O")
+
+        service.addTicker(kr)
+        service.addTicker(us)
+
+        service.removeTicker("ABC", MarketType.KOSPI.name)
+
+        val list = service.getWatchlistEntries()
+        assertEquals(1, list.size)
+        assertEquals(MarketType.NASDAQ.name, list[0].marketType)
+    }
+
+    @Test
     fun `XML 저장용 상태 객체(State) 로드 테스트`() {
         // Given
         val loadedState = WatchlistRepository.State()

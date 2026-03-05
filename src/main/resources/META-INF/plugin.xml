@@ -18,6 +18,12 @@
                 id="Market Ticker Status Bar"
                 implementation="com.github.myeoungdev.marketticker.ui.statusbar.MarketTickerStatusBarWidgetFactory"/>
 
+        <applicationConfigurable
+                parentId="tools"
+                id="com.github.myeoungdev.marketticker.settings"
+                displayName="Market Ticker"
+                instance="com.github.myeoungdev.marketticker.ui.settings.MarketTickerConfigurable"/>
+
         <notificationGroup id="Market Ticker Notification"
                            displayType="BALLOON"/>
     </extensions>

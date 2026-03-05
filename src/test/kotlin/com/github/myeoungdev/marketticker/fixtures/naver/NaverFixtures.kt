@@ -223,6 +223,94 @@ object NaverFixtures {
     }
     """
 
+    const val JSON_PRICE_COIN_SUCCESS = """
+    {
+      "pollingInterval": 7000,
+      "datas": [
+        {
+          "fqnfTicker": "BTC_KRW_UPBIT",
+          "openPrice": 100578000,
+          "highPrice": 101549000,
+          "lowPrice": 97493000,
+          "tradePrice": 99886000,
+          "previousClosePrice": 100520000,
+          "change": "FALLING",
+          "changeRate": -0.63,
+          "changeValue": -634000,
+          "accumulatedTradingVolume": 3131.98199876,
+          "accumulatedTradingValue": 312977052870.05096,
+          "koreaTradedAt": "2026-03-04T00:58:25"
+        }
+      ],
+      "time": "20260304005830"
+    }
+    """
+
+    const val JSON_CHART_COIN_SUCCESS = """
+    {
+      "isSuccess": true,
+      "detailCode": "",
+      "message": "",
+      "result": [
+        {
+          "candleId": "BTC_KRW_UPBIT_DAY1_2026-03-03",
+          "tradeBaseAt": "2026-03-03T00:00:00Z",
+          "openPrice": 100578000,
+          "highPrice": 101549000,
+          "lowPrice": 97493000,
+          "closePrice": 99878000,
+          "accumulatedTradingVolume": 3020.62747538
+        }
+      ]
+    }
+    """
+
+    const val JSON_DOMESTIC_INDEX_SUCCESS = """
+    {
+      "pollingInterval": 70000,
+      "datas": [
+        {
+          "itemCode": "KOSPI",
+          "stockName": "코스피",
+          "closePrice": "5,791.91",
+          "compareToPreviousClosePrice": "-452.22",
+          "fluctuationsRatio": "-7.24",
+          "openPrice": "6,165.15",
+          "highPrice": "6,180.45",
+          "lowPrice": "5,791.65",
+          "accumulatedTradingVolume": "1,227,193천주",
+          "accumulatedTradingValue": "52,800,573백만",
+          "marketStatus": "CLOSE",
+          "symbolCode": "KOSPI"
+        }
+      ],
+      "time": "20260304005834"
+    }
+    """
+
+    const val JSON_MARKET_METAL_SUCCESS = """
+    {
+      "pollingInterval": 7000,
+      "datas": [
+        {
+          "reutersCode": "GCcv1",
+          "symbolCode": "GC",
+          "name": "국제 금",
+          "closePrice": "5,081.20",
+          "fluctuations": "-230.40",
+          "fluctuationsRatio": "-4.34",
+          "openPrice": "5,335.70",
+          "highPrice": "5,394.20",
+          "lowPrice": "5,005.00",
+          "accumulatedTradingVolume": "203,802",
+          "marketStatus": "OPEN",
+          "unit": "USD/OZS"
+        }
+      ],
+      "time": "20260304005832"
+    }
+    """
+
     const val JSON_PRICE_DOMESTIC_SUCCESS = """
     {
        "pollingInterval":7000,

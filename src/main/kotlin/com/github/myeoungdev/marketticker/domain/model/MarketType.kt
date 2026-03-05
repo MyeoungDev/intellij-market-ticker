@@ -19,6 +19,8 @@ enum class MarketType(
     NASDAQ("NASDAQ", "나스닥", ZoneId.of("America/New_York"), Country.USA),
     NYSE("NYSE", "뉴욕증권거래소", ZoneId.of("America/New_York"), Country.USA),
     TOKYO("TSE", "도쿄증권거래소", ZoneId.of("Asia/Tokyo"), Country.JAPAN),
+    UPBIT("UPBIT", "업비트", ZoneId.of("Asia/Seoul"), Country.KOREA),
+    BITHUMB("BITHUMB", "빗썸", ZoneId.of("Asia/Seoul"), Country.KOREA),
     UNKNOWN("UNKNOWN", "알 수 없음", ZoneId.systemDefault(), Country.UNKNOWN);
 
     companion object {
@@ -29,5 +31,9 @@ enum class MarketType(
 
     fun isKoreanMarket(): Boolean {
         return this == KOSPI || this == KOSDAQ
+    }
+
+    fun isCryptoMarket(): Boolean {
+        return this == UPBIT || this == BITHUMB
     }
 }

@@ -38,6 +38,7 @@ class MarketDataService(
 
     private val watchlistRepository = service<WatchlistRepository>()
     private val notificationService = service<NotificationService>()
+    private val priceHistoryService = service<PriceHistoryService>()
 
     private val priceProvider: PriceProvider = NaverPriceProvider()
     private val searchProvider: SearchProvider = NaverSearchProvider()
@@ -69,6 +70,7 @@ class MarketDataService(
             logger.info { "Fetched prices count: ${prices.size}" }
 
             _currentPrices.emit(prices)
+            priceHistoryService.append(prices)
 
             notificationService.checkAndNotify(prices)
 
@@ -123,8 +125,8 @@ class MarketDataService(
      *
      * @param symbol Ticker symbol
      */
-    fun removeTicker(symbol: String) {
-        watchlistRepository.removeTicker(symbol)
+    fun removeTicker(symbol: String, marketType: MarketType? = null) {
+        watchlistRepository.removeTicker(symbol, marketType?.name)
         ApplicationManager.getApplication().messageBus.syncPublisher(WatchlistEntryUpdateListener.TOPIC).onWatchlistEntryUpdated()
         forceRefresh()
     }

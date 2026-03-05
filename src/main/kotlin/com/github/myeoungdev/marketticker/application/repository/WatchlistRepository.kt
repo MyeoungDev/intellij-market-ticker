@@ -24,7 +24,10 @@ class WatchlistRepository : PersistentStateComponent<WatchlistRepository.State> 
         var nationCode: String? = "",
         var nationName: String? = "",
         var purchasePrice: Double? = null,
-        var quantity: Double? = null
+        var quantity: Double? = null,
+        var targetWeightPercentage: Double? = null,
+        var realizedProfitLoss: Double? = 0.0,
+        var groupTag: String = ""
     )
 
     data class State(
@@ -63,13 +66,18 @@ class WatchlistRepository : PersistentStateComponent<WatchlistRepository.State> 
                 ticker.nationCode,
                 ticker.nationName,
                 null,
-                null
+                null,
+                null,
+                0.0,
+                defaultGroupTagFor(ticker.marketType.name)
             )
         )
     }
 
-    fun removeTicker(symbol: String) {
-        marketTickerState.tickers.removeIf { it.symbol == symbol }
+    fun removeTicker(symbol: String, marketType: String? = null) {
+        marketTickerState.tickers.removeIf {
+            it.symbol == symbol && (marketType == null || it.marketType == marketType)
+        }
     }
 
     fun updateWatchlistEntryPortfolio(updatedEntry: WatchlistEntry) {
@@ -81,9 +89,22 @@ class WatchlistRepository : PersistentStateComponent<WatchlistRepository.State> 
             val watchlistEntry = marketTickerState.tickers[index]
             watchlistEntry.purchasePrice = updatedEntry.purchasePrice
             watchlistEntry.quantity = updatedEntry.quantity
+            watchlistEntry.targetWeightPercentage = updatedEntry.targetWeightPercentage
+            watchlistEntry.realizedProfitLoss = updatedEntry.realizedProfitLoss ?: 0.0
+            watchlistEntry.groupTag = updatedEntry.groupTag.ifBlank {
+                defaultGroupTagFor(updatedEntry.marketType)
+            }
             logger.info { "Updated portfolio for ${watchlistEntry.symbol}: purchasePrice=${watchlistEntry.purchasePrice}, quantity=${watchlistEntry.quantity}" } // Corrected logging variable
         } else {
             logger.warn { "Watchlist entry ${updatedEntry.name} not found in watchlist for portfolio update." }
+        }
+    }
+
+    private fun defaultGroupTagFor(marketType: String): String {
+        return when (marketType) {
+            "KOSPI", "KOSDAQ" -> "국내"
+            "NASDAQ", "NYSE" -> "해외"
+            else -> "기타"
         }
     }
 

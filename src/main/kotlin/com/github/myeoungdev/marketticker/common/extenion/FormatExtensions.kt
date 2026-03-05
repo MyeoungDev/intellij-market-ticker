@@ -11,8 +11,14 @@ fun String?.parseCommaToDouble(): Double {
         return 0.0
     }
 
-    return this.replace(",", "")
-        .toDoubleOrNull() ?: 0.0
+    val normalized = this.replace(",", "")
+        .replace("%", "")
+        .replace("−", "-")
+        .trim()
+
+    return normalized.toDoubleOrNull()
+        ?: Regex("[-+]?\\d*\\.?\\d+").find(normalized)?.value?.toDoubleOrNull()
+        ?: 0.0
 }
 
 /**

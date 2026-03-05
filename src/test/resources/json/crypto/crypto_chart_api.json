@@ -1,0 +1,3396 @@
+curl 'https://m.stock.naver.com/front-api/chart/cryptoChartData?exchangeType=UPBIT&nfTicker=BTC&marketType=KRW&type=days&interval=1&from=2025-01-23T00:00:00&to=2026-02-01T23:59:59' \
+-H 'accept: */*' \
+-H 'accept-language: ko-KR,ko;q=0.9' \
+-H 'origin: https://stock.naver.com' \
+-H 'priority: u=1, i' \
+-H 'referer: https://stock.naver.com/crypto/UPBIT/BTC' \
+-H 'sec-ch-ua: "Not)A;Brand";v="99", "Google Chrome";v="127", "Chromium";v="127"' \
+-H 'sec-ch-ua-mobile: ?1' \
+-H 'sec-ch-ua-platform: "Android"' \
+-H 'sec-fetch-dest: empty' \
+-H 'sec-fetch-mode: cors' \
+-H 'sec-fetch-site: same-site' \
+-H 'user-agent: Mozilla/5.0 (Linux; Android 6.0; Nexus 5 Build/MRA58N) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/127.0.0.0 Mobile Safari/537.36'
+
+{
+  "isSuccess": true,
+  "detailCode": "",
+  "message": "",
+  "result": [
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-01-23",
+      "tradeBaseAt": "2025-01-23T00:00:00Z",
+      "openPrice": 154999000,
+      "highPrice": 158920000,
+      "lowPrice": 152000000,
+      "closePrice": 155112000,
+      "accumulatedTradingVolume": 4862.19227811
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-01-24",
+      "tradeBaseAt": "2025-01-24T00:00:00Z",
+      "openPrice": 155112000,
+      "highPrice": 159000000,
+      "lowPrice": 154000000,
+      "closePrice": 157146000,
+      "accumulatedTradingVolume": 2873.324649
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-01-25",
+      "tradeBaseAt": "2025-01-25T00:00:00Z",
+      "openPrice": 157170000,
+      "highPrice": 157832000,
+      "lowPrice": 156889000,
+      "closePrice": 157200000,
+      "accumulatedTradingVolume": 1030.73359964
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-01-26",
+      "tradeBaseAt": "2025-01-26T00:00:00Z",
+      "openPrice": 157200000,
+      "highPrice": 157933000,
+      "lowPrice": 156000000,
+      "closePrice": 156100000,
+      "accumulatedTradingVolume": 1211.62502318
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-01-27",
+      "tradeBaseAt": "2025-01-27T00:00:00Z",
+      "openPrice": 156100000,
+      "highPrice": 157075000,
+      "lowPrice": 151260000,
+      "closePrice": 154919000,
+      "accumulatedTradingVolume": 4922.6468022
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-01-28",
+      "tradeBaseAt": "2025-01-28T00:00:00Z",
+      "openPrice": 154919000,
+      "highPrice": 156658000,
+      "lowPrice": 153782000,
+      "closePrice": 155919000,
+      "accumulatedTradingVolume": 1848.78624612
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-01-29",
+      "tradeBaseAt": "2025-01-29T00:00:00Z",
+      "openPrice": 155919000,
+      "highPrice": 159455000,
+      "lowPrice": 155765000,
+      "closePrice": 158859000,
+      "accumulatedTradingVolume": 2078.67994056
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-01-30",
+      "tradeBaseAt": "2025-01-30T00:00:00Z",
+      "openPrice": 158859000,
+      "highPrice": 160559000,
+      "lowPrice": 157860000,
+      "closePrice": 158139000,
+      "accumulatedTradingVolume": 2319.02698078
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-01-31",
+      "tradeBaseAt": "2025-01-31T00:00:00Z",
+      "openPrice": 158182000,
+      "highPrice": 159669000,
+      "lowPrice": 155600000,
+      "closePrice": 156580000,
+      "accumulatedTradingVolume": 2129.17745711
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-02-01",
+      "tradeBaseAt": "2025-02-01T00:00:00Z",
+      "openPrice": 156580000,
+      "highPrice": 158090000,
+      "lowPrice": 155888000,
+      "closePrice": 157330000,
+      "accumulatedTradingVolume": 1619.80320769
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-02-02",
+      "tradeBaseAt": "2025-02-02T00:00:00Z",
+      "openPrice": 157399000,
+      "highPrice": 157925000,
+      "lowPrice": 152477000,
+      "closePrice": 154000000,
+      "accumulatedTradingVolume": 4071.87094813
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-02-03",
+      "tradeBaseAt": "2025-02-03T00:00:00Z",
+      "openPrice": 154000000,
+      "highPrice": 160304000,
+      "lowPrice": 145000000,
+      "closePrice": 158217000,
+      "accumulatedTradingVolume": 10024.73505923
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-02-04",
+      "tradeBaseAt": "2025-02-04T00:00:00Z",
+      "openPrice": 158217000,
+      "highPrice": 159439000,
+      "lowPrice": 153000000,
+      "closePrice": 154122000,
+      "accumulatedTradingVolume": 3487.67009628
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-02-05",
+      "tradeBaseAt": "2025-02-05T00:00:00Z",
+      "openPrice": 154140000,
+      "highPrice": 155662000,
+      "lowPrice": 151000000,
+      "closePrice": 151450000,
+      "accumulatedTradingVolume": 1916.10734457
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-02-06",
+      "tradeBaseAt": "2025-02-06T00:00:00Z",
+      "openPrice": 151450000,
+      "highPrice": 153925000,
+      "lowPrice": 150011000,
+      "closePrice": 151356000,
+      "accumulatedTradingVolume": 1849.75006961
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-02-07",
+      "tradeBaseAt": "2025-02-07T00:00:00Z",
+      "openPrice": 151359000,
+      "highPrice": 154000000,
+      "lowPrice": 148730000,
+      "closePrice": 149601000,
+      "accumulatedTradingVolume": 2909.10670683
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-02-08",
+      "tradeBaseAt": "2025-02-08T00:00:00Z",
+      "openPrice": 149602000,
+      "highPrice": 150200000,
+      "lowPrice": 147994000,
+      "closePrice": 148803000,
+      "accumulatedTradingVolume": 1075.62535359
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-02-09",
+      "tradeBaseAt": "2025-02-09T00:00:00Z",
+      "openPrice": 148873000,
+      "highPrice": 149819000,
+      "lowPrice": 146197000,
+      "closePrice": 147579000,
+      "accumulatedTradingVolume": 1541.55305088
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-02-10",
+      "tradeBaseAt": "2025-02-10T00:00:00Z",
+      "openPrice": 147602000,
+      "highPrice": 148830000,
+      "lowPrice": 146000000,
+      "closePrice": 147724000,
+      "accumulatedTradingVolume": 1457.45752226
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-02-11",
+      "tradeBaseAt": "2025-02-11T00:00:00Z",
+      "openPrice": 147812000,
+      "highPrice": 148750000,
+      "lowPrice": 145112000,
+      "closePrice": 146020000,
+      "accumulatedTradingVolume": 1669.24926882
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-02-12",
+      "tradeBaseAt": "2025-02-12T00:00:00Z",
+      "openPrice": 146034000,
+      "highPrice": 148266000,
+      "lowPrice": 143429000,
+      "closePrice": 147846000,
+      "accumulatedTradingVolume": 2307.47284288
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-02-13",
+      "tradeBaseAt": "2025-02-13T00:00:00Z",
+      "openPrice": 147846000,
+      "highPrice": 148155000,
+      "lowPrice": 144580000,
+      "closePrice": 145877000,
+      "accumulatedTradingVolume": 1331.28698982
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-02-14",
+      "tradeBaseAt": "2025-02-14T00:00:00Z",
+      "openPrice": 145802000,
+      "highPrice": 148120000,
+      "lowPrice": 145270000,
+      "closePrice": 146551000,
+      "accumulatedTradingVolume": 1435.33598102
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-02-15",
+      "tradeBaseAt": "2025-02-15T00:00:00Z",
+      "openPrice": 146551000,
+      "highPrice": 147720000,
+      "lowPrice": 146200000,
+      "closePrice": 147501000,
+      "accumulatedTradingVolume": 733.06032932
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-02-16",
+      "tradeBaseAt": "2025-02-16T00:00:00Z",
+      "openPrice": 147503000,
+      "highPrice": 147598000,
+      "lowPrice": 145484000,
+      "closePrice": 145625000,
+      "accumulatedTradingVolume": 671.71332295
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-02-17",
+      "tradeBaseAt": "2025-02-17T00:00:00Z",
+      "openPrice": 145625000,
+      "highPrice": 145980000,
+      "lowPrice": 144139000,
+      "closePrice": 144390000,
+      "accumulatedTradingVolume": 1267.18557174
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-02-18",
+      "tradeBaseAt": "2025-02-18T00:00:00Z",
+      "openPrice": 144390000,
+      "highPrice": 145352000,
+      "lowPrice": 141104000,
+      "closePrice": 143728000,
+      "accumulatedTradingVolume": 1754.60548271
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-02-19",
+      "tradeBaseAt": "2025-02-19T00:00:00Z",
+      "openPrice": 143760000,
+      "highPrice": 144743000,
+      "lowPrice": 142250000,
+      "closePrice": 144312000,
+      "accumulatedTradingVolume": 1069.3540581
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-02-20",
+      "tradeBaseAt": "2025-02-20T00:00:00Z",
+      "openPrice": 144314000,
+      "highPrice": 146000000,
+      "lowPrice": 143689000,
+      "closePrice": 145719000,
+      "accumulatedTradingVolume": 939.00260259
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-02-21",
+      "tradeBaseAt": "2025-02-21T00:00:00Z",
+      "openPrice": 145719000,
+      "highPrice": 146400000,
+      "lowPrice": 141334000,
+      "closePrice": 142859000,
+      "accumulatedTradingVolume": 1802.73267951
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-02-22",
+      "tradeBaseAt": "2025-02-22T00:00:00Z",
+      "openPrice": 142891000,
+      "highPrice": 143191000,
+      "lowPrice": 141988000,
+      "closePrice": 142300000,
+      "accumulatedTradingVolume": 699.20266557
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-02-23",
+      "tradeBaseAt": "2025-02-23T00:00:00Z",
+      "openPrice": 142364000,
+      "highPrice": 142500000,
+      "lowPrice": 140019000,
+      "closePrice": 141364000,
+      "accumulatedTradingVolume": 1091.6888984
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-02-24",
+      "tradeBaseAt": "2025-02-24T00:00:00Z",
+      "openPrice": 141371000,
+      "highPrice": 141572000,
+      "lowPrice": 131800000,
+      "closePrice": 132135000,
+      "accumulatedTradingVolume": 4987.71406631
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-02-25",
+      "tradeBaseAt": "2025-02-25T00:00:00Z",
+      "openPrice": 132135000,
+      "highPrice": 134899000,
+      "lowPrice": 125004000,
+      "closePrice": 129715000,
+      "accumulatedTradingVolume": 8847.3776982
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-02-26",
+      "tradeBaseAt": "2025-02-26T00:00:00Z",
+      "openPrice": 129715000,
+      "highPrice": 130000000,
+      "lowPrice": 120723000,
+      "closePrice": 122784000,
+      "accumulatedTradingVolume": 4779.97562112
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-02-27",
+      "tradeBaseAt": "2025-02-27T00:00:00Z",
+      "openPrice": 122775000,
+      "highPrice": 127493000,
+      "lowPrice": 121500000,
+      "closePrice": 124331000,
+      "accumulatedTradingVolume": 3770.15373297
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-02-28",
+      "tradeBaseAt": "2025-02-28T00:00:00Z",
+      "openPrice": 124404000,
+      "highPrice": 125411000,
+      "lowPrice": 116504000,
+      "closePrice": 124499000,
+      "accumulatedTradingVolume": 7878.5305605
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-01",
+      "tradeBaseAt": "2025-03-01T00:00:00Z",
+      "openPrice": 124499000,
+      "highPrice": 128980000,
+      "lowPrice": 123342000,
+      "closePrice": 128320000,
+      "accumulatedTradingVolume": 3139.14949168
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-02",
+      "tradeBaseAt": "2025-03-02T00:00:00Z",
+      "openPrice": 128320000,
+      "highPrice": 143708000,
+      "lowPrice": 126464000,
+      "closePrice": 142500000,
+      "accumulatedTradingVolume": 7926.22492232
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-03",
+      "tradeBaseAt": "2025-03-03T00:00:00Z",
+      "openPrice": 142500000,
+      "highPrice": 142950000,
+      "lowPrice": 128097000,
+      "closePrice": 130094000,
+      "accumulatedTradingVolume": 7118.39422776
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-04",
+      "tradeBaseAt": "2025-03-04T00:00:00Z",
+      "openPrice": 130110000,
+      "highPrice": 133790000,
+      "lowPrice": 123473000,
+      "closePrice": 130430000,
+      "accumulatedTradingVolume": 5613.26787691
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-05",
+      "tradeBaseAt": "2025-03-05T00:00:00Z",
+      "openPrice": 130368000,
+      "highPrice": 136459000,
+      "lowPrice": 128980000,
+      "closePrice": 134990000,
+      "accumulatedTradingVolume": 3637.90357222
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-06",
+      "tradeBaseAt": "2025-03-06T00:00:00Z",
+      "openPrice": 134990000,
+      "highPrice": 138321000,
+      "lowPrice": 131220000,
+      "closePrice": 133870000,
+      "accumulatedTradingVolume": 3640.1321495
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-07",
+      "tradeBaseAt": "2025-03-07T00:00:00Z",
+      "openPrice": 133858000,
+      "highPrice": 135900000,
+      "lowPrice": 127470000,
+      "closePrice": 129522000,
+      "accumulatedTradingVolume": 5258.89083787
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-08",
+      "tradeBaseAt": "2025-03-08T00:00:00Z",
+      "openPrice": 129522000,
+      "highPrice": 129998000,
+      "lowPrice": 127390000,
+      "closePrice": 128531000,
+      "accumulatedTradingVolume": 1351.55812949
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-09",
+      "tradeBaseAt": "2025-03-09T00:00:00Z",
+      "openPrice": 128579000,
+      "highPrice": 128950000,
+      "lowPrice": 119864000,
+      "closePrice": 121111000,
+      "accumulatedTradingVolume": 3708.57244967
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-10",
+      "tradeBaseAt": "2025-03-10T00:00:00Z",
+      "openPrice": 121039000,
+      "highPrice": 124910000,
+      "lowPrice": 116355000,
+      "closePrice": 117477000,
+      "accumulatedTradingVolume": 5950.48973869
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-11",
+      "tradeBaseAt": "2025-03-11T00:00:00Z",
+      "openPrice": 117495000,
+      "highPrice": 123918000,
+      "lowPrice": 114763000,
+      "closePrice": 123232000,
+      "accumulatedTradingVolume": 5714.24523651
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-12",
+      "tradeBaseAt": "2025-03-12T00:00:00Z",
+      "openPrice": 123232000,
+      "highPrice": 125300000,
+      "lowPrice": 120153000,
+      "closePrice": 123871000,
+      "accumulatedTradingVolume": 3310.46328038
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-13",
+      "tradeBaseAt": "2025-03-13T00:00:00Z",
+      "openPrice": 123871000,
+      "highPrice": 124600000,
+      "lowPrice": 119000000,
+      "closePrice": 120216000,
+      "accumulatedTradingVolume": 2451.95230335
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-14",
+      "tradeBaseAt": "2025-03-14T00:00:00Z",
+      "openPrice": 120216000,
+      "highPrice": 125500000,
+      "lowPrice": 119737000,
+      "closePrice": 123878000,
+      "accumulatedTradingVolume": 2059.41278058
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-15",
+      "tradeBaseAt": "2025-03-15T00:00:00Z",
+      "openPrice": 123855000,
+      "highPrice": 124896000,
+      "lowPrice": 123205000,
+      "closePrice": 124000000,
+      "accumulatedTradingVolume": 958.29986877
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-16",
+      "tradeBaseAt": "2025-03-16T00:00:00Z",
+      "openPrice": 124013000,
+      "highPrice": 125000000,
+      "lowPrice": 121020000,
+      "closePrice": 121749000,
+      "accumulatedTradingVolume": 1594.84480755
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-17",
+      "tradeBaseAt": "2025-03-17T00:00:00Z",
+      "openPrice": 121720000,
+      "highPrice": 123660000,
+      "lowPrice": 121260000,
+      "closePrice": 122801000,
+      "accumulatedTradingVolume": 1162.19594107
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-18",
+      "tradeBaseAt": "2025-03-18T00:00:00Z",
+      "openPrice": 122801000,
+      "highPrice": 122888000,
+      "lowPrice": 119550000,
+      "closePrice": 121272000,
+      "accumulatedTradingVolume": 1624.90063111
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-19",
+      "tradeBaseAt": "2025-03-19T00:00:00Z",
+      "openPrice": 121272000,
+      "highPrice": 127625000,
+      "lowPrice": 120939000,
+      "closePrice": 127194000,
+      "accumulatedTradingVolume": 2367.8219214
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-20",
+      "tradeBaseAt": "2025-03-20T00:00:00Z",
+      "openPrice": 127194000,
+      "highPrice": 128460000,
+      "lowPrice": 123910000,
+      "closePrice": 124297000,
+      "accumulatedTradingVolume": 2163.0060839
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-21",
+      "tradeBaseAt": "2025-03-21T00:00:00Z",
+      "openPrice": 124329000,
+      "highPrice": 125138000,
+      "lowPrice": 123228000,
+      "closePrice": 124500000,
+      "accumulatedTradingVolume": 1069.92495439
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-22",
+      "tradeBaseAt": "2025-03-22T00:00:00Z",
+      "openPrice": 124500000,
+      "highPrice": 124890000,
+      "lowPrice": 124000000,
+      "closePrice": 124150000,
+      "accumulatedTradingVolume": 471.51001517
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-23",
+      "tradeBaseAt": "2025-03-23T00:00:00Z",
+      "openPrice": 124150000,
+      "highPrice": 126938000,
+      "lowPrice": 124026000,
+      "closePrice": 126937000,
+      "accumulatedTradingVolume": 795.4027587
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-24",
+      "tradeBaseAt": "2025-03-24T00:00:00Z",
+      "openPrice": 126912000,
+      "highPrice": 130989000,
+      "lowPrice": 126196000,
+      "closePrice": 128890000,
+      "accumulatedTradingVolume": 2487.27149825
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-25",
+      "tradeBaseAt": "2025-03-25T00:00:00Z",
+      "openPrice": 128890000,
+      "highPrice": 130000000,
+      "lowPrice": 127502000,
+      "closePrice": 128823000,
+      "accumulatedTradingVolume": 1524.14730791
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-26",
+      "tradeBaseAt": "2025-03-26T00:00:00Z",
+      "openPrice": 128822000,
+      "highPrice": 130207000,
+      "lowPrice": 127200000,
+      "closePrice": 128556000,
+      "accumulatedTradingVolume": 1328.8735994
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-27",
+      "tradeBaseAt": "2025-03-27T00:00:00Z",
+      "openPrice": 128556000,
+      "highPrice": 129566000,
+      "lowPrice": 127000000,
+      "closePrice": 128701000,
+      "accumulatedTradingVolume": 1079.38711796
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-28",
+      "tradeBaseAt": "2025-03-28T00:00:00Z",
+      "openPrice": 128701000,
+      "highPrice": 129026000,
+      "lowPrice": 124610000,
+      "closePrice": 125800000,
+      "accumulatedTradingVolume": 1648.51701639
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-29",
+      "tradeBaseAt": "2025-03-29T00:00:00Z",
+      "openPrice": 125800000,
+      "highPrice": 126100000,
+      "lowPrice": 122007000,
+      "closePrice": 123378000,
+      "accumulatedTradingVolume": 1255.281682
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-30",
+      "tradeBaseAt": "2025-03-30T00:00:00Z",
+      "openPrice": 123274000,
+      "highPrice": 124890000,
+      "lowPrice": 122218000,
+      "closePrice": 123046000,
+      "accumulatedTradingVolume": 829.51053474
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-03-31",
+      "tradeBaseAt": "2025-03-31T00:00:00Z",
+      "openPrice": 123046000,
+      "highPrice": 124895000,
+      "lowPrice": 121263000,
+      "closePrice": 123209000,
+      "accumulatedTradingVolume": 1460.37610922
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-01",
+      "tradeBaseAt": "2025-04-01T00:00:00.088Z",
+      "openPrice": 123209000,
+      "highPrice": 126964000,
+      "lowPrice": 122800000,
+      "closePrice": 126632000,
+      "accumulatedTradingVolume": 1580.5872936
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-02",
+      "tradeBaseAt": "2025-04-02T00:00:00.086Z",
+      "openPrice": 126632000,
+      "highPrice": 130342000,
+      "lowPrice": 122500000,
+      "closePrice": 122798000,
+      "accumulatedTradingVolume": 2745.43701855
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-03",
+      "tradeBaseAt": "2025-04-03T00:00:00.2Z",
+      "openPrice": 122794000,
+      "highPrice": 124785000,
+      "lowPrice": 121002000,
+      "closePrice": 123244000,
+      "accumulatedTradingVolume": 1814.89880725
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-04",
+      "tradeBaseAt": "2025-04-04T00:00:00Z",
+      "openPrice": 123244000,
+      "highPrice": 124650000,
+      "lowPrice": 121100000,
+      "closePrice": 123409000,
+      "accumulatedTradingVolume": 2348.07168828
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-05",
+      "tradeBaseAt": "2025-04-05T00:00:00Z",
+      "openPrice": 123409000,
+      "highPrice": 123988000,
+      "lowPrice": 122033000,
+      "closePrice": 123300000,
+      "accumulatedTradingVolume": 660.55224138
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-06",
+      "tradeBaseAt": "2025-04-06T00:00:00Z",
+      "openPrice": 123255000,
+      "highPrice": 123500000,
+      "lowPrice": 115542000,
+      "closePrice": 117517000,
+      "accumulatedTradingVolume": 2831.64741137
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-07",
+      "tradeBaseAt": "2025-04-07T00:00:00Z",
+      "openPrice": 117517000,
+      "highPrice": 121149000,
+      "lowPrice": 111659000,
+      "closePrice": 118061000,
+      "accumulatedTradingVolume": 6659.42771804
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-08",
+      "tradeBaseAt": "2025-04-08T00:00:00Z",
+      "openPrice": 118062000,
+      "highPrice": 120239000,
+      "lowPrice": 114360000,
+      "closePrice": 114489000,
+      "accumulatedTradingVolume": 2416.29680041
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-09",
+      "tradeBaseAt": "2025-04-09T00:00:00Z",
+      "openPrice": 114497000,
+      "highPrice": 123168000,
+      "lowPrice": 112549000,
+      "closePrice": 121339000,
+      "accumulatedTradingVolume": 4828.55384549
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-10",
+      "tradeBaseAt": "2025-04-10T00:00:00Z",
+      "openPrice": 121339000,
+      "highPrice": 122300000,
+      "lowPrice": 116687000,
+      "closePrice": 117936000,
+      "accumulatedTradingVolume": 2203.34501763
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-11",
+      "tradeBaseAt": "2025-04-11T00:00:00Z",
+      "openPrice": 117929000,
+      "highPrice": 122333000,
+      "lowPrice": 116910000,
+      "closePrice": 121450000,
+      "accumulatedTradingVolume": 2018.05949266
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-12",
+      "tradeBaseAt": "2025-04-12T00:00:00Z",
+      "openPrice": 121450000,
+      "highPrice": 123973000,
+      "lowPrice": 120616000,
+      "closePrice": 123551000,
+      "accumulatedTradingVolume": 1352.17579839
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-13",
+      "tradeBaseAt": "2025-04-13T00:00:00Z",
+      "openPrice": 123577000,
+      "highPrice": 124520000,
+      "lowPrice": 120859000,
+      "closePrice": 121577000,
+      "accumulatedTradingVolume": 1527.22344963
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-14",
+      "tradeBaseAt": "2025-04-14T00:00:00Z",
+      "openPrice": 121577000,
+      "highPrice": 124000000,
+      "lowPrice": 121504000,
+      "closePrice": 122694000,
+      "accumulatedTradingVolume": 1604.44213702
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-15",
+      "tradeBaseAt": "2025-04-15T00:00:00Z",
+      "openPrice": 122694000,
+      "highPrice": 125120000,
+      "lowPrice": 122116000,
+      "closePrice": 122158000,
+      "accumulatedTradingVolume": 1617.12801646
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-16",
+      "tradeBaseAt": "2025-04-16T00:00:00Z",
+      "openPrice": 122154000,
+      "highPrice": 123570000,
+      "lowPrice": 121200000,
+      "closePrice": 121850000,
+      "accumulatedTradingVolume": 1433.79142248
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-17",
+      "tradeBaseAt": "2025-04-17T00:00:00Z",
+      "openPrice": 121850000,
+      "highPrice": 123220000,
+      "lowPrice": 121502000,
+      "closePrice": 122700000,
+      "accumulatedTradingVolume": 821.5976836
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-18",
+      "tradeBaseAt": "2025-04-18T00:00:00Z",
+      "openPrice": 122669000,
+      "highPrice": 122916000,
+      "lowPrice": 122255000,
+      "closePrice": 122288000,
+      "accumulatedTradingVolume": 447.20874424
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-19",
+      "tradeBaseAt": "2025-04-19T00:00:00Z",
+      "openPrice": 122288000,
+      "highPrice": 123500000,
+      "lowPrice": 122110000,
+      "closePrice": 122720000,
+      "accumulatedTradingVolume": 586.55690942
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-20",
+      "tradeBaseAt": "2025-04-20T00:00:00Z",
+      "openPrice": 122720000,
+      "highPrice": 123135000,
+      "lowPrice": 121571000,
+      "closePrice": 122746000,
+      "accumulatedTradingVolume": 825.23199678
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-21",
+      "tradeBaseAt": "2025-04-21T00:00:00Z",
+      "openPrice": 122746000,
+      "highPrice": 126660000,
+      "lowPrice": 122690000,
+      "closePrice": 126237000,
+      "accumulatedTradingVolume": 2230.90628933
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-22",
+      "tradeBaseAt": "2025-04-22T00:00:00Z",
+      "openPrice": 126200000,
+      "highPrice": 134397000,
+      "lowPrice": 125550000,
+      "closePrice": 133855000,
+      "accumulatedTradingVolume": 3400.6870884
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-23",
+      "tradeBaseAt": "2025-04-23T00:00:00Z",
+      "openPrice": 133856000,
+      "highPrice": 135413000,
+      "lowPrice": 131570000,
+      "closePrice": 134373000,
+      "accumulatedTradingVolume": 2892.60374306
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-24",
+      "tradeBaseAt": "2025-04-24T00:00:00Z",
+      "openPrice": 134373000,
+      "highPrice": 134710000,
+      "lowPrice": 132028000,
+      "closePrice": 134650000,
+      "accumulatedTradingVolume": 1755.00844477
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-25",
+      "tradeBaseAt": "2025-04-25T00:00:00Z",
+      "openPrice": 134641000,
+      "highPrice": 137869000,
+      "lowPrice": 133857000,
+      "closePrice": 136416000,
+      "accumulatedTradingVolume": 2131.27877132
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-26",
+      "tradeBaseAt": "2025-04-26T00:00:00Z",
+      "openPrice": 136557000,
+      "highPrice": 137140000,
+      "lowPrice": 135300000,
+      "closePrice": 136499000,
+      "accumulatedTradingVolume": 1034.47745671
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-27",
+      "tradeBaseAt": "2025-04-27T00:00:00Z",
+      "openPrice": 136525000,
+      "highPrice": 137400000,
+      "lowPrice": 135150000,
+      "closePrice": 135150000,
+      "accumulatedTradingVolume": 929.8213467
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-28",
+      "tradeBaseAt": "2025-04-28T00:00:00Z",
+      "openPrice": 135160000,
+      "highPrice": 137558000,
+      "lowPrice": 133720000,
+      "closePrice": 136816000,
+      "accumulatedTradingVolume": 1844.74732502
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-29",
+      "tradeBaseAt": "2025-04-29T00:00:00Z",
+      "openPrice": 136820000,
+      "highPrice": 137498000,
+      "lowPrice": 135700000,
+      "closePrice": 136310000,
+      "accumulatedTradingVolume": 1398.46508705
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-04-30",
+      "tradeBaseAt": "2025-04-30T00:00:00Z",
+      "openPrice": 136310000,
+      "highPrice": 136873000,
+      "lowPrice": 134138000,
+      "closePrice": 136050000,
+      "accumulatedTradingVolume": 1349.97619022
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-01",
+      "tradeBaseAt": "2025-05-01T00:00:00Z",
+      "openPrice": 136148000,
+      "highPrice": 140037000,
+      "lowPrice": 136002000,
+      "closePrice": 139145000,
+      "accumulatedTradingVolume": 1872.70438053
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-02",
+      "tradeBaseAt": "2025-05-02T00:00:00Z",
+      "openPrice": 139145000,
+      "highPrice": 140516000,
+      "lowPrice": 137799000,
+      "closePrice": 138636000,
+      "accumulatedTradingVolume": 1511.05273224
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-03",
+      "tradeBaseAt": "2025-05-03T00:00:00Z",
+      "openPrice": 138640000,
+      "highPrice": 138750000,
+      "lowPrice": 137153000,
+      "closePrice": 137560000,
+      "accumulatedTradingVolume": 726.54346242
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-04",
+      "tradeBaseAt": "2025-05-04T00:00:00Z",
+      "openPrice": 137598000,
+      "highPrice": 138080000,
+      "lowPrice": 135582000,
+      "closePrice": 135652000,
+      "accumulatedTradingVolume": 768.78311728
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-05",
+      "tradeBaseAt": "2025-05-05T00:00:00Z",
+      "openPrice": 135677000,
+      "highPrice": 136392000,
+      "lowPrice": 132900000,
+      "closePrice": 134890000,
+      "accumulatedTradingVolume": 1493.85349883
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-06",
+      "tradeBaseAt": "2025-05-06T00:00:00Z",
+      "openPrice": 134890000,
+      "highPrice": 137800000,
+      "lowPrice": 133061000,
+      "closePrice": 137400000,
+      "accumulatedTradingVolume": 1259.35463429
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-07",
+      "tradeBaseAt": "2025-05-07T00:00:00Z",
+      "openPrice": 137351000,
+      "highPrice": 138282000,
+      "lowPrice": 136050000,
+      "closePrice": 137660000,
+      "accumulatedTradingVolume": 1449.40587598
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-08",
+      "tradeBaseAt": "2025-05-08T00:00:00Z",
+      "openPrice": 137680000,
+      "highPrice": 145000000,
+      "lowPrice": 137402000,
+      "closePrice": 144780000,
+      "accumulatedTradingVolume": 3313.00582741
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-09",
+      "tradeBaseAt": "2025-05-09T00:00:00Z",
+      "openPrice": 144688000,
+      "highPrice": 146200000,
+      "lowPrice": 143500000,
+      "closePrice": 143720000,
+      "accumulatedTradingVolume": 2164.93136988
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-10",
+      "tradeBaseAt": "2025-05-10T00:00:00Z",
+      "openPrice": 143726000,
+      "highPrice": 145315000,
+      "lowPrice": 143500000,
+      "closePrice": 144964000,
+      "accumulatedTradingVolume": 1373.30714711
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-11",
+      "tradeBaseAt": "2025-05-11T00:00:00Z",
+      "openPrice": 144982000,
+      "highPrice": 146495000,
+      "lowPrice": 144037000,
+      "closePrice": 145510000,
+      "accumulatedTradingVolume": 1522.93450375
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-12",
+      "tradeBaseAt": "2025-05-12T00:00:00Z",
+      "openPrice": 145510000,
+      "highPrice": 147300000,
+      "lowPrice": 142532000,
+      "closePrice": 144875000,
+      "accumulatedTradingVolume": 2749.6179161
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-13",
+      "tradeBaseAt": "2025-05-13T00:00:00Z",
+      "openPrice": 144875000,
+      "highPrice": 146644000,
+      "lowPrice": 143500000,
+      "closePrice": 145880000,
+      "accumulatedTradingVolume": 1734.89816911
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-14",
+      "tradeBaseAt": "2025-05-14T00:00:00Z",
+      "openPrice": 145965000,
+      "highPrice": 146430000,
+      "lowPrice": 144249000,
+      "closePrice": 145718000,
+      "accumulatedTradingVolume": 1289.62687941
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-15",
+      "tradeBaseAt": "2025-05-15T00:00:00Z",
+      "openPrice": 145793000,
+      "highPrice": 146639000,
+      "lowPrice": 143634000,
+      "closePrice": 146026000,
+      "accumulatedTradingVolume": 1919.98902481
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-16",
+      "tradeBaseAt": "2025-05-16T00:00:00Z",
+      "openPrice": 146030000,
+      "highPrice": 147117000,
+      "lowPrice": 145570000,
+      "closePrice": 146465000,
+      "accumulatedTradingVolume": 1431.16035226
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-17",
+      "tradeBaseAt": "2025-05-17T00:00:00Z",
+      "openPrice": 146465000,
+      "highPrice": 146828000,
+      "lowPrice": 145770000,
+      "closePrice": 146555000,
+      "accumulatedTradingVolume": 961.68738842
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-18",
+      "tradeBaseAt": "2025-05-18T00:00:00Z",
+      "openPrice": 146580000,
+      "highPrice": 150600000,
+      "lowPrice": 146555000,
+      "closePrice": 150458000,
+      "accumulatedTradingVolume": 1989.80091526
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-19",
+      "tradeBaseAt": "2025-05-19T00:00:00Z",
+      "openPrice": 150296000,
+      "highPrice": 151199000,
+      "lowPrice": 145500000,
+      "closePrice": 148699000,
+      "accumulatedTradingVolume": 2536.96829107
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-20",
+      "tradeBaseAt": "2025-05-20T00:00:00Z",
+      "openPrice": 148700000,
+      "highPrice": 150990000,
+      "lowPrice": 147743000,
+      "closePrice": 150424000,
+      "accumulatedTradingVolume": 2056.48087294
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-21",
+      "tradeBaseAt": "2025-05-21T00:00:00Z",
+      "openPrice": 150424000,
+      "highPrice": 153301000,
+      "lowPrice": 148810000,
+      "closePrice": 152356000,
+      "accumulatedTradingVolume": 3244.77476836
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-22",
+      "tradeBaseAt": "2025-05-22T00:00:00Z",
+      "openPrice": 152356000,
+      "highPrice": 155323000,
+      "lowPrice": 152070000,
+      "closePrice": 154861000,
+      "accumulatedTradingVolume": 2821.93295751
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-23",
+      "tradeBaseAt": "2025-05-23T00:00:00Z",
+      "openPrice": 154861000,
+      "highPrice": 155169000,
+      "lowPrice": 149258000,
+      "closePrice": 149878000,
+      "accumulatedTradingVolume": 3301.84859609
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-24",
+      "tradeBaseAt": "2025-05-24T00:00:00Z",
+      "openPrice": 149962000,
+      "highPrice": 152700000,
+      "lowPrice": 149422000,
+      "closePrice": 150660000,
+      "accumulatedTradingVolume": 1178.23083653
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-25",
+      "tradeBaseAt": "2025-05-25T00:00:00Z",
+      "openPrice": 150680000,
+      "highPrice": 152946000,
+      "lowPrice": 149916000,
+      "closePrice": 152133000,
+      "accumulatedTradingVolume": 1078.44364401
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-26",
+      "tradeBaseAt": "2025-05-26T00:00:00Z",
+      "openPrice": 152133000,
+      "highPrice": 153000000,
+      "lowPrice": 151509000,
+      "closePrice": 152195000,
+      "accumulatedTradingVolume": 1099.73478784
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-27",
+      "tradeBaseAt": "2025-05-27T00:00:00Z",
+      "openPrice": 152197000,
+      "highPrice": 153218000,
+      "lowPrice": 150001000,
+      "closePrice": 151323000,
+      "accumulatedTradingVolume": 1774.65187847
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-28",
+      "tradeBaseAt": "2025-05-28T00:00:00Z",
+      "openPrice": 151323000,
+      "highPrice": 151608000,
+      "lowPrice": 149520000,
+      "closePrice": 150280000,
+      "accumulatedTradingVolume": 1258.07499699
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-29",
+      "tradeBaseAt": "2025-05-29T00:00:00Z",
+      "openPrice": 150280000,
+      "highPrice": 151291000,
+      "lowPrice": 147160000,
+      "closePrice": 147370000,
+      "accumulatedTradingVolume": 1830.02066115
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-30",
+      "tradeBaseAt": "2025-05-30T00:00:00Z",
+      "openPrice": 147370000,
+      "highPrice": 149000000,
+      "lowPrice": 146300000,
+      "closePrice": 147044000,
+      "accumulatedTradingVolume": 2298.29842596
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-05-31",
+      "tradeBaseAt": "2025-05-31T00:00:00Z",
+      "openPrice": 147044000,
+      "highPrice": 148700000,
+      "lowPrice": 146042000,
+      "closePrice": 147932000,
+      "accumulatedTradingVolume": 1209.42760002
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-01",
+      "tradeBaseAt": "2025-06-01T00:00:00Z",
+      "openPrice": 147932000,
+      "highPrice": 149502000,
+      "lowPrice": 147000000,
+      "closePrice": 149100000,
+      "accumulatedTradingVolume": 874.59185534
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-02",
+      "tradeBaseAt": "2025-06-02T00:00:00Z",
+      "openPrice": 149102000,
+      "highPrice": 149166000,
+      "lowPrice": 146209000,
+      "closePrice": 148074000,
+      "accumulatedTradingVolume": 1321.17070234
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-03",
+      "tradeBaseAt": "2025-06-03T00:00:00Z",
+      "openPrice": 148070000,
+      "highPrice": 148900000,
+      "lowPrice": 147022000,
+      "closePrice": 147322000,
+      "accumulatedTradingVolume": 1087.01105855
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-04",
+      "tradeBaseAt": "2025-06-04T00:00:00Z",
+      "openPrice": 147378000,
+      "highPrice": 147601000,
+      "lowPrice": 145200000,
+      "closePrice": 145210000,
+      "accumulatedTradingVolume": 1204.31063771
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-05",
+      "tradeBaseAt": "2025-06-05T00:00:00Z",
+      "openPrice": 145218000,
+      "highPrice": 146487000,
+      "lowPrice": 140399000,
+      "closePrice": 141588000,
+      "accumulatedTradingVolume": 2650.80086181
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-06",
+      "tradeBaseAt": "2025-06-06T00:00:00Z",
+      "openPrice": 141588000,
+      "highPrice": 146120000,
+      "lowPrice": 140862000,
+      "closePrice": 145196000,
+      "accumulatedTradingVolume": 1405.63970641
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-07",
+      "tradeBaseAt": "2025-06-07T00:00:00Z",
+      "openPrice": 145196000,
+      "highPrice": 146895000,
+      "lowPrice": 144601000,
+      "closePrice": 146514000,
+      "accumulatedTradingVolume": 701.74782498
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-08",
+      "tradeBaseAt": "2025-06-08T00:00:00Z",
+      "openPrice": 146540000,
+      "highPrice": 146796000,
+      "lowPrice": 145196000,
+      "closePrice": 145799000,
+      "accumulatedTradingVolume": 662.255613
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-09",
+      "tradeBaseAt": "2025-06-09T00:00:00Z",
+      "openPrice": 145801000,
+      "highPrice": 150600000,
+      "lowPrice": 144900000,
+      "closePrice": 150330000,
+      "accumulatedTradingVolume": 1740.32468211
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-10",
+      "tradeBaseAt": "2025-06-10T00:00:00Z",
+      "openPrice": 150330000,
+      "highPrice": 150992000,
+      "lowPrice": 149060000,
+      "closePrice": 150604000,
+      "accumulatedTradingVolume": 1495.42596773
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-11",
+      "tradeBaseAt": "2025-06-11T00:00:00Z",
+      "openPrice": 150628000,
+      "highPrice": 151400000,
+      "lowPrice": 148999000,
+      "closePrice": 149702000,
+      "accumulatedTradingVolume": 1207.74913167
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-12",
+      "tradeBaseAt": "2025-06-12T00:00:00Z",
+      "openPrice": 149710000,
+      "highPrice": 149840000,
+      "lowPrice": 145801000,
+      "closePrice": 145801000,
+      "accumulatedTradingVolume": 1713.92615788
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-13",
+      "tradeBaseAt": "2025-06-13T00:00:00Z",
+      "openPrice": 145811000,
+      "highPrice": 147340000,
+      "lowPrice": 143000000,
+      "closePrice": 147266000,
+      "accumulatedTradingVolume": 2314.74964227
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-14",
+      "tradeBaseAt": "2025-06-14T00:00:00Z",
+      "openPrice": 147265000,
+      "highPrice": 147526000,
+      "lowPrice": 145082000,
+      "closePrice": 146401000,
+      "accumulatedTradingVolume": 685.50929028
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-15",
+      "tradeBaseAt": "2025-06-15T00:00:00Z",
+      "openPrice": 146401000,
+      "highPrice": 147100000,
+      "lowPrice": 145220000,
+      "closePrice": 145997000,
+      "accumulatedTradingVolume": 688.44094474
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-16",
+      "tradeBaseAt": "2025-06-16T00:00:00Z",
+      "openPrice": 145998000,
+      "highPrice": 149303000,
+      "lowPrice": 145250000,
+      "closePrice": 146673000,
+      "accumulatedTradingVolume": 1550.94834639
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-17",
+      "tradeBaseAt": "2025-06-17T00:00:00Z",
+      "openPrice": 146661000,
+      "highPrice": 147957000,
+      "lowPrice": 143900000,
+      "closePrice": 145456000,
+      "accumulatedTradingVolume": 1534.6426481
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-18",
+      "tradeBaseAt": "2025-06-18T00:00:00Z",
+      "openPrice": 145456000,
+      "highPrice": 146128000,
+      "lowPrice": 144150000,
+      "closePrice": 145380000,
+      "accumulatedTradingVolume": 979.09683844
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-19",
+      "tradeBaseAt": "2025-06-19T00:00:00Z",
+      "openPrice": 145381000,
+      "highPrice": 146000000,
+      "lowPrice": 144500000,
+      "closePrice": 144978000,
+      "accumulatedTradingVolume": 804.24805973
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-20",
+      "tradeBaseAt": "2025-06-20T00:00:00Z",
+      "openPrice": 144979000,
+      "highPrice": 146930000,
+      "lowPrice": 143107000,
+      "closePrice": 143956000,
+      "accumulatedTradingVolume": 1417.88766141
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-21",
+      "tradeBaseAt": "2025-06-21T00:00:00Z",
+      "openPrice": 143956000,
+      "highPrice": 144427000,
+      "lowPrice": 141151000,
+      "closePrice": 142782000,
+      "accumulatedTradingVolume": 1176.32871227
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-22",
+      "tradeBaseAt": "2025-06-22T00:00:00Z",
+      "openPrice": 142811000,
+      "highPrice": 144825000,
+      "lowPrice": 137127000,
+      "closePrice": 140908000,
+      "accumulatedTradingVolume": 3427.48999522
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-23",
+      "tradeBaseAt": "2025-06-23T00:00:00Z",
+      "openPrice": 140908000,
+      "highPrice": 147101000,
+      "lowPrice": 139698000,
+      "closePrice": 146182000,
+      "accumulatedTradingVolume": 2585.56556993
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-24",
+      "tradeBaseAt": "2025-06-24T00:00:00Z",
+      "openPrice": 146180000,
+      "highPrice": 146387000,
+      "lowPrice": 144222000,
+      "closePrice": 145625000,
+      "accumulatedTradingVolume": 1398.08186776
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-25",
+      "tradeBaseAt": "2025-06-25T00:00:00Z",
+      "openPrice": 145626000,
+      "highPrice": 148620000,
+      "lowPrice": 145360000,
+      "closePrice": 147365000,
+      "accumulatedTradingVolume": 1451.35658492
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-26",
+      "tradeBaseAt": "2025-06-26T00:00:00Z",
+      "openPrice": 147365000,
+      "highPrice": 148205000,
+      "lowPrice": 146500000,
+      "closePrice": 146852000,
+      "accumulatedTradingVolume": 1072.4251918
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-27",
+      "tradeBaseAt": "2025-06-27T00:00:00Z",
+      "openPrice": 146868000,
+      "highPrice": 147628000,
+      "lowPrice": 146000000,
+      "closePrice": 147058000,
+      "accumulatedTradingVolume": 881.15026809
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-28",
+      "tradeBaseAt": "2025-06-28T00:00:00Z",
+      "openPrice": 147001000,
+      "highPrice": 147479000,
+      "lowPrice": 146799000,
+      "closePrice": 147174000,
+      "accumulatedTradingVolume": 367.95895603
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-29",
+      "tradeBaseAt": "2025-06-29T00:00:00Z",
+      "openPrice": 147174000,
+      "highPrice": 148502000,
+      "lowPrice": 147091000,
+      "closePrice": 147996000,
+      "accumulatedTradingVolume": 746.62583828
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-06-30",
+      "tradeBaseAt": "2025-06-30T00:00:00Z",
+      "openPrice": 147996000,
+      "highPrice": 148480000,
+      "lowPrice": 145740000,
+      "closePrice": 145759000,
+      "accumulatedTradingVolume": 1025.51490989
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-01",
+      "tradeBaseAt": "2025-07-01T00:00:00.105Z",
+      "openPrice": 145759000,
+      "highPrice": 146678000,
+      "lowPrice": 144710000,
+      "closePrice": 145019000,
+      "accumulatedTradingVolume": 1017.00286589
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-02",
+      "tradeBaseAt": "2025-07-02T00:00:00Z",
+      "openPrice": 145019000,
+      "highPrice": 148930000,
+      "lowPrice": 144265000,
+      "closePrice": 147372000,
+      "accumulatedTradingVolume": 1477.17680207
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-03",
+      "tradeBaseAt": "2025-07-03T00:00:00Z",
+      "openPrice": 147372000,
+      "highPrice": 149755000,
+      "lowPrice": 147364000,
+      "closePrice": 148737000,
+      "accumulatedTradingVolume": 1290.95630265
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-04",
+      "tradeBaseAt": "2025-07-04T00:00:00Z",
+      "openPrice": 148737000,
+      "highPrice": 149360000,
+      "lowPrice": 146929000,
+      "closePrice": 147797000,
+      "accumulatedTradingVolume": 915.83288905
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-05",
+      "tradeBaseAt": "2025-07-05T00:00:00Z",
+      "openPrice": 147798000,
+      "highPrice": 148400000,
+      "lowPrice": 147655000,
+      "closePrice": 148197000,
+      "accumulatedTradingVolume": 355.1103098
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-06",
+      "tradeBaseAt": "2025-07-06T00:00:00Z",
+      "openPrice": 148197000,
+      "highPrice": 149100000,
+      "lowPrice": 147411000,
+      "closePrice": 148500000,
+      "accumulatedTradingVolume": 672.00685084
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-07",
+      "tradeBaseAt": "2025-07-07T00:00:00Z",
+      "openPrice": 148500000,
+      "highPrice": 149100000,
+      "lowPrice": 147196000,
+      "closePrice": 148100000,
+      "accumulatedTradingVolume": 947.64724757
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-08",
+      "tradeBaseAt": "2025-07-08T00:00:00Z",
+      "openPrice": 148100000,
+      "highPrice": 148890000,
+      "lowPrice": 147100000,
+      "closePrice": 148302000,
+      "accumulatedTradingVolume": 769.61727441
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-09",
+      "tradeBaseAt": "2025-07-09T00:00:00Z",
+      "openPrice": 148302000,
+      "highPrice": 151479000,
+      "lowPrice": 148000000,
+      "closePrice": 150701000,
+      "accumulatedTradingVolume": 1638.67925067
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-10",
+      "tradeBaseAt": "2025-07-10T00:00:00Z",
+      "openPrice": 150750000,
+      "highPrice": 156960000,
+      "lowPrice": 150200000,
+      "closePrice": 156519000,
+      "accumulatedTradingVolume": 2768.63374905
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-11",
+      "tradeBaseAt": "2025-07-11T00:00:00Z",
+      "openPrice": 156517000,
+      "highPrice": 160744000,
+      "lowPrice": 155000000,
+      "closePrice": 158187000,
+      "accumulatedTradingVolume": 3456.21428386
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-12",
+      "tradeBaseAt": "2025-07-12T00:00:00.102Z",
+      "openPrice": 158187000,
+      "highPrice": 159952000,
+      "lowPrice": 157200000,
+      "closePrice": 159681000,
+      "accumulatedTradingVolume": 1138.31129365
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-13",
+      "tradeBaseAt": "2025-07-13T00:00:00.237Z",
+      "openPrice": 159683000,
+      "highPrice": 161754000,
+      "lowPrice": 159450000,
+      "closePrice": 161740000,
+      "accumulatedTradingVolume": 1339.29139444
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-14",
+      "tradeBaseAt": "2025-07-14T00:00:00.092Z",
+      "openPrice": 161740000,
+      "highPrice": 166798000,
+      "lowPrice": 161357000,
+      "closePrice": 163923000,
+      "accumulatedTradingVolume": 3684.07185862
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-15",
+      "tradeBaseAt": "2025-07-15T00:00:00.036Z",
+      "openPrice": 163923000,
+      "highPrice": 164010000,
+      "lowPrice": 158658000,
+      "closePrice": 160811000,
+      "accumulatedTradingVolume": 3276.2755269
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-16",
+      "tradeBaseAt": "2025-07-16T00:00:00.358Z",
+      "openPrice": 160811000,
+      "highPrice": 163210000,
+      "lowPrice": 160175000,
+      "closePrice": 161250000,
+      "accumulatedTradingVolume": 1980.22072126
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-17",
+      "tradeBaseAt": "2025-07-17T00:00:00.402Z",
+      "openPrice": 161246000,
+      "highPrice": 163955000,
+      "lowPrice": 160002000,
+      "closePrice": 162232000,
+      "accumulatedTradingVolume": 2371.74954751
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-18",
+      "tradeBaseAt": "2025-07-18T00:00:00.1Z",
+      "openPrice": 162232000,
+      "highPrice": 164446000,
+      "lowPrice": 159301000,
+      "closePrice": 161100000,
+      "accumulatedTradingVolume": 2870.43054777
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-19",
+      "tradeBaseAt": "2025-07-19T00:00:00.288Z",
+      "openPrice": 161098000,
+      "highPrice": 162470000,
+      "lowPrice": 160788000,
+      "closePrice": 161428000,
+      "accumulatedTradingVolume": 949.21876207
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-20",
+      "tradeBaseAt": "2025-07-20T00:00:00.79Z",
+      "openPrice": 161428000,
+      "highPrice": 162000000,
+      "lowPrice": 159726000,
+      "closePrice": 160072000,
+      "accumulatedTradingVolume": 1530.77015722
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-21",
+      "tradeBaseAt": "2025-07-21T00:00:00.972Z",
+      "openPrice": 160072000,
+      "highPrice": 162300000,
+      "lowPrice": 159350000,
+      "closePrice": 160096000,
+      "accumulatedTradingVolume": 2094.27517219
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-22",
+      "tradeBaseAt": "2025-07-22T00:00:00.117Z",
+      "openPrice": 160094000,
+      "highPrice": 162990000,
+      "lowPrice": 158750000,
+      "closePrice": 162321000,
+      "accumulatedTradingVolume": 2875.92317751
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-23",
+      "tradeBaseAt": "2025-07-23T00:00:00.148Z",
+      "openPrice": 162321000,
+      "highPrice": 162848000,
+      "lowPrice": 159192000,
+      "closePrice": 161990000,
+      "accumulatedTradingVolume": 2217.60629442
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-24",
+      "tradeBaseAt": "2025-07-24T00:00:00.417Z",
+      "openPrice": 162000000,
+      "highPrice": 162888000,
+      "lowPrice": 159000000,
+      "closePrice": 160928000,
+      "accumulatedTradingVolume": 2267.71389667
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-25",
+      "tradeBaseAt": "2025-07-25T00:00:00.367Z",
+      "openPrice": 160938000,
+      "highPrice": 161239000,
+      "lowPrice": 157746000,
+      "closePrice": 160217000,
+      "accumulatedTradingVolume": 2756.92062441
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-26",
+      "tradeBaseAt": "2025-07-26T00:00:00.914Z",
+      "openPrice": 160225000,
+      "highPrice": 161220000,
+      "lowPrice": 159600000,
+      "closePrice": 160900000,
+      "accumulatedTradingVolume": 893.50715438
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-27",
+      "tradeBaseAt": "2025-07-27T00:00:00.574Z",
+      "openPrice": 160900000,
+      "highPrice": 162800000,
+      "lowPrice": 160858000,
+      "closePrice": 162717000,
+      "accumulatedTradingVolume": 1186.33282832
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-28",
+      "tradeBaseAt": "2025-07-28T00:00:00.255Z",
+      "openPrice": 162548000,
+      "highPrice": 162985000,
+      "lowPrice": 161391000,
+      "closePrice": 162483000,
+      "accumulatedTradingVolume": 1590.53266996
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-29",
+      "tradeBaseAt": "2025-07-29T00:00:00.533Z",
+      "openPrice": 162483000,
+      "highPrice": 163800000,
+      "lowPrice": 162034000,
+      "closePrice": 163158000,
+      "accumulatedTradingVolume": 1628.46138167
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-30",
+      "tradeBaseAt": "2025-07-30T00:00:00.198Z",
+      "openPrice": 163248000,
+      "highPrice": 163708000,
+      "lowPrice": 161800000,
+      "closePrice": 163118000,
+      "accumulatedTradingVolume": 1330.16664923
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-07-31",
+      "tradeBaseAt": "2025-07-31T00:00:00.068Z",
+      "openPrice": 163118000,
+      "highPrice": 164300000,
+      "lowPrice": 161138000,
+      "closePrice": 161398000,
+      "accumulatedTradingVolume": 1581.43208394
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-01",
+      "tradeBaseAt": "2025-08-01T00:00:00.139Z",
+      "openPrice": 161400000,
+      "highPrice": 161770000,
+      "lowPrice": 158100000,
+      "closePrice": 158102000,
+      "accumulatedTradingVolume": 2990.4075481
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-02",
+      "tradeBaseAt": "2025-08-02T00:00:00.276Z",
+      "openPrice": 158101000,
+      "highPrice": 159362000,
+      "lowPrice": 157115000,
+      "closePrice": 157376000,
+      "accumulatedTradingVolume": 1429.79141405
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-03",
+      "tradeBaseAt": "2025-08-03T00:00:00.283Z",
+      "openPrice": 157376000,
+      "highPrice": 160324000,
+      "lowPrice": 156715000,
+      "closePrice": 160227000,
+      "accumulatedTradingVolume": 1223.99129983
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-04",
+      "tradeBaseAt": "2025-08-04T00:00:00.541Z",
+      "openPrice": 160208000,
+      "highPrice": 161400000,
+      "lowPrice": 159500000,
+      "closePrice": 160332000,
+      "accumulatedTradingVolume": 1165.54319286
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-05",
+      "tradeBaseAt": "2025-08-05T00:00:00.835Z",
+      "openPrice": 160333000,
+      "highPrice": 160571000,
+      "lowPrice": 158206000,
+      "closePrice": 159999000,
+      "accumulatedTradingVolume": 1264.47404945
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-06",
+      "tradeBaseAt": "2025-08-06T00:00:01.407Z",
+      "openPrice": 159999000,
+      "highPrice": 160955000,
+      "lowPrice": 158605000,
+      "closePrice": 160000000,
+      "accumulatedTradingVolume": 1000.70123754
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-07",
+      "tradeBaseAt": "2025-08-07T00:00:00.08Z",
+      "openPrice": 160000000,
+      "highPrice": 162000000,
+      "lowPrice": 159524000,
+      "closePrice": 161853000,
+      "accumulatedTradingVolume": 1594.91631875
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-08",
+      "tradeBaseAt": "2025-08-08T00:00:00.484Z",
+      "openPrice": 161853000,
+      "highPrice": 161994000,
+      "lowPrice": 160008000,
+      "closePrice": 160099000,
+      "accumulatedTradingVolume": 1473.64009939
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-09",
+      "tradeBaseAt": "2025-08-09T00:00:00.302Z",
+      "openPrice": 160099000,
+      "highPrice": 161547000,
+      "lowPrice": 160007000,
+      "closePrice": 160180000,
+      "accumulatedTradingVolume": 1532.65560092
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-10",
+      "tradeBaseAt": "2025-08-10T00:00:00.21Z",
+      "openPrice": 160180000,
+      "highPrice": 163877000,
+      "lowPrice": 160132000,
+      "closePrice": 163859000,
+      "accumulatedTradingVolume": 2461.77283956
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-11",
+      "tradeBaseAt": "2025-08-11T00:00:00.094Z",
+      "openPrice": 163860000,
+      "highPrice": 167000000,
+      "lowPrice": 163350000,
+      "closePrice": 164210000,
+      "accumulatedTradingVolume": 4064.5143164
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-12",
+      "tradeBaseAt": "2025-08-12T00:00:00Z",
+      "openPrice": 164210000,
+      "highPrice": 164990000,
+      "lowPrice": 163000000,
+      "closePrice": 164298000,
+      "accumulatedTradingVolume": 3501.42948071
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-13",
+      "tradeBaseAt": "2025-08-13T00:00:00Z",
+      "openPrice": 164298000,
+      "highPrice": 168262000,
+      "lowPrice": 163353000,
+      "closePrice": 168051000,
+      "accumulatedTradingVolume": 3937.38979816
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-14",
+      "tradeBaseAt": "2025-08-14T00:00:00Z",
+      "openPrice": 168051000,
+      "highPrice": 169900000,
+      "lowPrice": 162550000,
+      "closePrice": 164723000,
+      "accumulatedTradingVolume": 5826.57402742
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-15",
+      "tradeBaseAt": "2025-08-15T00:00:00Z",
+      "openPrice": 164723000,
+      "highPrice": 165885000,
+      "lowPrice": 163010000,
+      "closePrice": 164122000,
+      "accumulatedTradingVolume": 2393.987675
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-16",
+      "tradeBaseAt": "2025-08-16T00:00:00Z",
+      "openPrice": 164122000,
+      "highPrice": 164374000,
+      "lowPrice": 162685000,
+      "closePrice": 163058000,
+      "accumulatedTradingVolume": 1422.83003959
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-17",
+      "tradeBaseAt": "2025-08-17T00:00:00Z",
+      "openPrice": 163058000,
+      "highPrice": 164194000,
+      "lowPrice": 163035000,
+      "closePrice": 163111000,
+      "accumulatedTradingVolume": 1289.61093812
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-18",
+      "tradeBaseAt": "2025-08-18T00:00:00Z",
+      "openPrice": 163110000,
+      "highPrice": 163456000,
+      "lowPrice": 160000000,
+      "closePrice": 161513000,
+      "accumulatedTradingVolume": 2978.02047544
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-19",
+      "tradeBaseAt": "2025-08-19T00:00:00Z",
+      "openPrice": 161513000,
+      "highPrice": 162388000,
+      "lowPrice": 157044000,
+      "closePrice": 157172000,
+      "accumulatedTradingVolume": 3213.74040279
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-20",
+      "tradeBaseAt": "2025-08-20T00:00:00Z",
+      "openPrice": 157180000,
+      "highPrice": 159565000,
+      "lowPrice": 157100000,
+      "closePrice": 159149000,
+      "accumulatedTradingVolume": 2727.86142009
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-21",
+      "tradeBaseAt": "2025-08-21T00:00:00Z",
+      "openPrice": 159237000,
+      "highPrice": 159900000,
+      "lowPrice": 157280000,
+      "closePrice": 157737000,
+      "accumulatedTradingVolume": 1847.53517619
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-22",
+      "tradeBaseAt": "2025-08-22T00:00:00Z",
+      "openPrice": 157737000,
+      "highPrice": 162688000,
+      "lowPrice": 156647000,
+      "closePrice": 161176000,
+      "accumulatedTradingVolume": 4664.40806155
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-23",
+      "tradeBaseAt": "2025-08-23T00:00:00Z",
+      "openPrice": 161176000,
+      "highPrice": 161505000,
+      "lowPrice": 159000000,
+      "closePrice": 159705000,
+      "accumulatedTradingVolume": 2060.86766667
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-24",
+      "tradeBaseAt": "2025-08-24T00:00:00Z",
+      "openPrice": 159705000,
+      "highPrice": 160272000,
+      "lowPrice": 155870000,
+      "closePrice": 157603000,
+      "accumulatedTradingVolume": 3176.28992534
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-25",
+      "tradeBaseAt": "2025-08-25T00:00:00Z",
+      "openPrice": 157603000,
+      "highPrice": 158000000,
+      "lowPrice": 155346000,
+      "closePrice": 155887000,
+      "accumulatedTradingVolume": 3819.33064734
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-26",
+      "tradeBaseAt": "2025-08-26T00:00:00Z",
+      "openPrice": 155887000,
+      "highPrice": 157367000,
+      "lowPrice": 153952000,
+      "closePrice": 156661000,
+      "accumulatedTradingVolume": 3552.50689797
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-27",
+      "tradeBaseAt": "2025-08-27T00:00:00Z",
+      "openPrice": 156660000,
+      "highPrice": 157200000,
+      "lowPrice": 154800000,
+      "closePrice": 155534000,
+      "accumulatedTradingVolume": 2350.77997787
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-28",
+      "tradeBaseAt": "2025-08-28T00:00:00Z",
+      "openPrice": 155532000,
+      "highPrice": 157787000,
+      "lowPrice": 155211000,
+      "closePrice": 156737000,
+      "accumulatedTradingVolume": 2013.93464698
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-29",
+      "tradeBaseAt": "2025-08-29T00:00:00Z",
+      "openPrice": 156737000,
+      "highPrice": 157080000,
+      "lowPrice": 151100000,
+      "closePrice": 152262000,
+      "accumulatedTradingVolume": 4115.55225326
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-30",
+      "tradeBaseAt": "2025-08-30T00:00:00Z",
+      "openPrice": 152262000,
+      "highPrice": 152267000,
+      "lowPrice": 149704000,
+      "closePrice": 151734000,
+      "accumulatedTradingVolume": 2520.85571363
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-08-31",
+      "tradeBaseAt": "2025-08-31T00:00:00Z",
+      "openPrice": 151734000,
+      "highPrice": 152960000,
+      "lowPrice": 150447000,
+      "closePrice": 150700000,
+      "accumulatedTradingVolume": 1959.31009288
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-01",
+      "tradeBaseAt": "2025-09-01T00:00:00Z",
+      "openPrice": 150700000,
+      "highPrice": 152789000,
+      "lowPrice": 149000000,
+      "closePrice": 152419000,
+      "accumulatedTradingVolume": 3300.43577475
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-02",
+      "tradeBaseAt": "2025-09-02T00:00:00Z",
+      "openPrice": 152419000,
+      "highPrice": 155445000,
+      "lowPrice": 150984000,
+      "closePrice": 154850000,
+      "accumulatedTradingVolume": 3105.80919904
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-03",
+      "tradeBaseAt": "2025-09-03T00:00:00Z",
+      "openPrice": 154850000,
+      "highPrice": 156000000,
+      "lowPrice": 154032000,
+      "closePrice": 154890000,
+      "accumulatedTradingVolume": 1807.37446996
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-04",
+      "tradeBaseAt": "2025-09-04T00:00:00Z",
+      "openPrice": 154890000,
+      "highPrice": 156515000,
+      "lowPrice": 153093000,
+      "closePrice": 155410000,
+      "accumulatedTradingVolume": 1797.96628742
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-05",
+      "tradeBaseAt": "2025-09-05T00:00:00Z",
+      "openPrice": 155337000,
+      "highPrice": 157853000,
+      "lowPrice": 154502000,
+      "closePrice": 154930000,
+      "accumulatedTradingVolume": 2532.15650086
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-06",
+      "tradeBaseAt": "2025-09-06T00:00:00Z",
+      "openPrice": 154930000,
+      "highPrice": 155629000,
+      "lowPrice": 154231000,
+      "closePrice": 154325000,
+      "accumulatedTradingVolume": 906.70280394
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-07",
+      "tradeBaseAt": "2025-09-07T00:00:00Z",
+      "openPrice": 154325000,
+      "highPrice": 155784000,
+      "lowPrice": 154200000,
+      "closePrice": 155001000,
+      "accumulatedTradingVolume": 865.70691336
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-08",
+      "tradeBaseAt": "2025-09-08T00:00:00Z",
+      "openPrice": 155001000,
+      "highPrice": 156838000,
+      "lowPrice": 154592000,
+      "closePrice": 156048000,
+      "accumulatedTradingVolume": 1395.68476034
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-09",
+      "tradeBaseAt": "2025-09-09T00:00:00Z",
+      "openPrice": 156048000,
+      "highPrice": 157200000,
+      "lowPrice": 154697000,
+      "closePrice": 155450000,
+      "accumulatedTradingVolume": 2239.43253491
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-10",
+      "tradeBaseAt": "2025-09-10T00:00:00Z",
+      "openPrice": 155451000,
+      "highPrice": 158800000,
+      "lowPrice": 154950000,
+      "closePrice": 158561000,
+      "accumulatedTradingVolume": 2323.17207851
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-11",
+      "tradeBaseAt": "2025-09-11T00:00:00Z",
+      "openPrice": 158562000,
+      "highPrice": 160400000,
+      "lowPrice": 157777000,
+      "closePrice": 160375000,
+      "accumulatedTradingVolume": 2457.40390156
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-12",
+      "tradeBaseAt": "2025-09-12T00:00:00Z",
+      "openPrice": 160395000,
+      "highPrice": 161794000,
+      "lowPrice": 160000000,
+      "closePrice": 161101000,
+      "accumulatedTradingVolume": 2344.78634593
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-13",
+      "tradeBaseAt": "2025-09-13T00:00:00Z",
+      "openPrice": 161110000,
+      "highPrice": 161369000,
+      "lowPrice": 159461000,
+      "closePrice": 160536000,
+      "accumulatedTradingVolume": 1734.61150961
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-14",
+      "tradeBaseAt": "2025-09-14T00:00:00Z",
+      "openPrice": 160536000,
+      "highPrice": 161200000,
+      "lowPrice": 159899000,
+      "closePrice": 160338000,
+      "accumulatedTradingVolume": 1312.94524159
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-15",
+      "tradeBaseAt": "2025-09-15T00:00:00Z",
+      "openPrice": 160338000,
+      "highPrice": 161791000,
+      "lowPrice": 159500000,
+      "closePrice": 160705000,
+      "accumulatedTradingVolume": 2106.26974077
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-16",
+      "tradeBaseAt": "2025-09-16T00:00:00Z",
+      "openPrice": 160705000,
+      "highPrice": 162334000,
+      "lowPrice": 160125000,
+      "closePrice": 162167000,
+      "accumulatedTradingVolume": 1772.099492
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-17",
+      "tradeBaseAt": "2025-09-17T00:00:00Z",
+      "openPrice": 162200000,
+      "highPrice": 163000000,
+      "lowPrice": 160210000,
+      "closePrice": 161468000,
+      "accumulatedTradingVolume": 2526.85829256
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-18",
+      "tradeBaseAt": "2025-09-18T00:00:00Z",
+      "openPrice": 161468000,
+      "highPrice": 163333000,
+      "lowPrice": 161372000,
+      "closePrice": 162478000,
+      "accumulatedTradingVolume": 2901.85195553
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-19",
+      "tradeBaseAt": "2025-09-19T00:00:00Z",
+      "openPrice": 162478000,
+      "highPrice": 163080000,
+      "lowPrice": 161500000,
+      "closePrice": 162138000,
+      "accumulatedTradingVolume": 2377.62260949
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-20",
+      "tradeBaseAt": "2025-09-20T00:00:00Z",
+      "openPrice": 162162000,
+      "highPrice": 162486000,
+      "lowPrice": 162000000,
+      "closePrice": 162236000,
+      "accumulatedTradingVolume": 1365.88594607
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-21",
+      "tradeBaseAt": "2025-09-21T00:00:00Z",
+      "openPrice": 162236000,
+      "highPrice": 162239000,
+      "lowPrice": 161372000,
+      "closePrice": 161412000,
+      "accumulatedTradingVolume": 1617.40636798
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-22",
+      "tradeBaseAt": "2025-09-22T00:00:00Z",
+      "openPrice": 161410000,
+      "highPrice": 161631000,
+      "lowPrice": 159000000,
+      "closePrice": 160730000,
+      "accumulatedTradingVolume": 4383.83384739
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-23",
+      "tradeBaseAt": "2025-09-23T00:00:00Z",
+      "openPrice": 160731000,
+      "highPrice": 161350000,
+      "lowPrice": 158668000,
+      "closePrice": 159679000,
+      "accumulatedTradingVolume": 1921.65686349
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-24",
+      "tradeBaseAt": "2025-09-24T00:00:00Z",
+      "openPrice": 159680000,
+      "highPrice": 161200000,
+      "lowPrice": 159001000,
+      "closePrice": 160700000,
+      "accumulatedTradingVolume": 1699.51363403
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-25",
+      "tradeBaseAt": "2025-09-25T00:00:00Z",
+      "openPrice": 160700000,
+      "highPrice": 161037000,
+      "lowPrice": 158000000,
+      "closePrice": 158200000,
+      "accumulatedTradingVolume": 3171.96113268
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-26",
+      "tradeBaseAt": "2025-09-26T00:00:00Z",
+      "openPrice": 158219000,
+      "highPrice": 159307000,
+      "lowPrice": 157100000,
+      "closePrice": 158128000,
+      "accumulatedTradingVolume": 2674.99978242
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-27",
+      "tradeBaseAt": "2025-09-27T00:00:00Z",
+      "openPrice": 158129000,
+      "highPrice": 158250000,
+      "lowPrice": 157126000,
+      "closePrice": 157895000,
+      "accumulatedTradingVolume": 1155.24151945
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-28",
+      "tradeBaseAt": "2025-09-28T00:00:00Z",
+      "openPrice": 157892000,
+      "highPrice": 160800000,
+      "lowPrice": 157559000,
+      "closePrice": 160579000,
+      "accumulatedTradingVolume": 1953.90545292
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-29",
+      "tradeBaseAt": "2025-09-29T00:00:00Z",
+      "openPrice": 160579000,
+      "highPrice": 163200000,
+      "lowPrice": 159300000,
+      "closePrice": 162976000,
+      "accumulatedTradingVolume": 2386.16263871
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-09-30",
+      "tradeBaseAt": "2025-09-30T00:00:00Z",
+      "openPrice": 162976000,
+      "highPrice": 163655000,
+      "lowPrice": 161111000,
+      "closePrice": 162828000,
+      "accumulatedTradingVolume": 2198.09307103
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-01",
+      "tradeBaseAt": "2025-10-01T00:00:00Z",
+      "openPrice": 162828000,
+      "highPrice": 168429000,
+      "lowPrice": 162789000,
+      "closePrice": 168424000,
+      "accumulatedTradingVolume": 3547.30294219
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-02",
+      "tradeBaseAt": "2025-10-02T00:00:00Z",
+      "openPrice": 168424000,
+      "highPrice": 170903000,
+      "lowPrice": 167709000,
+      "closePrice": 170704000,
+      "accumulatedTradingVolume": 3990.54848441
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-03",
+      "tradeBaseAt": "2025-10-03T00:00:00Z",
+      "openPrice": 170749000,
+      "highPrice": 174995000,
+      "lowPrice": 169100000,
+      "closePrice": 173460000,
+      "accumulatedTradingVolume": 3521.21957594
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-04",
+      "tradeBaseAt": "2025-10-04T00:00:00Z",
+      "openPrice": 173460000,
+      "highPrice": 174990000,
+      "lowPrice": 172673000,
+      "closePrice": 174964000,
+      "accumulatedTradingVolume": 4097.94313894
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-05",
+      "tradeBaseAt": "2025-10-05T00:00:00Z",
+      "openPrice": 174986000,
+      "highPrice": 178651000,
+      "lowPrice": 174270000,
+      "closePrice": 177024000,
+      "accumulatedTradingVolume": 5488.34546041
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-06",
+      "tradeBaseAt": "2025-10-06T00:00:00Z",
+      "openPrice": 177002000,
+      "highPrice": 178790000,
+      "lowPrice": 176500000,
+      "closePrice": 177536000,
+      "accumulatedTradingVolume": 4182.08043722
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-07",
+      "tradeBaseAt": "2025-10-07T00:00:00Z",
+      "openPrice": 177562000,
+      "highPrice": 178400000,
+      "lowPrice": 174385000,
+      "closePrice": 175460000,
+      "accumulatedTradingVolume": 5017.59963831
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-08",
+      "tradeBaseAt": "2025-10-08T00:00:00Z",
+      "openPrice": 175490000,
+      "highPrice": 178617000,
+      "lowPrice": 175460000,
+      "closePrice": 178011000,
+      "accumulatedTradingVolume": 4009.00389465
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-09",
+      "tradeBaseAt": "2025-10-09T00:00:00Z",
+      "openPrice": 177853000,
+      "highPrice": 179869000,
+      "lowPrice": 176496000,
+      "closePrice": 177616000,
+      "accumulatedTradingVolume": 4285.01805322
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-10",
+      "tradeBaseAt": "2025-10-10T00:00:00Z",
+      "openPrice": 177616000,
+      "highPrice": 178151000,
+      "lowPrice": 165000000,
+      "closePrice": 172257000,
+      "accumulatedTradingVolume": 8511.39339915
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-11",
+      "tradeBaseAt": "2025-10-11T00:00:00Z",
+      "openPrice": 172180000,
+      "highPrice": 173937000,
+      "lowPrice": 166500000,
+      "closePrice": 170390000,
+      "accumulatedTradingVolume": 5952.53215694
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-12",
+      "tradeBaseAt": "2025-10-12T00:00:00Z",
+      "openPrice": 170390000,
+      "highPrice": 174909000,
+      "lowPrice": 168132000,
+      "closePrice": 173833000,
+      "accumulatedTradingVolume": 4987.57384734
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-13",
+      "tradeBaseAt": "2025-10-13T00:00:00Z",
+      "openPrice": 173833000,
+      "highPrice": 175334000,
+      "lowPrice": 170778000,
+      "closePrice": 171680000,
+      "accumulatedTradingVolume": 3481.27263054
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-14",
+      "tradeBaseAt": "2025-10-14T00:00:00Z",
+      "openPrice": 171695000,
+      "highPrice": 172444000,
+      "lowPrice": 168000000,
+      "closePrice": 170070000,
+      "accumulatedTradingVolume": 3755.75448392
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-15",
+      "tradeBaseAt": "2025-10-15T00:00:00Z",
+      "openPrice": 170109000,
+      "highPrice": 170740000,
+      "lowPrice": 168001000,
+      "closePrice": 168539000,
+      "accumulatedTradingVolume": 2648.6428179
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-16",
+      "tradeBaseAt": "2025-10-16T00:00:00Z",
+      "openPrice": 168642000,
+      "highPrice": 170124000,
+      "lowPrice": 164858000,
+      "closePrice": 165290000,
+      "accumulatedTradingVolume": 3756.74255646
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-17",
+      "tradeBaseAt": "2025-10-17T00:00:00Z",
+      "openPrice": 165291000,
+      "highPrice": 166565000,
+      "lowPrice": 159671000,
+      "closePrice": 163639000,
+      "accumulatedTradingVolume": 5760.34988648
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-18",
+      "tradeBaseAt": "2025-10-18T00:00:00Z",
+      "openPrice": 163639000,
+      "highPrice": 164998000,
+      "lowPrice": 162852000,
+      "closePrice": 163631000,
+      "accumulatedTradingVolume": 1670.39102336
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-19",
+      "tradeBaseAt": "2025-10-19T00:00:00Z",
+      "openPrice": 163631000,
+      "highPrice": 165996000,
+      "lowPrice": 161250000,
+      "closePrice": 164806000,
+      "accumulatedTradingVolume": 2198.92937581
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-20",
+      "tradeBaseAt": "2025-10-20T00:00:00Z",
+      "openPrice": 164806000,
+      "highPrice": 167468000,
+      "lowPrice": 163398000,
+      "closePrice": 165911000,
+      "accumulatedTradingVolume": 2307.85120593
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-21",
+      "tradeBaseAt": "2025-10-21T00:00:00Z",
+      "openPrice": 165911000,
+      "highPrice": 169336000,
+      "lowPrice": 162011000,
+      "closePrice": 163400000,
+      "accumulatedTradingVolume": 3521.74275072
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-22",
+      "tradeBaseAt": "2025-10-22T00:00:00Z",
+      "openPrice": 163400000,
+      "highPrice": 164406000,
+      "lowPrice": 162500000,
+      "closePrice": 163153000,
+      "accumulatedTradingVolume": 2066.22338628
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-23",
+      "tradeBaseAt": "2025-10-23T00:00:00.324Z",
+      "openPrice": 163153000,
+      "highPrice": 166400000,
+      "lowPrice": 163035000,
+      "closePrice": 165546000,
+      "accumulatedTradingVolume": 1865.06901141
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-24",
+      "tradeBaseAt": "2025-10-24T00:00:00.083Z",
+      "openPrice": 165546000,
+      "highPrice": 167381000,
+      "lowPrice": 164420000,
+      "closePrice": 165703000,
+      "accumulatedTradingVolume": 2181.51085226
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-25",
+      "tradeBaseAt": "2025-10-25T00:00:00.253Z",
+      "openPrice": 165703000,
+      "highPrice": 166849000,
+      "lowPrice": 165331000,
+      "closePrice": 166310000,
+      "accumulatedTradingVolume": 950.79345291
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-26",
+      "tradeBaseAt": "2025-10-26T00:00:00.659Z",
+      "openPrice": 166330000,
+      "highPrice": 170000000,
+      "lowPrice": 166104000,
+      "closePrice": 169514000,
+      "accumulatedTradingVolume": 3568.59946968
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-27",
+      "tradeBaseAt": "2025-10-27T00:00:00.105Z",
+      "openPrice": 169514000,
+      "highPrice": 171500000,
+      "lowPrice": 168793000,
+      "closePrice": 168980000,
+      "accumulatedTradingVolume": 2394.29263083
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-28",
+      "tradeBaseAt": "2025-10-28T00:00:00.264Z",
+      "openPrice": 168980000,
+      "highPrice": 170859000,
+      "lowPrice": 167550000,
+      "closePrice": 168263000,
+      "accumulatedTradingVolume": 2037.33273001
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-29",
+      "tradeBaseAt": "2025-10-29T00:00:00.085Z",
+      "openPrice": 168263000,
+      "highPrice": 168401000,
+      "lowPrice": 164000000,
+      "closePrice": 164617000,
+      "accumulatedTradingVolume": 2888.07400342
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-30",
+      "tradeBaseAt": "2025-10-30T00:00:00.328Z",
+      "openPrice": 164597000,
+      "highPrice": 166201000,
+      "lowPrice": 162000000,
+      "closePrice": 164258000,
+      "accumulatedTradingVolume": 3148.31071235
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-10-31",
+      "tradeBaseAt": "2025-10-31T00:00:01.104Z",
+      "openPrice": 164259000,
+      "highPrice": 166000000,
+      "lowPrice": 163255000,
+      "closePrice": 164275000,
+      "accumulatedTradingVolume": 1790.89261098
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-01",
+      "tradeBaseAt": "2025-11-01T00:00:00Z",
+      "openPrice": 164275000,
+      "highPrice": 164692000,
+      "lowPrice": 163410000,
+      "closePrice": 164000000,
+      "accumulatedTradingVolume": 694.31785429
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-02",
+      "tradeBaseAt": "2025-11-02T00:00:00Z",
+      "openPrice": 164001000,
+      "highPrice": 165137000,
+      "lowPrice": 163300000,
+      "closePrice": 164129000,
+      "accumulatedTradingVolume": 892.04408414
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-03",
+      "tradeBaseAt": "2025-11-03T00:00:00Z",
+      "openPrice": 164074000,
+      "highPrice": 164133000,
+      "lowPrice": 158000000,
+      "closePrice": 158587000,
+      "accumulatedTradingVolume": 4490.16668725
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-04",
+      "tradeBaseAt": "2025-11-04T00:00:00Z",
+      "openPrice": 158589000,
+      "highPrice": 161128000,
+      "lowPrice": 147651000,
+      "closePrice": 152873000,
+      "accumulatedTradingVolume": 8659.62989693
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-05",
+      "tradeBaseAt": "2025-11-05T00:00:00Z",
+      "openPrice": 152873000,
+      "highPrice": 156324000,
+      "lowPrice": 146679000,
+      "closePrice": 156008000,
+      "accumulatedTradingVolume": 6507.76385477
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-06",
+      "tradeBaseAt": "2025-11-06T00:00:00Z",
+      "openPrice": 156008000,
+      "highPrice": 156126000,
+      "lowPrice": 150500000,
+      "closePrice": 151401000,
+      "accumulatedTradingVolume": 2953.21012074
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-07",
+      "tradeBaseAt": "2025-11-07T00:00:00Z",
+      "openPrice": 151412000,
+      "highPrice": 154961000,
+      "lowPrice": 148831000,
+      "closePrice": 153850000,
+      "accumulatedTradingVolume": 3572.77591855
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-08",
+      "tradeBaseAt": "2025-11-08T00:00:00Z",
+      "openPrice": 153850000,
+      "highPrice": 154400000,
+      "lowPrice": 151353000,
+      "closePrice": 152541000,
+      "accumulatedTradingVolume": 1504.32240529
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-09",
+      "tradeBaseAt": "2025-11-09T00:00:00Z",
+      "openPrice": 152542000,
+      "highPrice": 156300000,
+      "lowPrice": 151279000,
+      "closePrice": 155490000,
+      "accumulatedTradingVolume": 1919.80883529
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-10",
+      "tradeBaseAt": "2025-11-10T00:00:00Z",
+      "openPrice": 155490000,
+      "highPrice": 158330000,
+      "lowPrice": 154922000,
+      "closePrice": 156797000,
+      "accumulatedTradingVolume": 2810.65379193
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-11",
+      "tradeBaseAt": "2025-11-11T00:00:00Z",
+      "openPrice": 156802000,
+      "highPrice": 159150000,
+      "lowPrice": 153267000,
+      "closePrice": 154302000,
+      "accumulatedTradingVolume": 2306.95427154
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-12",
+      "tradeBaseAt": "2025-11-12T00:00:00Z",
+      "openPrice": 154302000,
+      "highPrice": 157200000,
+      "lowPrice": 152000000,
+      "closePrice": 153300000,
+      "accumulatedTradingVolume": 2189.06036422
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-13",
+      "tradeBaseAt": "2025-11-13T00:00:00Z",
+      "openPrice": 153300000,
+      "highPrice": 155271000,
+      "lowPrice": 149000000,
+      "closePrice": 151306000,
+      "accumulatedTradingVolume": 3767.76935206
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-14",
+      "tradeBaseAt": "2025-11-14T00:00:00Z",
+      "openPrice": 151314000,
+      "highPrice": 151619000,
+      "lowPrice": 142950000,
+      "closePrice": 143623000,
+      "accumulatedTradingVolume": 7932.3540069
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-15",
+      "tradeBaseAt": "2025-11-15T00:00:00Z",
+      "openPrice": 143623000,
+      "highPrice": 146301000,
+      "lowPrice": 143489000,
+      "closePrice": 144265000,
+      "accumulatedTradingVolume": 2517.09644955
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-16",
+      "tradeBaseAt": "2025-11-16T00:00:00.259Z",
+      "openPrice": 144265000,
+      "highPrice": 144888000,
+      "lowPrice": 138663000,
+      "closePrice": 140320000,
+      "accumulatedTradingVolume": 4602.38661695
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-17",
+      "tradeBaseAt": "2025-11-17T00:00:00Z",
+      "openPrice": 140320000,
+      "highPrice": 142926000,
+      "lowPrice": 137127000,
+      "closePrice": 137706000,
+      "accumulatedTradingVolume": 4964.77094675
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-18",
+      "tradeBaseAt": "2025-11-18T00:00:00Z",
+      "openPrice": 137706000,
+      "highPrice": 139184000,
+      "lowPrice": 132200000,
+      "closePrice": 137750000,
+      "accumulatedTradingVolume": 8491.46886428
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-19",
+      "tradeBaseAt": "2025-11-19T00:00:00Z",
+      "openPrice": 137750000,
+      "highPrice": 137807000,
+      "lowPrice": 132449000,
+      "closePrice": 136500000,
+      "accumulatedTradingVolume": 4301.62796345
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-20",
+      "tradeBaseAt": "2025-11-20T00:00:00Z",
+      "openPrice": 136500000,
+      "highPrice": 138621000,
+      "lowPrice": 129800000,
+      "closePrice": 129896000,
+      "accumulatedTradingVolume": 5972.60994601
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-21",
+      "tradeBaseAt": "2025-11-21T00:00:00Z",
+      "openPrice": 129896000,
+      "highPrice": 131000000,
+      "lowPrice": 121455000,
+      "closePrice": 128044000,
+      "accumulatedTradingVolume": 11334.13871345
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-22",
+      "tradeBaseAt": "2025-11-22T00:00:00Z",
+      "openPrice": 128044000,
+      "highPrice": 129000000,
+      "lowPrice": 125609000,
+      "closePrice": 127333000,
+      "accumulatedTradingVolume": 2837.33109528
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-23",
+      "tradeBaseAt": "2025-11-23T00:00:00Z",
+      "openPrice": 127373000,
+      "highPrice": 133852000,
+      "lowPrice": 127327000,
+      "closePrice": 131960000,
+      "accumulatedTradingVolume": 5315.35521869
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-24",
+      "tradeBaseAt": "2025-11-24T00:00:00Z",
+      "openPrice": 131998000,
+      "highPrice": 133761000,
+      "lowPrice": 129050000,
+      "closePrice": 132574000,
+      "accumulatedTradingVolume": 4922.03774062
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-25",
+      "tradeBaseAt": "2025-11-25T00:00:00Z",
+      "openPrice": 132574000,
+      "highPrice": 132750000,
+      "lowPrice": 129365000,
+      "closePrice": 130736000,
+      "accumulatedTradingVolume": 3254.04040817
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-26",
+      "tradeBaseAt": "2025-11-26T00:00:00Z",
+      "openPrice": 130779000,
+      "highPrice": 135485000,
+      "lowPrice": 129600000,
+      "closePrice": 135366000,
+      "accumulatedTradingVolume": 3385.80001183
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-27",
+      "tradeBaseAt": "2025-11-27T00:00:00Z",
+      "openPrice": 135366000,
+      "highPrice": 138400000,
+      "lowPrice": 134608000,
+      "closePrice": 136941000,
+      "accumulatedTradingVolume": 3681.88321051
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-28",
+      "tradeBaseAt": "2025-11-28T00:00:00Z",
+      "openPrice": 136989000,
+      "highPrice": 139868000,
+      "lowPrice": 135691000,
+      "closePrice": 136334000,
+      "accumulatedTradingVolume": 3073.89834548
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-29",
+      "tradeBaseAt": "2025-11-29T00:00:00Z",
+      "openPrice": 136334000,
+      "highPrice": 136770000,
+      "lowPrice": 135300000,
+      "closePrice": 136073000,
+      "accumulatedTradingVolume": 1321.22099725
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-11-30",
+      "tradeBaseAt": "2025-11-30T00:00:00Z",
+      "openPrice": 136000000,
+      "highPrice": 137631000,
+      "lowPrice": 135600000,
+      "closePrice": 135744000,
+      "accumulatedTradingVolume": 1270.17355456
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-01",
+      "tradeBaseAt": "2025-12-01T00:00:00Z",
+      "openPrice": 135752000,
+      "highPrice": 135839000,
+      "lowPrice": 125809000,
+      "closePrice": 129172000,
+      "accumulatedTradingVolume": 6974.0657329
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-02",
+      "tradeBaseAt": "2025-12-02T00:00:00Z",
+      "openPrice": 129169000,
+      "highPrice": 137330000,
+      "lowPrice": 128650000,
+      "closePrice": 135626000,
+      "accumulatedTradingVolume": 4459.59547367
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-03",
+      "tradeBaseAt": "2025-12-03T00:00:00Z",
+      "openPrice": 135683000,
+      "highPrice": 140212000,
+      "lowPrice": 135200000,
+      "closePrice": 138881000,
+      "accumulatedTradingVolume": 4129.5750868
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-04",
+      "tradeBaseAt": "2025-12-04T00:00:00Z",
+      "openPrice": 138998000,
+      "highPrice": 139769000,
+      "lowPrice": 135909000,
+      "closePrice": 137390000,
+      "accumulatedTradingVolume": 2529.46613782
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-05",
+      "tradeBaseAt": "2025-12-05T00:00:00Z",
+      "openPrice": 137447000,
+      "highPrice": 138298000,
+      "lowPrice": 132000000,
+      "closePrice": 133828000,
+      "accumulatedTradingVolume": 2862.62465531
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-06",
+      "tradeBaseAt": "2025-12-06T00:00:00Z",
+      "openPrice": 133870000,
+      "highPrice": 134940000,
+      "lowPrice": 133200000,
+      "closePrice": 133598000,
+      "accumulatedTradingVolume": 1145.35925076
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-07",
+      "tradeBaseAt": "2025-12-07T00:00:00Z",
+      "openPrice": 133601000,
+      "highPrice": 136800000,
+      "lowPrice": 131333000,
+      "closePrice": 135195000,
+      "accumulatedTradingVolume": 1825.22306943
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-08",
+      "tradeBaseAt": "2025-12-08T00:00:00Z",
+      "openPrice": 135195000,
+      "highPrice": 137296000,
+      "lowPrice": 133758000,
+      "closePrice": 134986000,
+      "accumulatedTradingVolume": 2128.31828598
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-09",
+      "tradeBaseAt": "2025-12-09T00:00:00Z",
+      "openPrice": 134975000,
+      "highPrice": 139858000,
+      "lowPrice": 133300000,
+      "closePrice": 137200000,
+      "accumulatedTradingVolume": 2861.78716672
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-10",
+      "tradeBaseAt": "2025-12-10T00:00:00Z",
+      "openPrice": 137254000,
+      "highPrice": 139789000,
+      "lowPrice": 136304000,
+      "closePrice": 136700000,
+      "accumulatedTradingVolume": 2558.45714129
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-11",
+      "tradeBaseAt": "2025-12-11T00:00:00Z",
+      "openPrice": 136702000,
+      "highPrice": 138792000,
+      "lowPrice": 133364000,
+      "closePrice": 137332000,
+      "accumulatedTradingVolume": 2723.14618911
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-12",
+      "tradeBaseAt": "2025-12-12T00:00:00Z",
+      "openPrice": 137333000,
+      "highPrice": 137731000,
+      "lowPrice": 134134000,
+      "closePrice": 134902000,
+      "accumulatedTradingVolume": 1981.29211581
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-13",
+      "tradeBaseAt": "2025-12-13T00:00:00Z",
+      "openPrice": 134930000,
+      "highPrice": 135120000,
+      "lowPrice": 134150000,
+      "closePrice": 134733000,
+      "accumulatedTradingVolume": 861.651152
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-14",
+      "tradeBaseAt": "2025-12-14T00:00:00Z",
+      "openPrice": 134733000,
+      "highPrice": 135000000,
+      "lowPrice": 131183000,
+      "closePrice": 131795000,
+      "accumulatedTradingVolume": 1631.35341458
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-15",
+      "tradeBaseAt": "2025-12-15T00:00:00Z",
+      "openPrice": 131797000,
+      "highPrice": 134235000,
+      "lowPrice": 127602000,
+      "closePrice": 129132000,
+      "accumulatedTradingVolume": 3198.44756019
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-16",
+      "tradeBaseAt": "2025-12-16T00:00:00Z",
+      "openPrice": 129132000,
+      "highPrice": 131100000,
+      "lowPrice": 127001000,
+      "closePrice": 130682000,
+      "accumulatedTradingVolume": 2785.75720733
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-17",
+      "tradeBaseAt": "2025-12-17T00:00:00Z",
+      "openPrice": 130682000,
+      "highPrice": 134100000,
+      "lowPrice": 127633000,
+      "closePrice": 128680000,
+      "accumulatedTradingVolume": 2664.58155046
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-18",
+      "tradeBaseAt": "2025-12-18T00:00:00Z",
+      "openPrice": 128680000,
+      "highPrice": 132900000,
+      "lowPrice": 126226000,
+      "closePrice": 127135000,
+      "accumulatedTradingVolume": 3417.62107464
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-19",
+      "tradeBaseAt": "2025-12-19T00:00:00Z",
+      "openPrice": 127233000,
+      "highPrice": 132770000,
+      "lowPrice": 126551000,
+      "closePrice": 131223000,
+      "accumulatedTradingVolume": 3226.84485181
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-20",
+      "tradeBaseAt": "2025-12-20T00:00:00Z",
+      "openPrice": 131223000,
+      "highPrice": 132189000,
+      "lowPrice": 130767000,
+      "closePrice": 131469000,
+      "accumulatedTradingVolume": 972.31551384
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-21",
+      "tradeBaseAt": "2025-12-21T00:00:00Z",
+      "openPrice": 131526000,
+      "highPrice": 132486000,
+      "lowPrice": 130399000,
+      "closePrice": 131860000,
+      "accumulatedTradingVolume": 1164.35070299
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-22",
+      "tradeBaseAt": "2025-12-22T00:00:00Z",
+      "openPrice": 131859000,
+      "highPrice": 134750000,
+      "lowPrice": 131050000,
+      "closePrice": 132200000,
+      "accumulatedTradingVolume": 2339.51486501
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-23",
+      "tradeBaseAt": "2025-12-23T00:00:00Z",
+      "openPrice": 132201000,
+      "highPrice": 132618000,
+      "lowPrice": 129380000,
+      "closePrice": 130451000,
+      "accumulatedTradingVolume": 1956.73896356
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-24",
+      "tradeBaseAt": "2025-12-24T00:00:00Z",
+      "openPrice": 130451000,
+      "highPrice": 130550000,
+      "lowPrice": 127900000,
+      "closePrice": 129236000,
+      "accumulatedTradingVolume": 1885.25483134
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-25",
+      "tradeBaseAt": "2025-12-25T00:00:00Z",
+      "openPrice": 129236000,
+      "highPrice": 130200000,
+      "lowPrice": 128100000,
+      "closePrice": 128498000,
+      "accumulatedTradingVolume": 1152.57734435
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-26",
+      "tradeBaseAt": "2025-12-26T00:00:00Z",
+      "openPrice": 128497000,
+      "highPrice": 130800000,
+      "lowPrice": 127439000,
+      "closePrice": 128152000,
+      "accumulatedTradingVolume": 2080.73787804
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-27",
+      "tradeBaseAt": "2025-12-27T00:00:00Z",
+      "openPrice": 128149000,
+      "highPrice": 128396000,
+      "lowPrice": 127713000,
+      "closePrice": 128298000,
+      "accumulatedTradingVolume": 680.78595369
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-28",
+      "tradeBaseAt": "2025-12-28T00:00:00Z",
+      "openPrice": 128298000,
+      "highPrice": 128385000,
+      "lowPrice": 127522000,
+      "closePrice": 127914000,
+      "accumulatedTradingVolume": 668.60239301
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-29",
+      "tradeBaseAt": "2025-12-29T00:00:00Z",
+      "openPrice": 127914000,
+      "highPrice": 130575000,
+      "lowPrice": 126500000,
+      "closePrice": 127161000,
+      "accumulatedTradingVolume": 2475.58464995
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-30",
+      "tradeBaseAt": "2025-12-30T00:00:00Z",
+      "openPrice": 127161000,
+      "highPrice": 129602000,
+      "lowPrice": 126356000,
+      "closePrice": 128570000,
+      "accumulatedTradingVolume": 1788.05456022
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2025-12-31",
+      "tradeBaseAt": "2025-12-31T00:00:00Z",
+      "openPrice": 128570000,
+      "highPrice": 129211000,
+      "lowPrice": 127501000,
+      "closePrice": 128067000,
+      "accumulatedTradingVolume": 1279.04854656
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-01",
+      "tradeBaseAt": "2026-01-01T00:00:00Z",
+      "openPrice": 128000000,
+      "highPrice": 128943000,
+      "lowPrice": 127864000,
+      "closePrice": 128830000,
+      "accumulatedTradingVolume": 833.33256629
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-02",
+      "tradeBaseAt": "2026-01-02T00:00:00Z",
+      "openPrice": 128830000,
+      "highPrice": 131400000,
+      "lowPrice": 128321000,
+      "closePrice": 130150000,
+      "accumulatedTradingVolume": 2219.01957179
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-03",
+      "tradeBaseAt": "2026-01-03T00:00:00Z",
+      "openPrice": 130151000,
+      "highPrice": 131103000,
+      "lowPrice": 129290000,
+      "closePrice": 131077000,
+      "accumulatedTradingVolume": 1367.84550597
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-04",
+      "tradeBaseAt": "2026-01-04T00:00:00Z",
+      "openPrice": 131077000,
+      "highPrice": 132880000,
+      "lowPrice": 131060000,
+      "closePrice": 132386000,
+      "accumulatedTradingVolume": 1533.50015658
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-05",
+      "tradeBaseAt": "2026-01-05T00:00:00Z",
+      "openPrice": 132386000,
+      "highPrice": 136950000,
+      "lowPrice": 132364000,
+      "closePrice": 136074000,
+      "accumulatedTradingVolume": 3099.8765115
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-06",
+      "tradeBaseAt": "2026-01-06T00:00:00Z",
+      "openPrice": 136074000,
+      "highPrice": 136800000,
+      "lowPrice": 133186000,
+      "closePrice": 136299000,
+      "accumulatedTradingVolume": 2683.27239163
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-07",
+      "tradeBaseAt": "2026-01-07T00:00:00Z",
+      "openPrice": 136299000,
+      "highPrice": 136299000,
+      "lowPrice": 132500000,
+      "closePrice": 132939000,
+      "accumulatedTradingVolume": 2055.26806675
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-08",
+      "tradeBaseAt": "2026-01-08T00:00:00Z",
+      "openPrice": 132939000,
+      "highPrice": 133750000,
+      "lowPrice": 130777000,
+      "closePrice": 133174000,
+      "accumulatedTradingVolume": 1949.00828029
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-09",
+      "tradeBaseAt": "2026-01-09T00:00:00Z",
+      "openPrice": 133200000,
+      "highPrice": 134809000,
+      "lowPrice": 131770000,
+      "closePrice": 133451000,
+      "accumulatedTradingVolume": 1326.63774235
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-10",
+      "tradeBaseAt": "2026-01-10T00:00:00Z",
+      "openPrice": 133449000,
+      "highPrice": 133895000,
+      "lowPrice": 133200000,
+      "closePrice": 133503000,
+      "accumulatedTradingVolume": 508.46095731
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-11",
+      "tradeBaseAt": "2026-01-11T00:00:00Z",
+      "openPrice": 133503000,
+      "highPrice": 134250000,
+      "lowPrice": 133106000,
+      "closePrice": 133702000,
+      "accumulatedTradingVolume": 690.15913704
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-12",
+      "tradeBaseAt": "2026-01-12T00:00:00Z",
+      "openPrice": 133751000,
+      "highPrice": 136000000,
+      "lowPrice": 133200000,
+      "closePrice": 134602000,
+      "accumulatedTradingVolume": 1945.22524547
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-13",
+      "tradeBaseAt": "2026-01-13T00:00:00Z",
+      "openPrice": 134602000,
+      "highPrice": 140670000,
+      "lowPrice": 134321000,
+      "closePrice": 139968000,
+      "accumulatedTradingVolume": 2882.82667785
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-14",
+      "tradeBaseAt": "2026-01-14T00:00:00Z",
+      "openPrice": 139946000,
+      "highPrice": 143050000,
+      "lowPrice": 138800000,
+      "closePrice": 142160000,
+      "accumulatedTradingVolume": 3007.19608292
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-15",
+      "tradeBaseAt": "2026-01-15T00:00:00Z",
+      "openPrice": 142160000,
+      "highPrice": 142815000,
+      "lowPrice": 140400000,
+      "closePrice": 140907000,
+      "accumulatedTradingVolume": 2304.10527086
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-16",
+      "tradeBaseAt": "2026-01-16T00:00:00Z",
+      "openPrice": 140907000,
+      "highPrice": 141346000,
+      "lowPrice": 139800000,
+      "closePrice": 141083000,
+      "accumulatedTradingVolume": 1479.8551934
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-17",
+      "tradeBaseAt": "2026-01-17T00:00:00Z",
+      "openPrice": 141087000,
+      "highPrice": 141250000,
+      "lowPrice": 140409000,
+      "closePrice": 140527000,
+      "accumulatedTradingVolume": 771.66542927
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-18",
+      "tradeBaseAt": "2026-01-18T00:00:00Z",
+      "openPrice": 140526000,
+      "highPrice": 141200000,
+      "lowPrice": 138894000,
+      "closePrice": 138940000,
+      "accumulatedTradingVolume": 990.42272306
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-19",
+      "tradeBaseAt": "2026-01-19T00:00:00Z",
+      "openPrice": 138944000,
+      "highPrice": 138993000,
+      "lowPrice": 136590000,
+      "closePrice": 137010000,
+      "accumulatedTradingVolume": 2093.31669675
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-20",
+      "tradeBaseAt": "2026-01-20T00:00:00Z",
+      "openPrice": 137010000,
+      "highPrice": 137650000,
+      "lowPrice": 131118000,
+      "closePrice": 131849000,
+      "accumulatedTradingVolume": 3191.72256728
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-21",
+      "tradeBaseAt": "2026-01-21T00:00:00Z",
+      "openPrice": 131849000,
+      "highPrice": 134345000,
+      "lowPrice": 130000000,
+      "closePrice": 132505000,
+      "accumulatedTradingVolume": 3137.26136479
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-22",
+      "tradeBaseAt": "2026-01-22T00:00:00Z",
+      "openPrice": 132505000,
+      "highPrice": 134069000,
+      "lowPrice": 131786000,
+      "closePrice": 132864000,
+      "accumulatedTradingVolume": 1502.65463171
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-23",
+      "tradeBaseAt": "2026-01-23T00:00:00Z",
+      "openPrice": 132864000,
+      "highPrice": 134741000,
+      "lowPrice": 131568000,
+      "closePrice": 131961000,
+      "accumulatedTradingVolume": 1552.3488085
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-24",
+      "tradeBaseAt": "2026-01-24T00:00:00Z",
+      "openPrice": 131906000,
+      "highPrice": 132440000,
+      "lowPrice": 131643000,
+      "closePrice": 131644000,
+      "accumulatedTradingVolume": 679.01110126
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-25",
+      "tradeBaseAt": "2026-01-25T00:00:00Z",
+      "openPrice": 131644000,
+      "highPrice": 131880000,
+      "lowPrice": 128000000,
+      "closePrice": 128500000,
+      "accumulatedTradingVolume": 2169.1557654
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-26",
+      "tradeBaseAt": "2026-01-26T00:00:00Z",
+      "openPrice": 128500000,
+      "highPrice": 129900000,
+      "lowPrice": 127800000,
+      "closePrice": 129474000,
+      "accumulatedTradingVolume": 2326.35213304
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-27",
+      "tradeBaseAt": "2026-01-27T00:00:00Z",
+      "openPrice": 129474000,
+      "highPrice": 130349000,
+      "lowPrice": 127800000,
+      "closePrice": 129687000,
+      "accumulatedTradingVolume": 1890.07793598
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-28",
+      "tradeBaseAt": "2026-01-28T00:00:00Z",
+      "openPrice": 129690000,
+      "highPrice": 131300000,
+      "lowPrice": 128423000,
+      "closePrice": 129079000,
+      "accumulatedTradingVolume": 1769.09645035
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-29",
+      "tradeBaseAt": "2026-01-29T00:00:00Z",
+      "openPrice": 129051000,
+      "highPrice": 129080000,
+      "lowPrice": 122734000,
+      "closePrice": 124287000,
+      "accumulatedTradingVolume": 3891.78917701
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-30",
+      "tradeBaseAt": "2026-01-30T00:00:00Z",
+      "openPrice": 124258000,
+      "highPrice": 125300000,
+      "lowPrice": 119100000,
+      "closePrice": 125210000,
+      "accumulatedTradingVolume": 4913.02631677
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-01-31",
+      "tradeBaseAt": "2026-01-31T00:00:00Z",
+      "openPrice": 125210000,
+      "highPrice": 125220000,
+      "lowPrice": 114971000,
+      "closePrice": 117616000,
+      "accumulatedTradingVolume": 4990.76142735
+    },
+    {
+      "candleId": "BTC_KRW_UPBIT_DAY1_2026-02-01",
+      "tradeBaseAt": "2026-02-01T00:00:00Z",
+      "openPrice": 117616000,
+      "highPrice": 118500000,
+      "lowPrice": 115550000,
+      "closePrice": 116670000,
+      "accumulatedTradingVolume": 1836.61727773
+    }
+  ]
+}
