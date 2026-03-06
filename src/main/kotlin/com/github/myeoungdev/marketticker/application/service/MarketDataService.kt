@@ -138,8 +138,8 @@ class MarketDataService(
      *
      * @param entry WatchlistEntry Object (purchasePrice, quantity 포함)
      */
-    fun updateWatchlistEntryPortfolio(entry: WatchlistRepository.WatchlistEntry) { // Changed parameter type
-        watchlistRepository.updateWatchlistEntryPortfolio(entry) // Changed method call
+    fun updateWatchlistEntryPortfolio(entry: WatchlistRepository.WatchlistEntry) {
+        watchlistRepository.updateWatchlistEntryPortfolio(entry)
         ApplicationManager.getApplication().messageBus.syncPublisher(WatchlistEntryUpdateListener.TOPIC)
             .onWatchlistEntryUpdated()
         forceRefresh()
