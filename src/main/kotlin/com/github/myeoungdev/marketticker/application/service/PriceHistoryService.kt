@@ -21,7 +21,8 @@ class PriceHistoryService {
     enum class Period {
         DAY,
         WEEK,
-        MONTH
+        MONTH,
+        YEAR
     }
 
     /**
@@ -76,6 +77,7 @@ class PriceHistoryService {
             Period.DAY -> now.minus(Duration.ofHours(24)) to 5L
             Period.WEEK -> now.minus(Duration.ofDays(7)) to 60L
             Period.MONTH -> now.minus(Duration.ofDays(30)) to (60L * 24L)
+            Period.YEAR -> now.minus(Duration.ofDays(365)) to (60L * 24L * 7L)
         }
 
         val filtered = points.filter { it.at >= from }

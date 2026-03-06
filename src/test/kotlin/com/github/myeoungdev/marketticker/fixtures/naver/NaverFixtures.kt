@@ -311,6 +311,33 @@ object NaverFixtures {
     }
     """
 
+    const val JSON_CHART_DOMESTIC_DAY_SUCCESS = """
+    [
+      {
+        "localDate": "20260305",
+        "closePrice": 9230,
+        "openPrice": 9000,
+        "highPrice": 9880,
+        "lowPrice": 8600,
+        "accumulatedTradingVolume": 94858322,
+        "foreignRetentionRate": 0.37
+      }
+    ]
+    """
+
+    const val JSON_CHART_FOREIGN_YEAR_SUCCESS = """
+    [
+      {
+        "localDate": "20100101",
+        "closePrice": 0.385,
+        "openPrice": 0.4628,
+        "highPrice": 0.474,
+        "lowPrice": 0.2163,
+        "accumulatedTradingVolume": 186832539320
+      }
+    ]
+    """
+
     const val JSON_PRICE_DOMESTIC_SUCCESS = """
     {
        "pollingInterval":7000,

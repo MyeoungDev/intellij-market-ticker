@@ -58,8 +58,9 @@ data class NaverMarketIndicatorItem(
             return parsedRatio
         }
 
-        // fluctuationsRatio 값이 비어있거나 파싱 실패한 경우 전일 대비로 백업 계산
-        val delta = compareToPreviousClosePrice.parseCommaToDouble()
+        // fluctuationsRatio 값이 비어있거나 파싱 실패한 경우 전일 대비/등락폭으로 백업 계산
+        val delta = compareToPreviousClosePrice.parseCommaToDouble().takeIf { it != 0.0 }
+            ?: fluctuations.parseCommaToDouble()
         if (delta == 0.0) {
             return 0.0
         }

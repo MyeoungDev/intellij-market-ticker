@@ -27,6 +27,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.awt.BorderLayout
 import java.awt.Color
+import java.awt.Dimension
 import javax.swing.DefaultListModel
 import javax.swing.JLabel
 import javax.swing.JPanel
@@ -62,6 +63,7 @@ class MarketTickerView(
     private val chartView = ChartView()
 
     private val marketPulseTicker = MarketPulseTicker()
+    private val marketPulseContainer = JPanel(BorderLayout())
     private val bottomTabbedPane = JTabbedPane()
     private var latestIndicators: List<MarketIndicator> = emptyList()
 
@@ -101,6 +103,10 @@ class MarketTickerView(
         }
 
         marketPulseTicker.border = JBUI.Borders.empty(4, 8)
+        marketPulseContainer.add(marketPulseTicker, BorderLayout.CENTER)
+        marketPulseContainer.border = JBUI.Borders.customLineTop(Color(58, 58, 58))
+        marketPulseContainer.preferredSize = Dimension(0, 42)
+        marketPulseContainer.minimumSize = Dimension(0, 40)
         marketPulseTicker.isVisible = appSettingsService.isMarketPulseVisible()
         marketPulseTicker.setChunks(
             listOf(
@@ -122,7 +128,7 @@ class MarketTickerView(
             secondComponent = bottomTabbedPane
         }
         mainPanel.add(mainSplitter, BorderLayout.CENTER)
-        mainPanel.add(marketPulseTicker, BorderLayout.SOUTH)
+        mainPanel.add(marketPulseContainer, BorderLayout.SOUTH)
 
         watchlistView.onTickerSelected = { ticker, _ ->
             chartView.updateSelection(ticker)
@@ -154,9 +160,17 @@ class MarketTickerView(
     }
 
     private fun applyDisplaySettings() {
-        marketPulseTicker.isVisible = appSettingsService.isMarketPulseVisible()
-        if (!marketPulseTicker.isVisible) {
-            marketPulseTicker.setChunks(emptyList())
+        marketPulseTicker.isVisible = true
+        if (!appSettingsService.isMarketPulseVisible()) {
+            marketPulseTicker.setChunks(
+                listOf(
+                    MarketPulseTicker.Chunk(
+                        localizationService.text("한 줄 지표가 설정에서 꺼져 있습니다.", "Market pulse ticker is disabled in Settings."),
+                        Color(120, 120, 120),
+                        false
+                    )
+                )
+            )
         } else if (latestIndicators.isEmpty()) {
             marketPulseTicker.setChunks(
                 listOf(
@@ -245,7 +259,15 @@ class MarketTickerView(
 
     private fun renderMarketPulse() {
         if (!appSettingsService.isMarketPulseVisible()) {
-            marketPulseTicker.setChunks(emptyList())
+            marketPulseTicker.setChunks(
+                listOf(
+                    MarketPulseTicker.Chunk(
+                        localizationService.text("한 줄 지표가 설정에서 꺼져 있습니다.", "Market pulse ticker is disabled in Settings."),
+                        Color(120, 120, 120),
+                        false
+                    )
+                )
+            )
             return
         }
         if (latestIndicators.isEmpty()) {
@@ -282,7 +304,9 @@ class MarketTickerView(
                 chunks += MarketPulseTicker.Chunk("[$title] ", Color(140, 140, 140), true)
                 indicators.forEach { indicator ->
                     val sign = if (indicator.changeRate > 0) "+" else ""
-                    val rateText = "${sign}${localizationService.formatDecimal(indicator.changeRate, 2)}%"
+                    val rateText = if (indicator.changeRate.isFinite()) {
+                        "${sign}${localizationService.formatPercentFixed(indicator.changeRate, 2)}"
+                    } else localizationService.text("N/A", "N/A")
                     val priceText = localizationService.formatDecimal(indicator.currentPrice, 2)
                     val rateColor = when {
                         indicator.changeRate > 0 -> Color(217, 48, 37)
@@ -290,9 +314,9 @@ class MarketTickerView(
                         else -> Color(120, 120, 120)
                     }
                     val displayName = displayIndicatorName(indicator)
+                    val tickerText = "$displayName $priceText ($rateText) "
 
-                    chunks += MarketPulseTicker.Chunk("$displayName $priceText ", rateColor, false)
-                    chunks += MarketPulseTicker.Chunk("($rateText) ", rateColor, true)
+                    chunks += MarketPulseTicker.Chunk(tickerText, rateColor, true)
                     chunks += MarketPulseTicker.Chunk("   ", Color(120, 120, 120), false)
                 }
             }
@@ -300,6 +324,19 @@ class MarketTickerView(
             if (index < categoryOrder.lastIndex) {
                 chunks += MarketPulseTicker.Chunk(" | ", Color(100, 100, 100), true)
             }
+        }
+
+        if (chunks.none { it.text.isNotBlank() && it.text.trim() != "|" }) {
+            marketPulseTicker.setChunks(
+                listOf(
+                    MarketPulseTicker.Chunk(
+                        localizationService.text("지표 데이터가 없습니다.", "No market pulse data."),
+                        Color(120, 120, 120),
+                        false
+                    )
+                )
+            )
+            return
         }
 
         marketPulseTicker.setChunks(chunks)

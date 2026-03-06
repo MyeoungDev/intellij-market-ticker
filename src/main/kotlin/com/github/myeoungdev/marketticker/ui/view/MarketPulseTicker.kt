@@ -6,6 +6,7 @@ import java.awt.Font
 import java.awt.Graphics
 import java.awt.Graphics2D
 import java.awt.RenderingHints
+import javax.swing.JLabel
 import javax.swing.JComponent
 import javax.swing.Timer
 
@@ -38,6 +39,7 @@ class MarketPulseTicker : JComponent() {
 
     init {
         isOpaque = false
+        font = JLabel().font.deriveFont(14f)
         preferredSize = Dimension(240, 32)
         minimumSize = Dimension(140, 30)
     }
@@ -75,7 +77,8 @@ class MarketPulseTicker : JComponent() {
 
         val streamWidth = measureStreamWidth(g2, baseFont)
         if (streamWidth <= 0) return
-        val y = (height + g2.fontMetrics.ascent - g2.fontMetrics.descent) / 2
+        val metrics = g2.getFontMetrics(baseFont)
+        val y = ((height - metrics.height) / 2) + metrics.ascent
 
         // 화면을 꽉 채우도록 스트림을 반복 렌더링하여 좁은 폭에서도 항상 텍스트가 보이게 합니다.
         var x = offsetX
@@ -88,7 +91,7 @@ class MarketPulseTicker : JComponent() {
     private fun drawStream(g2: Graphics2D, startX: Int, baselineY: Int, baseFont: Font) {
         var x = startX
         chunks.forEach { chunk ->
-            val font = if (chunk.bold) baseFont.deriveFont(Font.BOLD.toFloat()) else baseFont
+            val font = if (chunk.bold) baseFont.deriveFont(baseFont.style or Font.BOLD) else baseFont
             g2.font = font
             g2.color = chunk.color
             g2.drawString(chunk.text, x, baselineY)
@@ -98,7 +101,7 @@ class MarketPulseTicker : JComponent() {
 
     private fun measureStreamWidth(g2: Graphics2D, baseFont: Font): Int {
         return chunks.sumOf { chunk ->
-            val font = if (chunk.bold) baseFont.deriveFont(Font.BOLD.toFloat()) else baseFont
+            val font = if (chunk.bold) baseFont.deriveFont(baseFont.style or Font.BOLD) else baseFont
             g2.font = font
             g2.fontMetrics.stringWidth(chunk.text)
         }
@@ -107,7 +110,7 @@ class MarketPulseTicker : JComponent() {
     private fun measureStreamWidth(): Int {
         val metrics = getFontMetrics(font)
         return chunks.sumOf { chunk ->
-            val f = if (chunk.bold) font.deriveFont(Font.BOLD.toFloat()) else font
+            val f = if (chunk.bold) font.deriveFont(font.style or Font.BOLD) else font
             metrics.stringWidth(chunk.text).takeIf { f == font } ?: getFontMetrics(f).stringWidth(chunk.text)
         }
     }
