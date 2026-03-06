@@ -1,20 +1,11 @@
 package com.github.myeoungdev.marketticker.infrastructure.naver
 
 import com.fasterxml.jackson.module.kotlin.readValue
+import com.github.myeoungdev.marketticker.application.service.PriceHistoryService
 import com.github.myeoungdev.marketticker.common.config.httpClient
 import com.github.myeoungdev.marketticker.common.config.objectMapper
-import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
-import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCoinPrice
-import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCryptoCandle
-import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCryptoChartResponse
-import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverRealtimeCoinPriceResponse
-import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverRealTimeStockPriceResponse
-import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverMarketIndicatorResponse
-import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverSearchItem
-import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverSearchResponse
-import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverStockChartCandle
-import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverStockPrice
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.*
 import com.intellij.openapi.application.ApplicationManager
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.net.URI
@@ -22,7 +13,9 @@ import java.net.URLEncoder
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 /**
@@ -45,7 +38,9 @@ class NaverClient(
     private val marketMetalUrl: String = "https://stock.naver.com/api/polling/marketindex/metals",
     private val marketEnergyUrl: String = "https://stock.naver.com/api/polling/marketindex/energy",
     private val domesticChartUrl: String = "https://api.stock.naver.com/chart/domestic/item",
-    private val foreignChartUrl: String = "https://api.stock.naver.com/chart/foreign/item"
+    private val foreignChartUrl: String = "https://api.stock.naver.com/chart/foreign/item",
+    private val newsListUrl: String = "https://stock.naver.com/api/domestic/news/list",
+    private val newsAggregateUrl: String = "https://stock.naver.com/api/domestic/news/aggregate/home"
 ) {
 
     companion object {
@@ -58,6 +53,7 @@ class NaverClient(
         private const val ORIGIN_KEY = "Origin"
         private const val ORIGIN_VALUE = "https://stock.naver.com"
         private val CHART_TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm")
+        private val NEWS_DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
     }
 
     /**
@@ -215,11 +211,83 @@ class NaverClient(
     }
 
     /**
+     * 국내 뉴스 리스트를 조회합니다.
+     */
+    fun fetchNewsList(
+        category: String = "FLASHNEWS",
+        page: Int = 1,
+        pageSize: Int = 15,
+        date: LocalDate = LocalDate.now(ZoneId.of("Asia/Seoul"))
+    ): List<NaverNewsArticle> {
+        checkBackgroundThread()
+        return try {
+            val normalizedCategory = category.trim().uppercase().ifBlank { "FLASHNEWS" }
+            val fullUrl = "$newsListUrl?category=$normalizedCategory&page=${page.coerceAtLeast(1)}" +
+                    "&pageSize=${pageSize.coerceIn(1, 50)}&date=${date.format(NEWS_DATE_FORMATTER)}"
+
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(fullUrl))
+                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+                .header(ACCEPT_KEY, ACCEPT_VALUE)
+                .header(ORIGIN_KEY, ORIGIN_VALUE)
+                .GET()
+                .build()
+
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            if (response.statusCode() != 200) {
+                logger.error { "Naver news list API Error [${response.statusCode()}]: $fullUrl" }
+                return emptyList()
+            }
+            val body: NaverNewsListResponse = objectMapper.readValue(response.body())
+            body.articles
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to fetch news list" }
+            emptyList()
+        }
+    }
+
+    /**
+     * 뉴스 홈의 랭킹 기사 목록을 조회합니다.
+     */
+    fun fetchRankingNews(limit: Int = 20): List<NaverNewsArticle> {
+        checkBackgroundThread()
+        return try {
+            val fullUrl =
+                "$newsAggregateUrl?flashNewsSize=4&mainNewsSize=6&rankingNewsSize=${
+                    limit.coerceIn(
+                        1,
+                        30
+                    )
+                }&overseasNewsSize=5&focusSize=5&moneyStorySize=20&noticeSize=5"
+
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(fullUrl))
+                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+                .header(ACCEPT_KEY, ACCEPT_VALUE)
+                .header(ORIGIN_KEY, ORIGIN_VALUE)
+                .GET()
+                .build()
+
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            if (response.statusCode() != 200) {
+                logger.error { "Naver ranking news API Error [${response.statusCode()}]: $fullUrl" }
+                return emptyList()
+            }
+
+            val body: NaverNewsAggregateResponse = objectMapper.readValue(response.body())
+            body.rankingNews.map { it.toNewsArticle() }
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to fetch ranking news" }
+            emptyList()
+        }
+    }
+
+    /**
      * 국내/해외 주식 차트 캔들 데이터를 조회합니다.
      */
     fun fetchStockChartCandles(
         ticker: Ticker,
-        period: com.github.myeoungdev.marketticker.application.service.PriceHistoryService.Period
+        period: PriceHistoryService.Period
     ): List<NaverStockChartCandle> {
         checkBackgroundThread()
         if (ticker.marketType.isCryptoMarket()) return emptyList()
@@ -227,21 +295,25 @@ class NaverClient(
         return try {
             val now = LocalDateTime.now(ticker.marketType.zoneId)
             val from = when (period) {
-                com.github.myeoungdev.marketticker.application.service.PriceHistoryService.Period.DAY -> now.minusYears(1)
-                com.github.myeoungdev.marketticker.application.service.PriceHistoryService.Period.WEEK -> now.minusYears(3)
-                com.github.myeoungdev.marketticker.application.service.PriceHistoryService.Period.MONTH -> now.minusYears(10)
-                com.github.myeoungdev.marketticker.application.service.PriceHistoryService.Period.YEAR -> now.minusYears(40)
+                PriceHistoryService.Period.DAY -> now.minusYears(1)
+                PriceHistoryService.Period.WEEK -> now.minusYears(3)
+                PriceHistoryService.Period.MONTH -> now.minusYears(10)
+                PriceHistoryService.Period.YEAR -> now.minusYears(40)
             }
             val periodPath = when (period) {
-                com.github.myeoungdev.marketticker.application.service.PriceHistoryService.Period.DAY -> "day"
-                com.github.myeoungdev.marketticker.application.service.PriceHistoryService.Period.WEEK -> "week"
-                com.github.myeoungdev.marketticker.application.service.PriceHistoryService.Period.MONTH -> "month"
-                com.github.myeoungdev.marketticker.application.service.PriceHistoryService.Period.YEAR -> "year"
+                PriceHistoryService.Period.DAY -> "day"
+                PriceHistoryService.Period.WEEK -> "week"
+                PriceHistoryService.Period.MONTH -> "month"
+                PriceHistoryService.Period.YEAR -> "year"
             }
             val symbol = if (ticker.marketType.isKoreanMarket()) ticker.symbol else ticker.tradingSymbol
             val baseUrl = if (ticker.marketType.isKoreanMarket()) domesticChartUrl else foreignChartUrl
             val fullUrl =
-                "$baseUrl/$symbol/$periodPath?startDateTime=${from.format(CHART_TIME_FORMATTER)}&endDateTime=${now.format(CHART_TIME_FORMATTER)}"
+                "$baseUrl/$symbol/$periodPath?startDateTime=${from.format(CHART_TIME_FORMATTER)}&endDateTime=${
+                    now.format(
+                        CHART_TIME_FORMATTER
+                    )
+                }"
 
             val request = HttpRequest.newBuilder()
                 .uri(URI.create(fullUrl))

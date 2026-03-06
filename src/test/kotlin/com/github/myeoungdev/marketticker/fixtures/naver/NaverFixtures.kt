@@ -338,6 +338,39 @@ object NaverFixtures {
     ]
     """
 
+    const val JSON_NEWS_LIST_FLASH_SUCCESS = """
+    {
+      "articles": [
+        {
+          "officeId": "003",
+          "officeHname": "뉴시스",
+          "articleId": "0013805290",
+          "title": "테스트 뉴스 제목",
+          "datetime": "2026-03-06 09:43:54",
+          "type": "1",
+          "subcontent": "테스트 본문",
+          "thumbUrl": "https://imgnews.pstatic.net/test.jpg"
+        }
+      ],
+      "date": "20260306",
+      "isFirstDate": true
+    }
+    """
+
+    const val JSON_NEWS_AGGREGATE_RANKING_SUCCESS = """
+    {
+      "rankingNews": [
+        {
+          "title": "랭킹 뉴스 테스트",
+          "url": "https://n.news.naver.com/article/015/0005258767",
+          "rank": "1",
+          "press": "한국경제",
+          "time": "1시간 전"
+        }
+      ]
+    }
+    """
+
     const val JSON_PRICE_DOMESTIC_SUCCESS = """
     {
        "pollingInterval":7000,

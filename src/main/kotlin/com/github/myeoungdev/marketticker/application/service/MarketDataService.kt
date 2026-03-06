@@ -116,7 +116,8 @@ class MarketDataService(
      */
     fun addTicker(ticker: Ticker) {
         watchlistRepository.addTicker(ticker)
-        ApplicationManager.getApplication().messageBus.syncPublisher(WatchlistEntryUpdateListener.TOPIC).onWatchlistEntryUpdated()
+        ApplicationManager.getApplication().messageBus.syncPublisher(WatchlistEntryUpdateListener.TOPIC)
+            .onWatchlistEntryUpdated()
         forceRefresh()
     }
 
@@ -127,7 +128,8 @@ class MarketDataService(
      */
     fun removeTicker(symbol: String, marketType: MarketType? = null) {
         watchlistRepository.removeTicker(symbol, marketType?.name)
-        ApplicationManager.getApplication().messageBus.syncPublisher(WatchlistEntryUpdateListener.TOPIC).onWatchlistEntryUpdated()
+        ApplicationManager.getApplication().messageBus.syncPublisher(WatchlistEntryUpdateListener.TOPIC)
+            .onWatchlistEntryUpdated()
         forceRefresh()
     }
 
@@ -138,7 +140,8 @@ class MarketDataService(
      */
     fun updateWatchlistEntryPortfolio(entry: WatchlistRepository.WatchlistEntry) { // Changed parameter type
         watchlistRepository.updateWatchlistEntryPortfolio(entry) // Changed method call
-        ApplicationManager.getApplication().messageBus.syncPublisher(WatchlistEntryUpdateListener.TOPIC).onWatchlistEntryUpdated()
+        ApplicationManager.getApplication().messageBus.syncPublisher(WatchlistEntryUpdateListener.TOPIC)
+            .onWatchlistEntryUpdated()
         forceRefresh()
     }
 

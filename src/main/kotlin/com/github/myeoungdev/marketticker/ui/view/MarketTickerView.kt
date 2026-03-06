@@ -1,10 +1,10 @@
 package com.github.myeoungdev.marketticker.ui.view
 
+import com.github.myeoungdev.marketticker.application.listener.SettingsUpdateListener
+import com.github.myeoungdev.marketticker.application.service.AppSettingsService
 import com.github.myeoungdev.marketticker.application.service.LocalizationService
 import com.github.myeoungdev.marketticker.application.service.MarketDataService
 import com.github.myeoungdev.marketticker.application.service.MarketIndicatorService
-import com.github.myeoungdev.marketticker.application.service.AppSettingsService
-import com.github.myeoungdev.marketticker.application.listener.SettingsUpdateListener
 import com.github.myeoungdev.marketticker.domain.model.IndicatorCategory
 import com.github.myeoungdev.marketticker.domain.model.MarketIndicator
 import com.github.myeoungdev.marketticker.domain.model.Ticker
@@ -17,14 +17,7 @@ import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.JBUI
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.Job
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.delay
-import kotlinx.coroutines.launch
-import kotlinx.coroutines.withContext
+import kotlinx.coroutines.*
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Dimension
@@ -61,10 +54,12 @@ class MarketTickerView(
     private val portfolioView = PortfolioView()
     private val heatmapView = HeatmapView()
     private val chartView = ChartView()
+    private val newsView = NewsView()
 
     private val marketPulseTicker = MarketPulseTicker()
     private val marketPulseContainer = JPanel(BorderLayout())
     private val bottomTabbedPane = JTabbedPane()
+    private val mainTabbedPane = JTabbedPane()
     private var latestIndicators: List<MarketIndicator> = emptyList()
 
     val mainPanel = JPanel(BorderLayout())
@@ -127,8 +122,14 @@ class MarketTickerView(
             firstComponent = searchPanel
             secondComponent = bottomTabbedPane
         }
-        mainPanel.add(mainSplitter, BorderLayout.CENTER)
-        mainPanel.add(marketPulseContainer, BorderLayout.SOUTH)
+        val stockMainPanel = JPanel(BorderLayout()).apply {
+            add(mainSplitter, BorderLayout.CENTER)
+            add(marketPulseContainer, BorderLayout.SOUTH)
+        }
+
+        mainTabbedPane.addTab(localizationService.text("주식", "Stocks"), stockMainPanel)
+        mainTabbedPane.addTab(localizationService.text("뉴스", "News"), newsView)
+        mainPanel.add(mainTabbedPane, BorderLayout.CENTER)
 
         watchlistView.onTickerSelected = { ticker, _ ->
             chartView.updateSelection(ticker)
@@ -165,7 +166,10 @@ class MarketTickerView(
             marketPulseTicker.setChunks(
                 listOf(
                     MarketPulseTicker.Chunk(
-                        localizationService.text("한 줄 지표가 설정에서 꺼져 있습니다.", "Market pulse ticker is disabled in Settings."),
+                        localizationService.text(
+                            "한 줄 지표가 설정에서 꺼져 있습니다.",
+                            "Market pulse ticker is disabled in Settings."
+                        ),
                         Color(120, 120, 120),
                         false
                     )
@@ -262,7 +266,10 @@ class MarketTickerView(
             marketPulseTicker.setChunks(
                 listOf(
                     MarketPulseTicker.Chunk(
-                        localizationService.text("한 줄 지표가 설정에서 꺼져 있습니다.", "Market pulse ticker is disabled in Settings."),
+                        localizationService.text(
+                            "한 줄 지표가 설정에서 꺼져 있습니다.",
+                            "Market pulse ticker is disabled in Settings."
+                        ),
                         Color(120, 120, 120),
                         false
                     )

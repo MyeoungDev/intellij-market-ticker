@@ -39,6 +39,7 @@ class TickerSchedulerService(
                             marketDataService.refreshPrices()
                             delay(appSettingsService.getFixedIntervalSec() * 1000L)
                         }
+
                         AppSettingsService.RefreshMode.AUTO -> {
                             marketDataService.refreshPrices()
                             val hasOpenMarket = marketDataService.currentPrices.value.any {
