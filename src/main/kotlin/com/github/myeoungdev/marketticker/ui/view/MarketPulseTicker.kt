@@ -91,7 +91,7 @@ class MarketPulseTicker : JComponent() {
     private fun drawStream(g2: Graphics2D, startX: Int, baselineY: Int, baseFont: Font) {
         var x = startX
         chunks.forEach { chunk ->
-            val font = if (chunk.bold) baseFont.deriveFont(Font.BOLD.toFloat()) else baseFont
+            val font = if (chunk.bold) baseFont.deriveFont(baseFont.style or Font.BOLD) else baseFont
             g2.font = font
             g2.color = chunk.color
             g2.drawString(chunk.text, x, baselineY)
@@ -101,7 +101,7 @@ class MarketPulseTicker : JComponent() {
 
     private fun measureStreamWidth(g2: Graphics2D, baseFont: Font): Int {
         return chunks.sumOf { chunk ->
-            val font = if (chunk.bold) baseFont.deriveFont(Font.BOLD.toFloat()) else baseFont
+            val font = if (chunk.bold) baseFont.deriveFont(baseFont.style or Font.BOLD) else baseFont
             g2.font = font
             g2.fontMetrics.stringWidth(chunk.text)
         }
@@ -110,7 +110,7 @@ class MarketPulseTicker : JComponent() {
     private fun measureStreamWidth(): Int {
         val metrics = getFontMetrics(font)
         return chunks.sumOf { chunk ->
-            val f = if (chunk.bold) font.deriveFont(Font.BOLD.toFloat()) else font
+            val f = if (chunk.bold) font.deriveFont(font.style or Font.BOLD) else font
             metrics.stringWidth(chunk.text).takeIf { f == font } ?: getFontMetrics(f).stringWidth(chunk.text)
         }
     }
