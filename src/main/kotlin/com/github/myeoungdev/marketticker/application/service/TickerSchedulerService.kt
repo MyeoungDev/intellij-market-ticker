@@ -26,6 +26,7 @@ class TickerSchedulerService(
 
     init {
         logger.info { "Scheduler Started." }
+        marketDataService.forceRefresh()
         startPolling()
     }
 

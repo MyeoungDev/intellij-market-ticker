@@ -24,6 +24,8 @@
                 displayName="Market Ticker"
                 instance="com.github.myeoungdev.marketticker.ui.settings.MarketTickerConfigurable"/>
 
+        <postStartupActivity implementation="com.github.myeoungdev.marketticker.startup.MarketTickerStartupActivity"/>
+
         <notificationGroup id="Market Ticker Notification"
                            displayType="BALLOON"/>
     </extensions>

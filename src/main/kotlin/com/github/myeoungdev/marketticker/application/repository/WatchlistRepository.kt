@@ -1,6 +1,7 @@
 package com.github.myeoungdev.marketticker.application.repository
 
 import com.github.myeoungdev.marketticker.domain.model.Ticker
+import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.intellij.openapi.components.PersistentStateComponent
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
@@ -39,12 +40,23 @@ class WatchlistRepository : PersistentStateComponent<WatchlistRepository.State> 
 
     override fun getState(): State = marketTickerState
 
+    /**
+     * 저장된 상태를 로드하면서 구버전/누락 필드를 현재 스키마에 맞게 보정합니다.
+     */
     override fun loadState(state: State) {
-        marketTickerState = state
+        marketTickerState = State(
+            tickers = state.tickers
+                .map { normalizeEntry(it) }
+                .toMutableList(),
+            updateIntervalSec = state.updateIntervalSec
+        )
     }
 
+    /**
+     * 외부로는 내부 상태의 복사본만 반환합니다.
+     */
     fun getWatchlistEntries(): List<WatchlistEntry> {
-        return marketTickerState.tickers.map { it }
+        return marketTickerState.tickers.map { it.copy() }
     }
 
     fun addTicker(ticker: Ticker) {
@@ -58,7 +70,8 @@ class WatchlistRepository : PersistentStateComponent<WatchlistRepository.State> 
         }
 
         marketTickerState.tickers.add(
-            WatchlistEntry(
+            normalizeEntry(
+                WatchlistEntry(
                 ticker.symbol,
                 ticker.tradingSymbol,
                 ticker.name,
@@ -70,6 +83,7 @@ class WatchlistRepository : PersistentStateComponent<WatchlistRepository.State> 
                 null,
                 0.0,
                 defaultGroupTagFor(ticker.marketType.name)
+                )
             )
         )
     }
@@ -98,6 +112,19 @@ class WatchlistRepository : PersistentStateComponent<WatchlistRepository.State> 
         } else {
             logger.warn { "Watchlist entry ${updatedEntry.name} not found in watchlist for portfolio update." }
         }
+    }
+
+    private fun normalizeEntry(entry: WatchlistEntry): WatchlistEntry {
+        val normalizedMarketType = MarketType.of(entry.marketType).name
+        val normalizedTradingSymbol = entry.tradingSymbol.ifBlank { entry.symbol }
+        val normalizedGroupTag = entry.groupTag.ifBlank { defaultGroupTagFor(normalizedMarketType) }
+
+        return entry.copy(
+            tradingSymbol = normalizedTradingSymbol,
+            marketType = normalizedMarketType,
+            realizedProfitLoss = entry.realizedProfitLoss ?: 0.0,
+            groupTag = normalizedGroupTag
+        )
     }
 
     private fun defaultGroupTagFor(marketType: String): String {

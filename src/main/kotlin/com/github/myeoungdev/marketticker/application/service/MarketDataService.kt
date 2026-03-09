@@ -21,6 +21,8 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.sync.Mutex
+import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
 
 private val logger = KotlinLogging.logger {}
@@ -45,45 +47,45 @@ class MarketDataService(
 
     private val _currentPrices = MutableStateFlow<List<TickerPrice>>(emptyList())
     val currentPrices: StateFlow<List<TickerPrice>> = _currentPrices.asStateFlow()
+    private val refreshMutex = Mutex()
 
     /**
      * 등록된 Ticker 의 실시간 가격을 갱신하는 메서드 입니다.
      */
     suspend fun refreshPrices() {
-        val watchlistEntries = watchlistRepository.getWatchlistEntries() // Changed method call
+        refreshMutex.withLock {
+            val watchlistEntries = watchlistRepository.getWatchlistEntries()
 
-        if (watchlistEntries.isEmpty()) return
-
-        try {
-            // Map WatchlistEntry to Ticker for PriceProvider
-            val tickersForPriceProvider = watchlistEntries.map { entry ->
-                Ticker(
-                    entry.symbol,
-                    entry.tradingSymbol,
-                    entry.name,
-                    MarketType.valueOf(entry.marketType),
-                    entry.nationCode,
-                    entry.nationName
-                )
+            if (watchlistEntries.isEmpty()) {
+                _currentPrices.emit(emptyList())
+                broadcastUpdate(emptyList())
+                return
             }
-            val prices = priceProvider.getPrices(tickersForPriceProvider) // Adjusted parameter
-            logger.info { "Fetched prices count: ${prices.size}" }
 
-            _currentPrices.emit(prices)
-            priceHistoryService.append(prices)
-
-            notificationService.checkAndNotify(prices)
-
-            ProjectManager.getInstance().openProjects.forEach { project ->
-                if (!project.isDisposed) {
-                    project.messageBus.syncPublisher(TickerUpdateListener.TOPIC).onTickerUpdated(prices)
+            try {
+                val tickersForPriceProvider = watchlistEntries.map { entry ->
+                    Ticker(
+                        entry.symbol,
+                        entry.tradingSymbol.ifBlank { entry.symbol },
+                        entry.name,
+                        MarketType.of(entry.marketType),
+                        entry.nationCode,
+                        entry.nationName
+                    )
                 }
+
+                val prices = withContext(Dispatchers.IO) {
+                    priceProvider.getPrices(tickersForPriceProvider)
+                }
+                logger.info { "Fetched prices count: ${prices.size}" }
+
+                _currentPrices.emit(prices)
+                priceHistoryService.append(prices)
+                notificationService.checkAndNotify(prices)
+                broadcastUpdate(prices)
+            } catch (e: Exception) {
+                logger.error(e) { "Failed to refresh prices" }
             }
-
-            broadcastUpdate(prices)
-
-        } catch (e: Exception) {
-            logger.error(e) { "Failed to refresh prices" }
         }
     }
 
@@ -165,7 +167,7 @@ class MarketDataService(
      * 강제로 가격을 갱신하는 메서드 입니다.
      */
     fun forceRefresh() {
-        cs.launch {
+        cs.launch(Dispatchers.IO) {
             refreshPrices()
         }
     }
