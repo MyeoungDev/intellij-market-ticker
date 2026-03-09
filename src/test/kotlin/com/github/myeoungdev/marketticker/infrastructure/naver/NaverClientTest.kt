@@ -53,7 +53,9 @@ class NaverClientTest {
             domesticChartUrl = "$baseUrl/chart/domestic/item",
             foreignChartUrl = "$baseUrl/chart/foreign/item",
             newsListUrl = "$baseUrl/news/list",
-            newsAggregateUrl = "$baseUrl/news/aggregate/home"
+            worldNewsUrl = "$baseUrl/foreign/news/worldNews",
+            newsAggregateUrl = "$baseUrl/news/aggregate/home",
+            noticeListUrl = "$baseUrl/home/noticeList"
         )
     }
 
@@ -387,20 +389,84 @@ class NaverClientTest {
         @Test
         fun `랭킹 뉴스 API 성공 시 랭킹 기사 목록을 반환한다`() {
             wireMockServer.stubFor(
+                get(urlPathMatching("/news/list.*"))
+                    .withQueryParam("category", equalTo("RANKNEWS"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", "application/json")
+                            .withBody(NaverFixtures.JSON_NEWS_LIST_RANK_SUCCESS)
+                    )
+            )
+
+            val result = naverClient.fetchNewsList(category = "RANKNEWS")
+
+            assertThat(result).hasSize(1)
+            assertThat(result.first().title).contains("외국인")
+            assertThat(result.first().ranking).isEqualTo("1")
+            assertThat(result.first().sumCount).isEqualTo("29885")
+            assertThat(result.first().subcontent).contains("요약")
+            assertThat(result.first().articleUrl()).isEqualTo("https://n.news.naver.com/article/015/0005260111")
+        }
+
+        @Test
+        fun `해외 뉴스 API 성공 시 기사 목록을 반환한다`() {
+            wireMockServer.stubFor(
+                get(urlPathMatching("/foreign/news/worldNews.*"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", "application/json")
+                            .withBody(NaverFixtures.JSON_WORLD_NEWS_SUCCESS)
+                    )
+            )
+
+            val result = naverClient.fetchWorldNews(page = 1, pageSize = 15)
+
+            assertThat(result).hasSize(1)
+            assertThat(result.first().title).contains("우크라이나")
+            assertThat(result.first().officeHname).isEqualTo("로이터")
+            assertThat(result.first().articleUrl()).isEqualTo("https://stock.naver.com/news/worldnews/2509419")
+            assertThat(result.first().subcontent).contains("전력 수입")
+        }
+
+        @Test
+        fun `뉴스 홈 집계 API 성공 시 헤드라인과 공지 데이터를 파싱한다`() {
+            wireMockServer.stubFor(
                 get(urlPathMatching("/news/aggregate/home.*"))
                     .willReturn(
                         aResponse()
                             .withStatus(200)
                             .withHeader("Content-Type", "application/json")
-                            .withBody(NaverFixtures.JSON_NEWS_AGGREGATE_RANKING_SUCCESS)
+                            .withBody(NaverFixtures.JSON_NEWS_HOME_SUCCESS)
                     )
             )
 
-            val result = naverClient.fetchRankingNews(limit = 5)
+            val result = naverClient.fetchNewsHome()
 
-            assertThat(result).hasSize(1)
-            assertThat(result.first().title).isEqualTo("랭킹 뉴스 테스트")
-            assertThat(result.first().articleUrl()).isEqualTo("https://n.news.naver.com/article/015/0005258767")
+            assertThat(result).isNotNull
+            assertThat(result?.flashNews).hasSize(1)
+            assertThat(result?.newsFocus).hasSize(1)
+            assertThat(result?.newsNotice?.items).hasSize(1)
+        }
+
+        @Test
+        fun `공지 리스트 API 성공 시 공지 요약 목록을 반환한다`() {
+            wireMockServer.stubFor(
+                get(urlPathMatching("/home/noticeList.*"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", "application/json")
+                            .withBody(NaverFixtures.JSON_NOTICE_LIST_SUCCESS)
+                    )
+            )
+
+            val result = naverClient.fetchNoticeList(page = 1, pageSize = 5)
+
+            assertThat(result).hasSize(2)
+            assertThat(result.first().title).contains("서머타임")
+            assertThat(result.first().categoryColor).isEqualTo("green")
         }
     }
 

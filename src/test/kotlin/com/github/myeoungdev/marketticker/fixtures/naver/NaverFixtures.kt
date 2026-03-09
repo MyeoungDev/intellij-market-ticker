@@ -357,6 +357,45 @@ object NaverFixtures {
     }
     """
 
+    const val JSON_NEWS_LIST_RANK_SUCCESS = """
+    {
+      "articles": [
+        {
+          "officeId": "015",
+          "officeHname": "한국경제",
+          "articleId": "0005260111",
+          "title": "코스피 '10조' 팔더니…5일 만에 외국인 '1300억' 담은 회사 [종목+]",
+          "datetime": "2026-03-09 20:01:14",
+          "type": "1",
+          "subcontent": "외국인 수급과 건설주 유입 배경을 다룬 기사 요약입니다.",
+          "ranking": "1",
+          "prevRanking": "2",
+          "sumCount": "29885",
+          "thumbUrl": "https://imgnews.pstatic.net/image/origin/015/2026/03/09/5260111.jpg?type=nf206_146"
+        }
+      ],
+      "date": "20260309",
+      "isFirstDate": false
+    }
+    """
+
+    const val JSON_WORLD_NEWS_SUCCESS = """
+    [
+      {
+        "oid": "fnGuide",
+        "ohnm": "로이터",
+        "aid": "2509419",
+        "tit": "우크라이나의 전력 수입이 원자력 발전소 수리로 증가한다고 ExPro 컨설팅은 말합니다.",
+        "dt": "20260310001018",
+        "updatedt": "20260310001018",
+        "type": "0",
+        "subcontent": "우크라이나의 전력 수입 증가 배경을 다룬 해외 뉴스 요약입니다.",
+        "thumbUrl": null,
+        "relatedItems": []
+      }
+    ]
+    """
+
     const val JSON_NEWS_AGGREGATE_RANKING_SUCCESS = """
     {
       "rankingNews": [
@@ -369,6 +408,120 @@ object NaverFixtures {
         }
       ]
     }
+    """
+
+    const val JSON_NEWS_HOME_SUCCESS = """
+    {
+      "flashNews": [
+        {
+          "url": "https://n.news.naver.com/article/018/0006231338",
+          "thumbnailUrl": "https://imgnews.pstatic.net/image/origin/018/2026/03/09/6231338.jpg",
+          "title": "감산에 100달러 넘어선 국제유가",
+          "leadtext": "국제유가가 100달러 선에서 거래되고 있다.",
+          "press": "이데일리",
+          "time": "2026-03-09T23:50:14",
+          "isVideo": false,
+          "isOverseas": false
+        }
+      ],
+      "mainNews": [
+        {
+          "url": "https://n.news.naver.com/article/001/0015948546",
+          "thumbnailUrl": "https://imgnews.pstatic.net/image/origin/001/2026/03/09/15948546.jpg",
+          "title": "뉴욕증시, 유가 100달러 돌파에 하락 출발",
+          "leadtext": "뉴욕증시 3대 지수가 일제히 하락 출발했다.",
+          "press": "연합뉴스",
+          "time": "2026-03-09T23:28:53",
+          "isVideo": false,
+          "isOverseas": false
+        }
+      ],
+      "rankingNews": [
+        {
+          "title": "랭킹 뉴스 테스트",
+          "url": "https://n.news.naver.com/article/015/0005258767",
+          "rank": "1",
+          "press": "한국경제",
+          "time": "1시간 전",
+          "rankDiff": 2
+        }
+      ],
+      "overseasNews": [
+        {
+          "url": "/news/worldnews/2509353",
+          "title": "미국 원자력 발전 용량 증가",
+          "officeHname": "로이터",
+          "datetime": "25분 전",
+          "aid": "2509353",
+          "subcontent": "해외 시장 관련 기사 요약입니다.",
+          "isVideo": false
+        }
+      ],
+      "newsFocus": [
+        {
+          "categoryUrl": "/news/section?tab=market-outlook",
+          "category": "시황·전망",
+          "news": [
+            {
+              "title": "유가 119달러 쇼크에 아시아증시 패닉",
+              "press": "매일경제",
+              "time": "2026-03-09T13:28:08.000Z",
+              "url": "https://n.news.naver.com/mnews/article/009/0005647629",
+              "thumbnailUrl": "http://imgnews.naver.net/image/thumb154/009/2026/03/09/5647629.jpg",
+              "isVideo": false
+            }
+          ]
+        }
+      ],
+      "moneyStory": [
+        {
+          "url": "https://story.pay.naver.com/content/2285_3_C1",
+          "photo": {
+            "src": "https://moneystory-phinf.pstatic.net/sample.jpg",
+            "alt": "머니스토리 이미지"
+          },
+          "title": "100달러 돌파한 유가, 이번 주 시행",
+          "categoryName": "경제 브리핑 · Daily 국내 경제",
+          "date": "2026. 03. 09.",
+          "viewCount": 21117
+        }
+      ],
+      "newsNotice": {
+        "items": [
+          {
+            "no": "1609348",
+            "comment": "-",
+            "datetime": "2026-03-10",
+            "title": "티웨이항공 공매도 과열종목 지정",
+            "itemName": "티웨이항공",
+            "itemcode": "091810",
+            "causeCode": "03040",
+            "noticeTypeName": "시장조치",
+            "contents": "<html><body><p>공매도 거래 금지 적용</p></body></html>"
+          }
+        ],
+        "totalElements": "769"
+      }
+    }
+    """
+
+    const val JSON_NOTICE_LIST_SUCCESS = """
+    [
+      {
+        "noticeId": "142",
+        "title": "미국/유럽 서머타임 적용에 따른 거래시간 변경 안내",
+        "category": "거래시간",
+        "categoryColor": "green",
+        "createdAt": "2026-03-09T14:18:12"
+      },
+      {
+        "noticeId": "141",
+        "title": "코스피 서킷브레이커 발동, 코스닥 매도 사이드카",
+        "category": "주의",
+        "categoryColor": "red",
+        "createdAt": "2026-03-09T10:46:08"
+      }
+    ]
     """
 
     const val JSON_PRICE_DOMESTIC_SUCCESS = """
