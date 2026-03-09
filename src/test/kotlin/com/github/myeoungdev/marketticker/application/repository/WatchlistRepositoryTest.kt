@@ -122,4 +122,37 @@ class WatchlistRepositoryTest {
         assertEquals(DEFAULT_TICKER.name, list[0].name)
     }
 
+    @Test
+    fun `저장 상태 로드시 비어있는 tradingSymbol 과 groupTag 를 보정한다`() {
+        val loadedState = WatchlistRepository.State()
+        loadedState.tickers.add(
+            WatchlistRepository.WatchlistEntry(
+                symbol = DEFAULT_TICKER.symbol,
+                tradingSymbol = "",
+                name = DEFAULT_TICKER.name,
+                marketType = DEFAULT_TICKER.marketType.name,
+                nationCode = DEFAULT_TICKER.nationCode,
+                nationName = DEFAULT_TICKER.nationName,
+                groupTag = ""
+            )
+        )
+
+        service.loadState(loadedState)
+
+        val entry = service.getWatchlistEntries().single()
+        assertEquals(DEFAULT_TICKER.symbol, entry.tradingSymbol)
+        assertEquals("국내", entry.groupTag)
+    }
+
+    @Test
+    fun `getWatchlistEntries 는 내부 상태의 복사본을 반환한다`() {
+        service.addTicker(DEFAULT_TICKER)
+
+        val first = service.getWatchlistEntries().single()
+        first.name = "변경"
+
+        val second = service.getWatchlistEntries().single()
+        assertEquals(DEFAULT_TICKER.name, second.name)
+    }
+
 }
