@@ -32,6 +32,7 @@ class NaverClient(
     private val domesticPriceUrl: String = "https://polling.finance.naver.com/api/realtime/domestic/stock",
     private val worldPriceUrl: String = "https://polling.finance.naver.com/api/realtime/worldstock/stock",
     private val coinPriceUrl: String = "https://polling.finance.naver.com/api/realtime/coin/price",
+    private val coinOverviewUrl: String = "https://stock.naver.com/api/coin/price",
     private val cryptoChartUrl: String = "https://m.stock.naver.com/front-api/chart/cryptoChartData",
     private val domesticIndexUrl: String = "https://stock.naver.com/api/polling/domestic/index",
     private val worldIndexUrl: String = "https://stock.naver.com/api/polling/worldstock/index",
@@ -173,20 +174,51 @@ class NaverClient(
     }
 
     /**
+     * 코인 상세 시세를 조회합니다.
+     */
+    fun fetchCoinOverview(exchangeType: String, nfTicker: String): NaverCoinOverview? {
+        checkBackgroundThread()
+
+        return try {
+            val fullUrl = "$coinOverviewUrl/$exchangeType/$nfTicker"
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(fullUrl))
+                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+                .header(ACCEPT_KEY, ACCEPT_VALUE)
+                .header(ORIGIN_KEY, ORIGIN_VALUE)
+                .GET()
+                .build()
+
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            if (response.statusCode() != 200) {
+                logger.error { "Naver coin overview API Error [${response.statusCode()}]: $fullUrl" }
+                return null
+            }
+
+            objectMapper.readValue<NaverCoinOverview>(response.body())
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to fetch coin overview: $exchangeType/$nfTicker" }
+            null
+        }
+    }
+
+    /**
      * 코인 일봉 차트 데이터를 조회합니다.
      */
     fun fetchCryptoChartCandles(
         exchangeType: String,
         nfTicker: String,
         marketType: String = "KRW",
-        from: LocalDateTime
+        from: LocalDateTime,
+        to: LocalDateTime = LocalDateTime.now()
     ): List<NaverCryptoCandle> {
         checkBackgroundThread()
 
         return try {
             val fromEncoded = URLEncoder.encode(from.toString(), Charsets.UTF_8)
+            val toEncoded = URLEncoder.encode(to.toString(), Charsets.UTF_8)
             val fullUrl =
-                "$cryptoChartUrl?exchangeType=$exchangeType&nfTicker=$nfTicker&marketType=$marketType&type=days&interval=1&from=$fromEncoded"
+                "$cryptoChartUrl?exchangeType=$exchangeType&nfTicker=$nfTicker&marketType=$marketType&type=days&interval=1&from=$fromEncoded&to=$toEncoded"
 
             val request = HttpRequest.newBuilder()
                 .uri(URI.create(fullUrl))

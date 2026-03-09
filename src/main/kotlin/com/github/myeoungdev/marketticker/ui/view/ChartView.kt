@@ -69,19 +69,7 @@ class ChartView : JPanel(BorderLayout()) {
 
         scope.launch {
             val data = if (marketType.isCryptoMarket()) {
-                val from = when (period) {
-                    PriceHistoryService.Period.DAY -> LocalDateTime.now().minusDays(1)
-                    PriceHistoryService.Period.WEEK -> LocalDateTime.now().minusDays(7)
-                    PriceHistoryService.Period.MONTH -> LocalDateTime.now().minusDays(30)
-                    PriceHistoryService.Period.YEAR -> LocalDateTime.now().minusDays(365)
-                }
-
-                naverClient.fetchCryptoChartCandles(
-                    exchangeType = marketType.name,
-                    nfTicker = ticker.symbol,
-                    marketType = "KRW",
-                    from = from
-                ).map { it.toPriceHistoryCandle() }
+                loadCryptoCandles(ticker, marketType)
             } else {
                 val zoneId: ZoneId = marketType.zoneId
                 val stockChartCandles = naverClient.fetchStockChartCandles(ticker, period)
@@ -93,7 +81,7 @@ class ChartView : JPanel(BorderLayout()) {
             }
 
             ApplicationManager.getApplication().invokeLater {
-                candles = data.takeLast(80)
+                candles = data.takeLast(visibleCandleLimit())
                 ma5 = historyService.movingAverage(candles, 5)
                 ma20 = historyService.movingAverage(candles, 20)
                 canvas.repaint()
@@ -104,6 +92,52 @@ class ChartView : JPanel(BorderLayout()) {
     override fun removeNotify() {
         super.removeNotify()
         scope.cancel()
+    }
+
+    /**
+     * 코인 차트는 Naver 일봉 API를 기본으로 사용하고, 오늘 상세 시세로 마지막 캔들을 보정합니다.
+     */
+    private fun loadCryptoCandles(ticker: Ticker, marketType: MarketType): List<PriceHistoryService.Candle> {
+        val now = LocalDateTime.now(marketType.zoneId)
+        val from = when (period) {
+            PriceHistoryService.Period.DAY -> now.minusDays(30)
+            PriceHistoryService.Period.WEEK -> now.minusDays(90)
+            PriceHistoryService.Period.MONTH -> now.minusDays(180)
+            PriceHistoryService.Period.YEAR -> now.minusDays(365 * 3L)
+        }
+
+        val chartCandles = naverClient.fetchCryptoChartCandles(
+            exchangeType = marketType.name,
+            nfTicker = ticker.symbol,
+            marketType = "KRW",
+            from = from,
+            to = now
+        ).map { it.toPriceHistoryCandle() }
+
+        val mergedCandles = naverClient.fetchCoinOverview(marketType.name, ticker.symbol)
+            ?.mergeDailyCandles(chartCandles, marketType.zoneId)
+            ?: chartCandles
+
+        if (period != PriceHistoryService.Period.DAY || mergedCandles.isNotEmpty()) {
+            return mergedCandles
+        }
+
+        return historyService.buildCandles(
+            symbol = ticker.symbol,
+            marketType = ticker.marketType.name,
+            period = period,
+            zoneId = marketType.zoneId
+        )
+    }
+
+    /**
+     * 기간별 표시 캔들 수를 제한해 차트 밀도를 유지합니다.
+     */
+    private fun visibleCandleLimit(): Int = when (period) {
+        PriceHistoryService.Period.DAY -> 30
+        PriceHistoryService.Period.WEEK -> 45
+        PriceHistoryService.Period.MONTH -> 60
+        PriceHistoryService.Period.YEAR -> 80
     }
 
     private inner class ChartCanvas : JPanel() {
@@ -124,8 +158,8 @@ class ChartView : JPanel(BorderLayout()) {
                 return
             }
 
-            val topPadding = 20
-            val bottomPadding = 124
+            val topPadding = 16
+            val bottomPadding = 88
             val leftPadding = 40
             val rightPadding = 20
 
@@ -164,12 +198,12 @@ class ChartView : JPanel(BorderLayout()) {
                 val bodyHeight = kotlin.math.abs(closeY - openY).coerceAtLeast(2)
                 g2.fillRect(x + 1, bodyTop, candleWidth.toInt().coerceAtLeast(2) - 2, bodyHeight)
 
-                val volumeTop = height - 96
-                val volumeHeight = ((candle.volume.toDouble() / maxVolume) * 56.0).toInt().coerceAtLeast(1)
+                val volumeTop = height - 58
+                val volumeHeight = ((candle.volume.toDouble() / maxVolume) * 28.0).toInt().coerceAtLeast(1)
                 g2.color = if (isUp) Color(255, 138, 128) else Color(130, 177, 255)
                 g2.fillRect(
                     x + 1,
-                    volumeTop + (56 - volumeHeight),
+                    volumeTop + (28 - volumeHeight),
                     candleWidth.toInt().coerceAtLeast(2) - 2,
                     volumeHeight
                 )
@@ -203,15 +237,15 @@ class ChartView : JPanel(BorderLayout()) {
             drawAxisLabels(g2, leftPadding, rightPadding, chartBottom, height, maxPrice, minPrice, zoneId)
 
             g2.color = Color(200, 200, 200)
-            g2.drawString("MA5", leftPadding, height - 54)
-            g2.drawString("MA20", leftPadding + 60, height - 54)
+            g2.drawString("MA5", leftPadding, height - 30)
+            g2.drawString("MA20", leftPadding + 60, height - 30)
             g2.color = Color(255, 193, 7)
-            g2.fillRect(leftPadding + 32, height - 60, 20, 4)
+            g2.fillRect(leftPadding + 32, height - 36, 20, 4)
             g2.color = Color(0, 230, 118)
-            g2.fillRect(leftPadding + 100, height - 60, 20, 4)
+            g2.fillRect(leftPadding + 100, height - 36, 20, 4)
 
             g2.color = Color(180, 180, 180)
-            g2.drawString(localizationService.text("거래량", "Volume"), leftPadding, height - 102)
+            g2.drawString(localizationService.text("거래량", "Volume"), leftPadding, height - 64)
         }
 
         private fun drawAxisLabels(
@@ -239,7 +273,7 @@ class ChartView : JPanel(BorderLayout()) {
                 DateTimeFormatter.ofPattern("yyyy-MM-dd")
             }
 
-            val y = canvasHeight - 12
+            val y = canvasHeight - 8
             val chartWidth = width - leftPadding - rightPadding
             val xStart = leftPadding
             val xMid = leftPadding + (chartWidth / 2)

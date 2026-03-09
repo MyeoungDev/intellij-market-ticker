@@ -11,6 +11,34 @@ import com.github.myeoungdev.marketticker.infrastructure.naver.dto.*
 object NaverFixtures {
 
     /**
+     * 코인 상세 응답 JSON 입니다.
+     */
+    const val JSON_COIN_OVERVIEW_SUCCESS = """
+    {
+      "fqnfTicker": "BTC_KRW_UPBIT",
+      "nfTicker": "BTC",
+      "exchangeTicker": "BTC",
+      "krName": "비트코인",
+      "enName": "Bitcoin",
+      "exchangeType": "UPBIT",
+      "exchangeName": "업비트",
+      "tradePrice": 102131000,
+      "change": "RISING",
+      "changeRate": 4.38,
+      "changeValue": 4286000,
+      "koreaTradedAt": "2026-03-09T23:41:53.384",
+      "totalInfos": [
+        { "code": "previousClosePrice", "key": "전일", "value": 97845000 },
+        { "code": "openPrice", "key": "시가", "value": 97845000 },
+        { "code": "highPrice", "key": "고가", "value": 102200000 },
+        { "code": "lowPrice", "key": "저가", "value": 97668000 },
+        { "code": "tradePrice", "key": "거래가", "value": 102131000 },
+        { "code": "accumulatedTradingVolume", "key": "거래량", "value": 2083.76351566 }
+      ]
+    }
+    """
+
+    /**
      * NaverSearchResponse (최상위 검색 응답 래퍼) 생성
      */
     fun createSearchResponse(
