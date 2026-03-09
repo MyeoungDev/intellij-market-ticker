@@ -51,7 +51,9 @@ class NaverClientTest {
             marketMetalUrl = "$baseUrl/marketindex/metals",
             marketEnergyUrl = "$baseUrl/marketindex/energy",
             domesticChartUrl = "$baseUrl/chart/domestic/item",
-            foreignChartUrl = "$baseUrl/chart/foreign/item"
+            foreignChartUrl = "$baseUrl/chart/foreign/item",
+            newsListUrl = "$baseUrl/news/list",
+            newsAggregateUrl = "$baseUrl/news/aggregate/home"
         )
     }
 
@@ -360,6 +362,45 @@ class NaverClientTest {
             assertThat(result).hasSize(1)
             assertThat(result.first().localDate).isEqualTo("20100101")
             assertThat(result.first().closePrice).isEqualTo(0.385)
+        }
+
+        @Test
+        fun `뉴스 리스트 API 성공 시 기사 목록을 반환한다`() {
+            wireMockServer.stubFor(
+                get(urlPathMatching("/news/list.*"))
+                    .withQueryParam("category", equalTo("FLASHNEWS"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", "application/json")
+                            .withBody(NaverFixtures.JSON_NEWS_LIST_FLASH_SUCCESS)
+                    )
+            )
+
+            val result = naverClient.fetchNewsList(category = "FLASHNEWS")
+
+            assertThat(result).hasSize(1)
+            assertThat(result.first().title).isEqualTo("테스트 뉴스 제목")
+            assertThat(result.first().articleUrl()).isEqualTo("https://n.news.naver.com/article/003/0013805290")
+        }
+
+        @Test
+        fun `랭킹 뉴스 API 성공 시 랭킹 기사 목록을 반환한다`() {
+            wireMockServer.stubFor(
+                get(urlPathMatching("/news/aggregate/home.*"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", "application/json")
+                            .withBody(NaverFixtures.JSON_NEWS_AGGREGATE_RANKING_SUCCESS)
+                    )
+            )
+
+            val result = naverClient.fetchRankingNews(limit = 5)
+
+            assertThat(result).hasSize(1)
+            assertThat(result.first().title).isEqualTo("랭킹 뉴스 테스트")
+            assertThat(result.first().articleUrl()).isEqualTo("https://n.news.naver.com/article/015/0005258767")
         }
     }
 

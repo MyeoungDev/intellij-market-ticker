@@ -1,7 +1,7 @@
 package com.github.myeoungdev.marketticker.application.service
 
-import com.github.myeoungdev.marketticker.domain.model.AlertRule
 import com.github.myeoungdev.marketticker.domain.model.AlertMode
+import com.github.myeoungdev.marketticker.domain.model.AlertRule
 import com.github.myeoungdev.marketticker.domain.model.MarketStatus
 import com.github.myeoungdev.marketticker.domain.model.TickerPrice
 import com.intellij.openapi.components.PersistentStateComponent

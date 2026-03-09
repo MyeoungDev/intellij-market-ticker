@@ -226,6 +226,7 @@ class HeatmapView : JPanel(BorderLayout()) {
                 val blue = (60 * (1 - intensity)).toInt()      // 60 ~ 0
                 Color(red, green, blue)
             }
+
             changeRate < 0 -> {
                 // 하락 - 빨간색 (블룸버그 스타일)
                 val red = (100 + (155 * intensity)).toInt()    // 100 ~ 255
@@ -233,6 +234,7 @@ class HeatmapView : JPanel(BorderLayout()) {
                 val blue = (60 * (1 - intensity)).toInt()      // 60 ~ 0
                 Color(red, green, blue)
             }
+
             else -> {
                 Color(102, 102, 102)
             }

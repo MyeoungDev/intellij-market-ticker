@@ -3,7 +3,7 @@ package com.github.myeoungdev.marketticker.application.service
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import java.text.NumberFormat
-import java.util.Locale
+import java.util.*
 
 /**
  * UI 문자열 선택 및 숫자/퍼센트 로케일 포맷을 담당하는 서비스입니다.

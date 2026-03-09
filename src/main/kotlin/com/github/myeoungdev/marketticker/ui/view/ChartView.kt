@@ -7,17 +7,8 @@ import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.infrastructure.naver.NaverClient
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
-import kotlinx.coroutines.CoroutineScope
-import kotlinx.coroutines.Dispatchers
-import kotlinx.coroutines.SupervisorJob
-import kotlinx.coroutines.cancel
-import kotlinx.coroutines.launch
-import java.awt.BasicStroke
-import java.awt.BorderLayout
-import java.awt.Color
-import java.awt.Graphics
-import java.awt.Graphics2D
-import java.awt.RenderingHints
+import kotlinx.coroutines.*
+import java.awt.*
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
@@ -176,11 +167,38 @@ class ChartView : JPanel(BorderLayout()) {
                 val volumeTop = height - 96
                 val volumeHeight = ((candle.volume.toDouble() / maxVolume) * 56.0).toInt().coerceAtLeast(1)
                 g2.color = if (isUp) Color(255, 138, 128) else Color(130, 177, 255)
-                g2.fillRect(x + 1, volumeTop + (56 - volumeHeight), candleWidth.toInt().coerceAtLeast(2) - 2, volumeHeight)
+                g2.fillRect(
+                    x + 1,
+                    volumeTop + (56 - volumeHeight),
+                    candleWidth.toInt().coerceAtLeast(2) - 2,
+                    volumeHeight
+                )
             }
 
-            drawMa(g2, ma5, candles, leftPadding, candleWidth, chartBottom, minPrice, priceRange, chartHeight, Color(255, 193, 7))
-            drawMa(g2, ma20, candles, leftPadding, candleWidth, chartBottom, minPrice, priceRange, chartHeight, Color(0, 230, 118))
+            drawMa(
+                g2,
+                ma5,
+                candles,
+                leftPadding,
+                candleWidth,
+                chartBottom,
+                minPrice,
+                priceRange,
+                chartHeight,
+                Color(255, 193, 7)
+            )
+            drawMa(
+                g2,
+                ma20,
+                candles,
+                leftPadding,
+                candleWidth,
+                chartBottom,
+                minPrice,
+                priceRange,
+                chartHeight,
+                Color(0, 230, 118)
+            )
 
             drawAxisLabels(g2, leftPadding, rightPadding, chartBottom, height, maxPrice, minPrice, zoneId)
 
