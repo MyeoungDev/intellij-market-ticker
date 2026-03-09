@@ -8,6 +8,8 @@ import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.fixtures.domain.TickerFixtures
 import com.github.myeoungdev.marketticker.fixtures.naver.NaverFixtures
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCoinOverview
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCryptoChartResponse
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverSearchResponse
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock.*
@@ -17,6 +19,7 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.*
 import java.net.http.HttpClient
 import java.time.LocalDateTime
+import java.time.ZoneId
 
 /**
  * Some Descirption...
@@ -45,6 +48,7 @@ class NaverClientTest {
             domesticPriceUrl = "$baseUrl/domestic/stock",
             worldPriceUrl = "$baseUrl/worldstock/stock",
             coinPriceUrl = "$baseUrl/coin/price",
+            coinOverviewUrl = "$baseUrl/api/coin/price",
             cryptoChartUrl = "$baseUrl/chart/cryptoChartData",
             domesticIndexUrl = "$baseUrl/domestic/index",
             worldIndexUrl = "$baseUrl/worldstock/index",
@@ -283,6 +287,25 @@ class NaverClientTest {
         }
 
         @Test
+        fun `코인 상세 API 성공 시 오늘 시세 정보를 파싱한다`() {
+            wireMockServer.stubFor(
+                get(urlPathMatching("/api/coin/price/UPBIT/BTC"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", "application/json")
+                            .withBody(NaverFixtures.JSON_COIN_OVERVIEW_SUCCESS)
+                    )
+            )
+
+            val result = naverClient.fetchCoinOverview("UPBIT", "BTC")
+
+            assertThat(result).isNotNull
+            assertThat(result?.tradePrice).isEqualTo(102131000.0)
+            assertThat(result?.totalInfos).isNotEmpty
+        }
+
+        @Test
         fun `국내 지수 API 성공 시 지수 데이터를 파싱한다`() {
             wireMockServer.stubFor(
                 get(urlPathMatching("/domestic/index.*"))
@@ -516,6 +539,28 @@ class NaverClientTest {
 
             // Then
             assertThat(result).isEmpty()
+        }
+    }
+
+    @Nested
+    @DisplayName("4. 코인 차트 보정")
+    inner class CoinChartMergeTest {
+
+        @Test
+        fun `코인 상세 응답은 마지막 일봉을 오늘 시세로 보정한다`() {
+            val overview: NaverCoinOverview = objectMapper.readValue(NaverFixtures.JSON_COIN_OVERVIEW_SUCCESS)
+            val chartResponse: NaverCryptoChartResponse = objectMapper.readValue(NaverFixtures.JSON_CHART_COIN_SUCCESS)
+
+            val merged = overview.mergeDailyCandles(
+                candles = chartResponse.result.map { it.toPriceHistoryCandle() },
+                zoneId = ZoneId.of("Asia/Seoul")
+            )
+
+            assertThat(merged).isNotEmpty
+            assertThat(merged.last().close).isEqualTo(102131000.0)
+            assertThat(merged.last().high).isEqualTo(102200000.0)
+            assertThat(merged.last().low).isEqualTo(97668000.0)
+            assertThat(merged.last().volume).isEqualTo(2083L)
         }
     }
 }
