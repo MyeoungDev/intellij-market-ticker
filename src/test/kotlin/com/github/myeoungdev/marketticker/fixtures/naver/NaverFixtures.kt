@@ -718,4 +718,326 @@ object NaverFixtures {
     }
     """
 
+    const val JSON_RESEARCH_AGGREGATE_SUCCESS = """
+    {
+      "researchCategory": [
+        {
+          "url": "/research/daily",
+          "category": "시황정보",
+          "report": [
+            {
+              "url": "/research/daily/35256",
+              "title": "3/10 KB 리서치 모닝코멘트",
+              "iconName": "kb",
+              "securitiesCompany": "KB증권",
+              "publishDate": "2026-03-10",
+              "analystName": [],
+              "isToday": false
+            }
+          ]
+        },
+        {
+          "url": "/research/company",
+          "category": "종목분석",
+          "report": [
+            {
+              "url": "/research/company/90866",
+              "title": "나올 재료 감안 시 이번엔 텐베거가 예상됩니다",
+              "iconName": "hana",
+              "securitiesCompany": "하나증권",
+              "publishDate": "2026-03-10",
+              "analystName": [],
+              "isToday": false
+            }
+          ]
+        }
+      ]
+    }
+    """
+
+    const val JSON_RESEARCH_RECENT_POPULAR_SUCCESS = """
+    [
+      {
+        "researchCategory": "종목분석",
+        "category": "종목분석",
+        "itemCode": "218410",
+        "itemName": "RFHIC",
+        "researchId": "90866",
+        "title": "나올 재료 감안 시 이번엔 텐베거가 예상됩니다",
+        "content": "<p><strong>12개월 목표가 10만원으로 상향</strong></p>",
+        "brokerName": "하나증권",
+        "brokerCode": "57",
+        "writeDate": "2026-03-10",
+        "readCount": "85",
+        "endUrl": "https://m.stock.naver.com/research/company/90866",
+        "opinion": "Buy",
+        "goalPrice": "100000",
+        "prevGoalPrice": "63200"
+      },
+      {
+        "researchCategory": "시황정보",
+        "category": "시황정보",
+        "researchId": "35256",
+        "title": "3/10 KB 리서치 모닝코멘트",
+        "content": "<p><strong>국내 및 글로벌 증시 동향</strong></p>",
+        "brokerName": "KB증권",
+        "brokerCode": "58",
+        "writeDate": "2026-03-10",
+        "readCount": "84",
+        "endUrl": "https://m.stock.naver.com/research/daily/35256"
+      }
+    ]
+    """
+
+    const val JSON_RESEARCH_CATEGORY_LATEST_SUCCESS = """
+    {
+      "MARKET": [
+        {
+          "researchCategory": "시황정보",
+          "category": "시황정보",
+          "researchId": "35256",
+          "title": "3/10 KB 리서치 모닝코멘트",
+          "content": "<p><strong>국내 및 글로벌 증시 동향</strong></p>",
+          "brokerName": "KB증권",
+          "brokerCode": "58",
+          "writeDate": "2026-03-10",
+          "readCount": "84",
+          "endUrl": "https://m.stock.naver.com/research/daily/35256"
+        }
+      ],
+      "COMPANY": [
+        {
+          "researchCategory": "종목분석",
+          "category": "종목분석",
+          "itemCode": "218410",
+          "itemName": "RFHIC",
+          "researchId": "90866",
+          "title": "나올 재료 감안 시 이번엔 텐베거가 예상됩니다",
+          "content": "<p><strong>12개월 목표가 10만원으로 상향</strong></p>",
+          "brokerName": "하나증권",
+          "brokerCode": "57",
+          "writeDate": "2026-03-10",
+          "readCount": "85",
+          "endUrl": "https://m.stock.naver.com/research/company/90866",
+          "opinion": "Buy",
+          "goalPrice": "100000",
+          "prevGoalPrice": "63200"
+        }
+      ],
+      "INDUSTRY": [],
+      "INVEST": [],
+      "ECONOMY": [],
+      "DEBENTURE": []
+    }
+    """
+
+    const val JSON_RESEARCH_INDUSTRY_SUCCESS = """
+    {
+      "자동차": [
+        {
+          "researchCategory": "산업분석",
+          "category": "자동차",
+          "researchId": "43690",
+          "title": "1월 Auto Sales DataBook",
+          "content": "<p><strong>1월 글로벌 도매 판매 현대차 -1.0%, 기아 +2.5%</strong></p>",
+          "analyst": "이재일",
+          "brokerName": "유진투자증권",
+          "brokerCode": "63",
+          "writeDate": "2026-03-10",
+          "readCount": "6",
+          "endUrl": "https://m.stock.naver.com/research/industry/43690"
+        }
+      ],
+      "게임": [
+        {
+          "researchCategory": "산업분석",
+          "category": "게임",
+          "researchId": "43689",
+          "title": "구글 수수료율 인하에 따른 업종 전반 수혜 기대",
+          "content": "<p>구글 수수료 개편 수혜 예상</p>",
+          "analyst": "남효지",
+          "brokerName": "SK증권",
+          "brokerCode": "64",
+          "writeDate": "2026-03-10",
+          "readCount": "31",
+          "endUrl": "https://m.stock.naver.com/research/industry/43689"
+        }
+      ]
+    }
+    """
+
+    const val JSON_DISCUSSION_RANKING_SUCCESS = """
+    {
+      "rankTime": "2026-03-10T08:00:00",
+      "totalCount": 100,
+      "contents": [
+        {
+          "itemCode": "005930",
+          "ranking": 1,
+          "prevRanking": 3,
+          "score": 604,
+          "rankTime": "2026-03-10T08:00:00",
+          "posts": [
+            {
+              "postId": "414379193",
+              "title": "증권사 객장에 가 보세요",
+              "contentSwReplacedButImg": "객장 분위기가 정상이 아닙니다.",
+              "postType": "normal"
+            }
+          ],
+          "stockPrices": {
+            "stockName": "삼성전자",
+            "endUrl": "https://m.stock.naver.com/domestic/stock/005930",
+            "overMarketPriceInfo": {
+              "overPrice": "187,900",
+              "fluctuationsRatio": "8.30"
+            }
+          }
+        },
+        {
+          "itemCode": "247540",
+          "ranking": 2,
+          "score": 439,
+          "rankTime": "2026-03-10T08:00:00",
+          "posts": [
+            {
+              "postId": "414531273",
+              "title": "거참 이상하네,,왜 에코프로비엠만 올랐지?",
+              "contentSwReplacedButImg": "삼성sdi, 포스코퓨처엠은 폭락 그대로인데...",
+              "postType": "normal"
+            }
+          ],
+          "stockPrices": {
+            "stockName": "에코프로비엠",
+            "endUrl": "https://m.stock.naver.com/domestic/stock/247540",
+            "overMarketPriceInfo": {
+              "overPrice": "215,000",
+              "fluctuationsRatio": "6.17"
+            }
+          }
+        }
+      ]
+    }
+    """
+
+    const val JSON_RESEARCH_RANKING_SEARCH_TOP_SUCCESS = """
+    {
+      "ranking": [
+        {
+          "itemname": "삼성전자",
+          "itemcode": "005930",
+          "marketStatus": "PREOPEN",
+          "nowVal": "173500",
+          "changeRate": "0.0",
+          "per": "26.43",
+          "pbr": "2.94075",
+          "dividendRate": "0.961",
+          "marketSum": "1027057179000000"
+        },
+        {
+          "itemname": "SK하이닉스",
+          "itemcode": "000660",
+          "marketStatus": "PREOPEN",
+          "nowVal": "836000",
+          "changeRate": "0.0",
+          "per": "17.05",
+          "pbr": "6.38073",
+          "dividendRate": "0.359",
+          "marketSum": "595819177000000"
+        }
+      ],
+      "latestResearch": [
+        {
+          "itemCode": "005930",
+          "itemName": "삼성전자",
+          "researchId": "90857",
+          "title": "주가 매력도가 더 높아졌다",
+          "content": "<p><strong>동사에 대한 투자의견과 목표주가 유지</strong></p>",
+          "brokerName": "미래에셋증권",
+          "brokerCode": "56",
+          "writeDate": "2026-03-10",
+          "readCount": "743",
+          "endUrl": "https://stock.pstatic.net/stock-research/company/56/20260310_company_716140000.pdf",
+          "opinion": "매수",
+          "goalPrice": "275000",
+          "prevGoalPrice": "173500"
+        }
+      ]
+    }
+    """
+
+    const val JSON_RESEARCH_RANKING_PRICE_TOP_SUCCESS = """
+    {
+      "ranking": [
+        {
+          "itemname": "한화시스템",
+          "itemcode": "272210",
+          "marketStatus": "PREOPEN",
+          "nowVal": "162700",
+          "changeRate": "0.0",
+          "per": "51.63",
+          "pbr": "6.24839",
+          "dividendRate": "0.307",
+          "marketSum": "30737184000000"
+        }
+      ],
+      "latestResearch": [
+        {
+          "itemCode": "272210",
+          "itemName": "한화시스템",
+          "researchId": "91234",
+          "title": "방산과 우주 모멘텀 점검",
+          "content": "<p><strong>수주 가시성과 밸류 재평가</strong></p>",
+          "brokerName": "신한투자증권",
+          "brokerCode": "21",
+          "writeDate": "2026-03-10",
+          "readCount": "125",
+          "endUrl": "https://stock.pstatic.net/stock-research/company/21/20260310_company_1234000.pdf",
+          "opinion": "매수",
+          "goalPrice": "190000",
+          "prevGoalPrice": "150000"
+        }
+      ]
+    }
+    """
+
+    const val JSON_RESEARCH_RANKING_UP_SUCCESS = JSON_RESEARCH_RANKING_PRICE_TOP_SUCCESS
+
+    const val JSON_RESEARCH_RANKING_DOWN_SUCCESS = JSON_RESEARCH_RANKING_SEARCH_TOP_SUCCESS
+
+    const val JSON_STOCK_RESEARCH_SUCCESS = """
+    [
+      {
+        "nid": "90857",
+        "itemcode": "005930",
+        "itemname": "삼성전자",
+        "brokerName": "미래에셋증권",
+        "brokerCode": "56",
+        "title": "주가 매력도가 더 높아졌다",
+        "content": "<p><strong>동사에 대한 투자의견과 목표주가 유지</strong></p>",
+        "goalPrice": "275000",
+        "opinion": "매수",
+        "attachUrl": "https://stock.pstatic.net/stock-research/company/56/20260310_company_716140000.pdf",
+        "readCount": "743",
+        "writeDate": "2026-03-10",
+        "prevGoalPrice": "173500"
+      },
+      {
+        "nid": "90814",
+        "itemcode": "005930",
+        "itemname": "삼성전자",
+        "brokerName": "미래에셋증권",
+        "brokerCode": "56",
+        "title": "후퇴가 아닌 진격을 할 때",
+        "content": "<p><strong>급격한 주가 하락에도 목표주가 유지</strong></p>",
+        "goalPrice": "275000",
+        "opinion": "매수",
+        "attachUrl": "https://stock.pstatic.net/stock-research/company/56/20260305_company_761607000.pdf",
+        "readCount": "34312",
+        "writeDate": "2026-03-05",
+        "prevGoalPrice": "172200"
+      }
+    ]
+    """
+
 }

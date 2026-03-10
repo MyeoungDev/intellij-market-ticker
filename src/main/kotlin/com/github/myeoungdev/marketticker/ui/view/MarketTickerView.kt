@@ -55,10 +55,12 @@ class MarketTickerView(
     private val heatmapView = HeatmapView()
     private val chartView = ChartView()
     private val newsView = NewsView()
+    private val researchView = ResearchView()
 
     private val marketPulseTicker = MarketPulseTicker()
     private val marketPulseContainer = JPanel(BorderLayout())
     private val bottomTabbedPane = JTabbedPane()
+    private val topLevelTabbedPane = JTabbedPane()
     private val mainTabbedPane = JTabbedPane()
     private var latestIndicators: List<MarketIndicator> = emptyList()
 
@@ -66,6 +68,7 @@ class MarketTickerView(
 
     override fun dispose() {
         scope.cancel()
+        researchView.dispose()
     }
 
     init {
@@ -122,17 +125,18 @@ class MarketTickerView(
             firstComponent = searchPanel
             secondComponent = bottomTabbedPane
         }
-        val stockMainPanel = JPanel(BorderLayout()).apply {
+        val stockPanel = JPanel(BorderLayout()).apply {
             add(mainSplitter, BorderLayout.CENTER)
             add(marketPulseContainer, BorderLayout.SOUTH)
         }
-
-        mainTabbedPane.addTab(localizationService.text("주식", "Stocks"), stockMainPanel)
+        mainTabbedPane.addTab(localizationService.text("주식", "Stocks"), stockPanel)
         mainTabbedPane.addTab(localizationService.text("뉴스", "News"), newsView)
+        mainTabbedPane.addTab(localizationService.text("리서치", "Research"), researchView)
         mainPanel.add(mainTabbedPane, BorderLayout.CENTER)
 
         watchlistView.onTickerSelected = { ticker, _ ->
             chartView.updateSelection(ticker)
+            researchView.showStockResearch(ticker)
         }
 
         applyDisplaySettings()
@@ -151,6 +155,7 @@ class MarketTickerView(
                 if (e.clickCount == 2) {
                     val ticker = searchResultList.selectedValue ?: return
                     marketDataService.addTicker(ticker)
+                    researchView.showStockResearch(ticker)
 
                     searchField.text = ""
                     searchListModel.clear()
