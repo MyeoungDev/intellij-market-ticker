@@ -41,7 +41,9 @@ class NaverClient(
     private val domesticChartUrl: String = "https://api.stock.naver.com/chart/domestic/item",
     private val foreignChartUrl: String = "https://api.stock.naver.com/chart/foreign/item",
     private val newsListUrl: String = "https://stock.naver.com/api/domestic/news/list",
-    private val newsAggregateUrl: String = "https://stock.naver.com/api/domestic/news/aggregate/home"
+    private val worldNewsUrl: String = "https://stock.naver.com/api/foreign/news/worldNews",
+    private val newsAggregateUrl: String = "https://stock.naver.com/api/domestic/news/aggregate/home",
+    private val noticeListUrl: String = "https://stock.naver.com/api/domestic/home/noticeList"
 ) {
 
     companion object {
@@ -279,18 +281,12 @@ class NaverClient(
     }
 
     /**
-     * 뉴스 홈의 랭킹 기사 목록을 조회합니다.
+     * 해외 뉴스 리스트를 조회합니다.
      */
-    fun fetchRankingNews(limit: Int = 20): List<NaverNewsArticle> {
+    fun fetchWorldNews(page: Int = 1, pageSize: Int = 15): List<NaverNewsArticle> {
         checkBackgroundThread()
         return try {
-            val fullUrl =
-                "$newsAggregateUrl?flashNewsSize=4&mainNewsSize=6&rankingNewsSize=${
-                    limit.coerceIn(
-                        1,
-                        30
-                    )
-                }&overseasNewsSize=5&focusSize=5&moneyStorySize=20&noticeSize=5"
+            val fullUrl = "$worldNewsUrl?page=${page.coerceAtLeast(1)}&pageSize=${pageSize.coerceIn(1, 50)}"
 
             val request = HttpRequest.newBuilder()
                 .uri(URI.create(fullUrl))
@@ -302,14 +298,93 @@ class NaverClient(
 
             val response = client.send(request, HttpResponse.BodyHandlers.ofString())
             if (response.statusCode() != 200) {
-                logger.error { "Naver ranking news API Error [${response.statusCode()}]: $fullUrl" }
+                logger.error { "Naver world news API Error [${response.statusCode()}]: $fullUrl" }
+                return emptyList()
+            }
+            val body: List<NaverWorldNewsArticle> = objectMapper.readValue(response.body())
+            body.map { it.toNewsArticle() }
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to fetch world news list" }
+            emptyList()
+        }
+    }
+
+    /**
+     * 뉴스 홈 집계 데이터를 조회합니다.
+     */
+    fun fetchNewsHome(
+        flashNewsSize: Int = 4,
+        mainNewsSize: Int = 6,
+        rankingNewsSize: Int = 5,
+        overseasNewsSize: Int = 5,
+        focusSize: Int = 5,
+        moneyStorySize: Int = 12,
+        noticeSize: Int = 5
+    ): NaverNewsAggregateResponse? {
+        checkBackgroundThread()
+        return try {
+            val fullUrl =
+                "$newsAggregateUrl?flashNewsSize=${flashNewsSize.coerceIn(1, 10)}" +
+                        "&mainNewsSize=${mainNewsSize.coerceIn(1, 10)}" +
+                        "&rankingNewsSize=${rankingNewsSize.coerceIn(1, 30)}" +
+                        "&overseasNewsSize=${overseasNewsSize.coerceIn(1, 10)}" +
+                        "&focusSize=${focusSize.coerceIn(1, 10)}" +
+                        "&moneyStorySize=${moneyStorySize.coerceIn(1, 20)}" +
+                        "&noticeSize=${noticeSize.coerceIn(1, 20)}"
+
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(fullUrl))
+                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+                .header(ACCEPT_KEY, ACCEPT_VALUE)
+                .header(ORIGIN_KEY, ORIGIN_VALUE)
+                .GET()
+                .build()
+
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            if (response.statusCode() != 200) {
+                logger.error { "Naver news aggregate API Error [${response.statusCode()}]: $fullUrl" }
+                return null
+            }
+
+            objectMapper.readValue(response.body())
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to fetch news home" }
+            null
+        }
+    }
+
+    /**
+     * 뉴스 홈의 랭킹 기사 목록을 조회합니다.
+     */
+    fun fetchRankingNews(limit: Int = 20): List<NaverNewsArticle> {
+        return fetchNewsHome(rankingNewsSize = limit)?.rankingNews?.map { it.toNewsArticle() } ?: emptyList()
+    }
+
+    /**
+     * 상단 공지 요약 목록을 조회합니다.
+     */
+    fun fetchNoticeList(page: Int = 1, pageSize: Int = 10): List<NaverNoticeSummary> {
+        checkBackgroundThread()
+        return try {
+            val fullUrl = "$noticeListUrl?page=${page.coerceAtLeast(1)}&pageSize=${pageSize.coerceIn(1, 20)}"
+
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(fullUrl))
+                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+                .header(ACCEPT_KEY, ACCEPT_VALUE)
+                .header(ORIGIN_KEY, ORIGIN_VALUE)
+                .GET()
+                .build()
+
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            if (response.statusCode() != 200) {
+                logger.error { "Naver notice list API Error [${response.statusCode()}]: $fullUrl" }
                 return emptyList()
             }
 
-            val body: NaverNewsAggregateResponse = objectMapper.readValue(response.body())
-            body.rankingNews.map { it.toNewsArticle() }
+            objectMapper.readValue(response.body())
         } catch (e: Exception) {
-            logger.error(e) { "Failed to fetch ranking news" }
+            logger.error(e) { "Failed to fetch notice list" }
             emptyList()
         }
     }
