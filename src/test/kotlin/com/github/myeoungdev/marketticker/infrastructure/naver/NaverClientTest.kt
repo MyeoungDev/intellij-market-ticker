@@ -67,8 +67,7 @@ class NaverClientTest {
             industryResearchUrl = "$baseUrl/research/industry-research",
             discussionRankingUrl = "$baseUrl/community/discussion/rankings",
             researchRankingUrl = "$baseUrl/research/ranking",
-            stockResearchBaseUrl = "$baseUrl/research"
-            foreignChartUrl = "$baseUrl/chart/foreign/item",
+            stockResearchBaseUrl = "$baseUrl/research",
             newsListUrl = "$baseUrl/news/list",
             worldNewsUrl = "$baseUrl/foreign/news/worldNews",
             newsAggregateUrl = "$baseUrl/news/aggregate/home",
