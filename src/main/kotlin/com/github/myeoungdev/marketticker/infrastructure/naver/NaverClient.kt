@@ -5,6 +5,23 @@ import com.github.myeoungdev.marketticker.application.service.PriceHistoryServic
 import com.github.myeoungdev.marketticker.common.config.httpClient
 import com.github.myeoungdev.marketticker.common.config.objectMapper
 import com.github.myeoungdev.marketticker.domain.model.Ticker
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCoinPrice
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCryptoCandle
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCryptoChartResponse
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverRealtimeCoinPriceResponse
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverRealTimeStockPriceResponse
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverMarketIndicatorResponse
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverDiscussionRankingResponse
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverResearchAggregateResponse
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverResearchArticle
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverResearchLatestResponse
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverResearchRankingResponse
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverStockResearchItem
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.ResearchRankingType
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverSearchItem
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverSearchResponse
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverStockChartCandle
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverStockPrice
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.*
 import com.intellij.openapi.application.ApplicationManager
 import io.github.oshai.kotlinlogging.KotlinLogging
@@ -40,10 +57,17 @@ class NaverClient(
     private val marketEnergyUrl: String = "https://stock.naver.com/api/polling/marketindex/energy",
     private val domesticChartUrl: String = "https://api.stock.naver.com/chart/domestic/item",
     private val foreignChartUrl: String = "https://api.stock.naver.com/chart/foreign/item",
+    private val researchAggregateUrl: String = "https://stock.naver.com/api/domestic/home/researchaggregate/static",
+    private val researchRecentPopularUrl: String = "https://stock.naver.com/api/domestic/research/recent-popular",
+    private val researchCategoryLatestUrl: String = "https://stock.naver.com/api/domestic/research/category-lastest",
+    private val industryResearchUrl: String = "https://stock.naver.com/api/domestic/research/industry-research",
+    private val discussionRankingUrl: String = "https://stock.naver.com/api/community/discussion/rankings",
+    private val researchRankingUrl: String = "https://stock.naver.com/api/domestic/research/ranking",
+    private val stockResearchBaseUrl: String = "https://stock.naver.com/api/domestic/research",
     private val newsListUrl: String = "https://stock.naver.com/api/domestic/news/list",
     private val worldNewsUrl: String = "https://stock.naver.com/api/foreign/news/worldNews",
     private val newsAggregateUrl: String = "https://stock.naver.com/api/domestic/news/aggregate/home",
-    private val noticeListUrl: String = "https://stock.naver.com/api/domestic/home/noticeList"
+    private val noticeListUrl: String = "https://stock.naver.com/api/domestic/home/noticeList",
 ) {
 
     companion object {
@@ -53,6 +77,8 @@ class NaverClient(
 
         private const val ACCEPT_KEY = "Accept"
         private const val ACCEPT_VALUE = "application/json"
+        private const val CONTENT_TYPE_KEY = "Content-Type"
+        private const val CONTENT_TYPE_JSON = "application/json"
         private const val ORIGIN_KEY = "Origin"
         private const val ORIGIN_VALUE = "https://stock.naver.com"
         private val CHART_TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm")
@@ -492,6 +518,188 @@ class NaverClient(
         } catch (e: Exception) {
             logger.error(e) { "Failed to fetch commodity: $group/$reutersCode" }
             NaverMarketIndicatorResponse()
+        }
+    }
+
+    fun fetchResearchAggregate(): NaverResearchAggregateResponse {
+        checkBackgroundThread()
+
+        return try {
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(researchAggregateUrl))
+                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+                .header(ACCEPT_KEY, ACCEPT_VALUE)
+                .header(CONTENT_TYPE_KEY, CONTENT_TYPE_JSON)
+                .header(ORIGIN_KEY, ORIGIN_VALUE)
+                .POST(HttpRequest.BodyPublishers.ofString("""{"sections":{"researchCategory":true}}"""))
+                .build()
+
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            if (response.statusCode() != 200) {
+                logger.error { "Naver research aggregate API Error [${response.statusCode()}]: $researchAggregateUrl" }
+                return NaverResearchAggregateResponse()
+            }
+
+            objectMapper.readValue(response.body())
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to fetch research aggregate" }
+            NaverResearchAggregateResponse()
+        }
+    }
+
+    fun fetchRecentPopularResearch(): List<NaverResearchArticle> {
+        checkBackgroundThread()
+
+        return try {
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(researchRecentPopularUrl))
+                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+                .header(ACCEPT_KEY, ACCEPT_VALUE)
+                .GET()
+                .build()
+
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            if (response.statusCode() != 200) {
+                logger.error { "Naver research recent popular API Error [${response.statusCode()}]: $researchRecentPopularUrl" }
+                return emptyList()
+            }
+
+            objectMapper.readValue(response.body())
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to fetch recent popular research" }
+            emptyList()
+        }
+    }
+
+    fun fetchCategoryLatestResearch(): NaverResearchLatestResponse {
+        checkBackgroundThread()
+
+        return try {
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(researchCategoryLatestUrl))
+                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+                .header(ACCEPT_KEY, ACCEPT_VALUE)
+                .GET()
+                .build()
+
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            if (response.statusCode() != 200) {
+                logger.error { "Naver research latest API Error [${response.statusCode()}]: $researchCategoryLatestUrl" }
+                return NaverResearchLatestResponse()
+            }
+
+            objectMapper.readValue(response.body())
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to fetch category latest research" }
+            NaverResearchLatestResponse()
+        }
+    }
+
+    fun fetchIndustryResearch(): Map<String, List<NaverResearchArticle>> {
+        checkBackgroundThread()
+
+        return try {
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(industryResearchUrl))
+                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+                .header(ACCEPT_KEY, ACCEPT_VALUE)
+                .GET()
+                .build()
+
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            if (response.statusCode() != 200) {
+                logger.error { "Naver industry research API Error [${response.statusCode()}]: $industryResearchUrl" }
+                return emptyMap()
+            }
+
+            objectMapper.readValue(response.body())
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to fetch industry research" }
+            emptyMap()
+        }
+    }
+
+    fun fetchDiscussionRankings(
+        nationType: String = "KOR",
+        page: Int = 1,
+        size: Int = 20,
+        postType: String = "HOT"
+    ): NaverDiscussionRankingResponse {
+        checkBackgroundThread()
+
+        return try {
+            val fullUrl = "$discussionRankingUrl?nationType=$nationType&page=$page&size=$size&postType=$postType"
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(fullUrl))
+                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+                .header(ACCEPT_KEY, ACCEPT_VALUE)
+                .GET()
+                .build()
+
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            if (response.statusCode() != 200) {
+                logger.error { "Naver discussion ranking API Error [${response.statusCode()}]: $fullUrl" }
+                return NaverDiscussionRankingResponse()
+            }
+
+            objectMapper.readValue(response.body())
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to fetch discussion rankings" }
+            NaverDiscussionRankingResponse()
+        }
+    }
+
+    fun fetchResearchRanking(
+        rankingType: ResearchRankingType,
+        selectedRank: Int
+    ): NaverResearchRankingResponse {
+        checkBackgroundThread()
+
+        return try {
+            val fullUrl = "$researchRankingUrl?rankingType=${rankingType.code}&selectedRank=$selectedRank"
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(fullUrl))
+                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+                .header(ACCEPT_KEY, ACCEPT_VALUE)
+                .GET()
+                .build()
+
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            if (response.statusCode() != 200) {
+                logger.error { "Naver research ranking API Error [${response.statusCode()}]: $fullUrl" }
+                return NaverResearchRankingResponse()
+            }
+
+            objectMapper.readValue(response.body())
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to fetch research ranking: ${rankingType.code}/$selectedRank" }
+            NaverResearchRankingResponse()
+        }
+    }
+
+    fun fetchStockResearch(itemCode: String, page: Int = 0, size: Int = 10): List<NaverResearchArticle> {
+        checkBackgroundThread()
+        if (itemCode.isBlank()) return emptyList()
+
+        return try {
+            val fullUrl = "$stockResearchBaseUrl/$itemCode/research?page=$page&size=$size"
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(fullUrl))
+                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+                .header(ACCEPT_KEY, ACCEPT_VALUE)
+                .GET()
+                .build()
+
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            if (response.statusCode() != 200) {
+                logger.error { "Naver stock research API Error [${response.statusCode()}]: $fullUrl" }
+                return emptyList()
+            }
+
+            objectMapper.readValue<List<NaverStockResearchItem>>(response.body()).map { it.toArticle() }
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to fetch stock research for $itemCode" }
+            emptyList()
         }
     }
 

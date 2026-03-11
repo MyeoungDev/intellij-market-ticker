@@ -8,9 +8,14 @@ import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.fixtures.domain.TickerFixtures
 import com.github.myeoungdev.marketticker.fixtures.naver.NaverFixtures
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverDiscussionRankingResponse
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverResearchLatestResponse
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverResearchRankingResponse
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCoinOverview
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCryptoChartResponse
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverSearchResponse
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.ResearchCategoryKey
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.ResearchRankingType
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock.*
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
@@ -56,6 +61,13 @@ class NaverClientTest {
             marketEnergyUrl = "$baseUrl/marketindex/energy",
             domesticChartUrl = "$baseUrl/chart/domestic/item",
             foreignChartUrl = "$baseUrl/chart/foreign/item",
+            researchAggregateUrl = "$baseUrl/research/aggregate",
+            researchRecentPopularUrl = "$baseUrl/research/recent-popular",
+            researchCategoryLatestUrl = "$baseUrl/research/category-latest",
+            industryResearchUrl = "$baseUrl/research/industry-research",
+            discussionRankingUrl = "$baseUrl/community/discussion/rankings",
+            researchRankingUrl = "$baseUrl/research/ranking",
+            stockResearchBaseUrl = "$baseUrl/research",
             newsListUrl = "$baseUrl/news/list",
             worldNewsUrl = "$baseUrl/foreign/news/worldNews",
             newsAggregateUrl = "$baseUrl/news/aggregate/home",
@@ -153,6 +165,35 @@ class NaverClientTest {
 
             val indicator = item.toMarketIndicator(IndicatorCategory.ENERGY)
             assertThat(indicator.changeRate).isEqualTo(-10.0)
+        }
+
+        @Test
+        fun `리서치 최신 응답은 카테고리 맵으로 역직렬화된다`() {
+            val response: NaverResearchLatestResponse =
+                objectMapper.readValue(NaverFixtures.JSON_RESEARCH_CATEGORY_LATEST_SUCCESS)
+
+            assertThat(response.categoryMap()[ResearchCategoryKey.MARKET]).hasSize(1)
+            assertThat(response.categoryMap()[ResearchCategoryKey.COMPANY]?.first()?.itemName).isEqualTo("RFHIC")
+        }
+
+        @Test
+        fun `커뮤니티 랭킹 응답은 HOT 종목 리스트로 역직렬화된다`() {
+            val response: NaverDiscussionRankingResponse =
+                objectMapper.readValue(NaverFixtures.JSON_DISCUSSION_RANKING_SUCCESS)
+
+            assertThat(response.contents).hasSize(2)
+            assertThat(response.contents.first().stockPrices?.stockName).isEqualTo("삼성전자")
+            assertThat(response.contents.first().toArticle().title).contains("1위")
+        }
+
+        @Test
+        fun `리서치 랭킹 응답은 종목 랭킹과 최신 리포트로 역직렬화된다`() {
+            val response: NaverResearchRankingResponse =
+                objectMapper.readValue(NaverFixtures.JSON_RESEARCH_RANKING_SEARCH_TOP_SUCCESS)
+
+            assertThat(response.ranking).hasSize(2)
+            assertThat(response.ranking.first().itemName).isEqualTo("삼성전자")
+            assertThat(response.latestResearch.first().itemCode).isEqualTo("005930")
         }
     }
 
@@ -263,6 +304,203 @@ class NaverClientTest {
             assertThat(result).hasSize(1)
             assertThat(result[0].fqnfTicker).isEqualTo("BTC_KRW_UPBIT")
             assertThat(result[0].tradePrice).isGreaterThan(0.0)
+        }
+
+        @Test
+        fun `리서치 aggregate API 성공 시 카테고리 섹션을 반환한다`() {
+            wireMockServer.stubFor(
+                post(urlEqualTo("/research/aggregate"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", "application/json")
+                            .withBody(NaverFixtures.JSON_RESEARCH_AGGREGATE_SUCCESS)
+                    )
+            )
+
+            val result = naverClient.fetchResearchAggregate()
+
+            assertThat(result.researchCategory).hasSize(2)
+            assertThat(result.researchCategory.first().report.first().title).isEqualTo("3/10 KB 리서치 모닝코멘트")
+        }
+
+        @Test
+        fun `리서치 인기 API 성공 시 보고서 리스트를 반환한다`() {
+            wireMockServer.stubFor(
+                get(urlEqualTo("/research/recent-popular"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", "application/json")
+                            .withBody(NaverFixtures.JSON_RESEARCH_RECENT_POPULAR_SUCCESS)
+                    )
+            )
+
+            val result = naverClient.fetchRecentPopularResearch()
+
+            assertThat(result).hasSize(2)
+            assertThat(result.first().title).contains("텐베거")
+        }
+
+        @Test
+        fun `리서치 최신 API 성공 시 카테고리별 보고서를 반환한다`() {
+            wireMockServer.stubFor(
+                get(urlEqualTo("/research/category-latest"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", "application/json")
+                            .withBody(NaverFixtures.JSON_RESEARCH_CATEGORY_LATEST_SUCCESS)
+                    )
+            )
+
+            val result = naverClient.fetchCategoryLatestResearch()
+
+            assertThat(result.market).hasSize(1)
+            assertThat(result.company.first().goalPrice).isEqualTo("100000")
+        }
+
+        @Test
+        fun `리서치 산업별 API 성공 시 산업 키별 보고서를 반환한다`() {
+            wireMockServer.stubFor(
+                get(urlEqualTo("/research/industry-research"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", "application/json")
+                            .withBody(NaverFixtures.JSON_RESEARCH_INDUSTRY_SUCCESS)
+                    )
+            )
+
+            val result = naverClient.fetchIndustryResearch()
+
+            assertThat(result.keys).contains("자동차", "게임")
+            assertThat(result["자동차"].orEmpty().first().title).contains("Auto Sales")
+        }
+
+        @Test
+        fun `커뮤니티 HOT API 성공 시 랭킹 응답을 반환한다`() {
+            wireMockServer.stubFor(
+                get(urlPathEqualTo("/community/discussion/rankings"))
+                    .withQueryParam("nationType", equalTo("KOR"))
+                    .withQueryParam("page", equalTo("1"))
+                    .withQueryParam("size", equalTo("20"))
+                    .withQueryParam("postType", equalTo("HOT"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", "application/json")
+                            .withBody(NaverFixtures.JSON_DISCUSSION_RANKING_SUCCESS)
+                    )
+            )
+
+            val result = naverClient.fetchDiscussionRankings()
+
+            assertThat(result.contents).hasSize(2)
+            assertThat(result.contents.first().score).isEqualTo(604)
+            assertThat(result.contents.first().toArticle().itemName).isEqualTo("삼성전자")
+        }
+
+        @Test
+        fun `리서치 검색상위 API 성공 시 선택 종목 리포트를 반환한다`() {
+            wireMockServer.stubFor(
+                get(urlPathEqualTo("/research/ranking"))
+                    .withQueryParam("rankingType", equalTo(ResearchRankingType.SEARCH_TOP.code))
+                    .withQueryParam("selectedRank", equalTo("1"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", "application/json")
+                            .withBody(NaverFixtures.JSON_RESEARCH_RANKING_SEARCH_TOP_SUCCESS)
+                    )
+            )
+
+            val result = naverClient.fetchResearchRanking(ResearchRankingType.SEARCH_TOP, 1)
+
+            assertThat(result.ranking.first().itemCode).isEqualTo("005930")
+            assertThat(result.latestResearch.first().title).contains("주가 매력도")
+        }
+
+        @Test
+        fun `리서치 거래대금상위 API 성공 시 선택 종목 리포트를 반환한다`() {
+            wireMockServer.stubFor(
+                get(urlPathEqualTo("/research/ranking"))
+                    .withQueryParam("rankingType", equalTo(ResearchRankingType.PRICE_TOP.code))
+                    .withQueryParam("selectedRank", equalTo("5"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", "application/json")
+                            .withBody(NaverFixtures.JSON_RESEARCH_RANKING_PRICE_TOP_SUCCESS)
+                    )
+            )
+
+            val result = naverClient.fetchResearchRanking(ResearchRankingType.PRICE_TOP, 5)
+
+            assertThat(result.ranking.first().itemName).isEqualTo("한화시스템")
+            assertThat(result.latestResearch.first().goalPrice).isEqualTo("190000")
+        }
+
+        @Test
+        fun `리서치 상승 API 성공 시 선택 종목 리포트를 반환한다`() {
+            wireMockServer.stubFor(
+                get(urlPathEqualTo("/research/ranking"))
+                    .withQueryParam("rankingType", equalTo(ResearchRankingType.UP.code))
+                    .withQueryParam("selectedRank", equalTo("1"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", "application/json")
+                            .withBody(NaverFixtures.JSON_RESEARCH_RANKING_UP_SUCCESS)
+                    )
+            )
+
+            val result = naverClient.fetchResearchRanking(ResearchRankingType.UP, 1)
+
+            assertThat(result.ranking).isNotEmpty
+            assertThat(result.latestResearch).isNotEmpty
+        }
+
+        @Test
+        fun `리서치 하락 API 성공 시 선택 종목 리포트를 반환한다`() {
+            wireMockServer.stubFor(
+                get(urlPathEqualTo("/research/ranking"))
+                    .withQueryParam("rankingType", equalTo(ResearchRankingType.DOWN.code))
+                    .withQueryParam("selectedRank", equalTo("1"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", "application/json")
+                            .withBody(NaverFixtures.JSON_RESEARCH_RANKING_DOWN_SUCCESS)
+                    )
+            )
+
+            val result = naverClient.fetchResearchRanking(ResearchRankingType.DOWN, 1)
+
+            assertThat(result.ranking).isNotEmpty
+            assertThat(result.latestResearch).isNotEmpty
+        }
+
+        @Test
+        fun `종목 리서치 API 성공 시 특정 종목 보고서 리스트를 반환한다`() {
+            wireMockServer.stubFor(
+                get(urlPathEqualTo("/research/005930/research"))
+                    .withQueryParam("page", equalTo("0"))
+                    .withQueryParam("size", equalTo("10"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", "application/json")
+                            .withBody(NaverFixtures.JSON_STOCK_RESEARCH_SUCCESS)
+                    )
+            )
+
+            val result = naverClient.fetchStockResearch("005930")
+
+            assertThat(result).hasSize(2)
+            assertThat(result.first().itemCode).isEqualTo("005930")
+            assertThat(result.first().endUrl).contains(".pdf")
+            assertThat(result.first().goalPrice).isEqualTo("275000")
         }
 
         @Test
