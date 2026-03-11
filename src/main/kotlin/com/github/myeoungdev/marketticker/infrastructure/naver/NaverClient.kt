@@ -66,6 +66,10 @@ class NaverClient(
     private val stockResearchBaseUrl: String = "https://stock.naver.com/api/domestic/research",
     private val newsListUrl: String = "https://stock.naver.com/api/domestic/news/list",
     private val worldNewsUrl: String = "https://stock.naver.com/api/foreign/news/worldNews",
+    private val domesticDetailNewsUrl: String = "https://stock.naver.com/api/domestic/detail/news",
+    private val foreignStockNewsUrl: String = "https://stock.naver.com/api/foreign/worldStock/list",
+    private val foreignStockOverviewUrl: String = "https://stock.naver.com/api/securityService/stock",
+    private val foreignStockBasicUrl: String = "https://stock.naver.com/api/securityService/stock",
     private val newsAggregateUrl: String = "https://stock.naver.com/api/domestic/news/aggregate/home",
     private val noticeListUrl: String = "https://stock.naver.com/api/domestic/home/noticeList",
 ) {
@@ -332,6 +336,156 @@ class NaverClient(
         } catch (e: Exception) {
             logger.error(e) { "Failed to fetch world news list" }
             emptyList()
+        }
+    }
+
+    /**
+     * 개별 종목의 국내 관련 뉴스 목록을 조회합니다.
+     */
+    fun fetchDomesticDetailNews(
+        itemCode: String,
+        page: Int = 1,
+        pageSize: Int = 15
+    ): List<NaverNewsArticle> {
+        checkBackgroundThread()
+        val normalizedItemCode = itemCode.trim()
+        if (normalizedItemCode.isBlank()) return emptyList()
+
+        return try {
+            val encodedItemCode = URLEncoder.encode(normalizedItemCode, Charsets.UTF_8)
+            val fullUrl =
+                "$domesticDetailNewsUrl?itemCode=$encodedItemCode&page=${page.coerceAtLeast(1)}&pageSize=${pageSize.coerceIn(1, 50)}"
+
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(fullUrl))
+                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+                .header(ACCEPT_KEY, ACCEPT_VALUE)
+                .header(ORIGIN_KEY, ORIGIN_VALUE)
+                .GET()
+                .build()
+
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            if (response.statusCode() != 200) {
+                logger.error { "Naver domestic detail news API Error [${response.statusCode()}]: $fullUrl" }
+                return emptyList()
+            }
+
+            val body: NaverDomesticDetailNewsResponse = objectMapper.readValue(response.body())
+            body.clusters.flatMap { cluster -> cluster.items.map { it.toNewsArticle() } }
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to fetch domestic detail news for itemCode: $itemCode" }
+            emptyList()
+        }
+    }
+
+    /**
+     * 개별 해외 종목의 글로벌 뉴스 목록을 조회합니다.
+     */
+    fun fetchForeignStockNews(
+        reutersCode: String,
+        page: Int = 1,
+        pageSize: Int = 15
+    ): List<NaverNewsArticle> {
+        checkBackgroundThread()
+        val normalizedReutersCode = reutersCode.trim()
+        if (normalizedReutersCode.isBlank()) return emptyList()
+
+        return try {
+            val encodedReutersCode = URLEncoder.encode(normalizedReutersCode, Charsets.UTF_8)
+            val fullUrl =
+                "$foreignStockNewsUrl?reutersCode=$encodedReutersCode&page=${page.coerceAtLeast(1)}&pageSize=${pageSize.coerceIn(1, 50)}"
+
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(fullUrl))
+                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+                .header(ACCEPT_KEY, ACCEPT_VALUE)
+                .header(ORIGIN_KEY, ORIGIN_VALUE)
+                .GET()
+                .build()
+
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            if (response.statusCode() != 200) {
+                logger.error { "Naver foreign stock news API Error [${response.statusCode()}]: $fullUrl" }
+                return emptyList()
+            }
+
+            val body: List<NaverWorldNewsArticle> = objectMapper.readValue(response.body())
+            body.map {
+                it.toNewsArticle(
+                    badgeLabel = "해외 종목뉴스",
+                    sectionKey = "WORLD_STOCK_NEWS",
+                    sectionLabel = "해외 종목뉴스"
+                )
+            }
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to fetch foreign stock news for reutersCode: $reutersCode" }
+            emptyList()
+        }
+    }
+
+    /**
+     * 해외 종목 개요 정보를 조회합니다.
+     */
+    fun fetchForeignStockOverview(reutersCode: String): NaverForeignStockOverview? {
+        checkBackgroundThread()
+        val normalizedReutersCode = reutersCode.trim()
+        if (normalizedReutersCode.isBlank()) return null
+
+        return try {
+            val encodedReutersCode = URLEncoder.encode(normalizedReutersCode, Charsets.UTF_8)
+            val fullUrl = "$foreignStockOverviewUrl/$encodedReutersCode/overview"
+
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(fullUrl))
+                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+                .header(ACCEPT_KEY, ACCEPT_VALUE)
+                .header(ORIGIN_KEY, ORIGIN_VALUE)
+                .GET()
+                .build()
+
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            if (response.statusCode() != 200) {
+                logger.error { "Naver foreign stock overview API Error [${response.statusCode()}]: $fullUrl" }
+                return null
+            }
+
+            objectMapper.readValue<NaverForeignStockOverview>(response.body())
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to fetch foreign stock overview for reutersCode: $reutersCode" }
+            null
+        }
+    }
+
+    /**
+     * 해외 종목 기본 시세/지표 정보를 조회합니다.
+     */
+    fun fetchForeignStockBasic(reutersCode: String): NaverForeignStockBasic? {
+        checkBackgroundThread()
+        val normalizedReutersCode = reutersCode.trim()
+        if (normalizedReutersCode.isBlank()) return null
+
+        return try {
+            val encodedReutersCode = URLEncoder.encode(normalizedReutersCode, Charsets.UTF_8)
+            val fullUrl = "$foreignStockBasicUrl/$encodedReutersCode/basic"
+
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(fullUrl))
+                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+                .header(ACCEPT_KEY, ACCEPT_VALUE)
+                .header(ORIGIN_KEY, ORIGIN_VALUE)
+                .GET()
+                .build()
+
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            if (response.statusCode() != 200) {
+                logger.error { "Naver foreign stock basic API Error [${response.statusCode()}]: $fullUrl" }
+                return null
+            }
+
+            objectMapper.readValue<NaverForeignStockBasic>(response.body())
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to fetch foreign stock basic for reutersCode: $reutersCode" }
+            null
         }
     }
 

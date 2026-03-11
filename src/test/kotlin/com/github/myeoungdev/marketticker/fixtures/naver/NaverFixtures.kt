@@ -424,6 +424,244 @@ object NaverFixtures {
     ]
     """
 
+    const val JSON_DOMESTIC_DETAIL_NEWS_SUCCESS = """
+    {
+      "total": "52251",
+      "clusters": [
+        {
+          "itemTotal": "2",
+          "items": [
+            {
+              "id": "0110004598294",
+              "officeId": "011",
+              "articleId": "0004598294",
+              "officeName": "서울경제",
+              "datetime": "202603112349",
+              "type": "1",
+              "title": "리사 수 AMD 방한, 삼성·네이버와 회동",
+              "body": "전 세계 인공지능(AI)용 그래픽처리장치 시장 2위 업체를 이끌고 있는 리사 수 AMD 최고경영자가 다음 주 한국을 방문한다. AI 공급망 협력을 강화할 것이라는 전망이 나온다.",
+              "photoType": "1",
+              "imageOriginLink": "https://imgnews.pstatic.net/image/origin/011/2026/03/11/4598294.jpg"
+            },
+            {
+              "id": "0810003625049",
+              "officeId": "081",
+              "articleId": "0003625049",
+              "officeName": "서울신문",
+              "datetime": "202603112251",
+              "type": "1",
+              "title": "리사 수 AMD CEO 이달 방한…삼성·네이버 등과 협력 논의",
+              "body": "AMD의 리사 수 최고경영자가 방한해 삼성전자·네이버 등과 협력 방안을 논의한다.",
+              "photoType": "1",
+              "imageOriginLink": "https://imgnews.pstatic.net/image/origin/081/2026/03/11/3625049.jpg"
+            }
+          ]
+        },
+        {
+          "itemTotal": "1",
+          "items": [
+            {
+              "id": "0010015953389",
+              "officeId": "001",
+              "articleId": "0015953389",
+              "officeName": "연합뉴스",
+              "datetime": "202603112345",
+              "type": "1",
+              "title": "뉴욕증시, 이란 전쟁·CPI 주목하며 혼조 출발",
+              "body": "뉴욕증시의 3대 주가지수는 미국과 이란 간의 전쟁 진행 상황과 2월 소비자물가지수 발표에 주목하며 혼조세로 출발했다.",
+              "photoType": "1",
+              "imageOriginLink": "https://imgnews.pstatic.net/image/origin/001/2026/03/11/15953389.jpg"
+            }
+          ]
+        }
+      ]
+    }
+    """
+
+    const val JSON_FOREIGN_STOCK_NEWS_SUCCESS = """
+    [
+      {
+        "oid": "fnGuide",
+        "ohnm": "로이터",
+        "aid": "2512970",
+        "tit": "엔비디아의 지원을 받는 스타트업 신틸 포토닉스, 고객과 함께 레이저 칩 테스트 시작",
+        "dt": "20260311231233",
+        "updatedt": "20260311231233",
+        "editor": "Reporting by Stephen Nellis in San Francisco",
+        "copyright": "(c) Copyright Thomson Reuters 2020.",
+        "type": "0",
+        "subcontent": "엔비디아의 지원을 받는 프랑스 스타트업 신틸 포토닉스는 고객들에게 테스트용 레이저 칩을 제공하기 시작했다고 발표했다.",
+        "thumbUrl": null,
+        "relatedItems": [
+          {
+            "reutersCode": "NVDA.O",
+            "itemName": "NVDA",
+            "fluctuationsRatio": "0.4655",
+            "endUrl": "https://stock.naver.com/worldstock/stock/NVDA.O/price"
+          }
+        ]
+      },
+      {
+        "oid": "fnGuide",
+        "ohnm": "로이터",
+        "aid": "2512806",
+        "tit": "엔비디아, AI 클라우드 기업 네비우스에 20억 달러 투자",
+        "dt": "20260311211942",
+        "updatedt": "20260311211942",
+        "editor": "Reporting by Arsheeya Bajwa in Bengaluru",
+        "copyright": "(c) Copyright Thomson Reuters 2020.",
+        "type": "0",
+        "subcontent": "엔비디아는 인공지능 클라우드 회사 네비우스에 20억 달러를 투자할 것이라고 발표했다.",
+        "thumbUrl": null,
+        "relatedItems": [
+          {
+            "reutersCode": "NBIS.O",
+            "itemName": "NBIS",
+            "fluctuationsRatio": "14.1733",
+            "endUrl": "https://stock.naver.com/worldstock/stock/NBIS.O/price"
+          }
+        ]
+      }
+    ]
+    """
+
+    const val JSON_FOREIGN_STOCK_OVERVIEW_SUCCESS = """
+    {
+      "companyName": "엔비디아",
+      "companyNameEng": "NVIDIA Corp",
+      "summary": "엔비디아는 풀스택 컴퓨팅 인프라 회사다.<br>컴퓨팅 및 네트워킹과 그래픽 부문으로 운영한다.",
+      "summaries": {
+        "summary": "엔비디아는 풀스택 컴퓨팅 인프라 회사다.<br>컴퓨팅 및 네트워킹과 그래픽 부문으로 운영한다.",
+        "representativeName": "Jen-Hsun Huang",
+        "representativeId": "PRE",
+        "nation": "United States",
+        "employees": 42000,
+        "employeesLastUpdated": "2026-01-25",
+        "city": "SANTA CLARA, CA",
+        "address": "2788 San Tomas Expressway",
+        "url": "https://www.nvidia.com/"
+      },
+      "industry": {
+        "code": "57101010",
+        "industryGroupKor": "반도체",
+        "name": "INDUSTRY57101010"
+      },
+      "stockItemListedInfo": {
+        "stockExchangeType": {
+          "code": "NSQ",
+          "zoneId": "EST5EDT",
+          "nationType": "USA",
+          "delayTime": 0,
+          "startTime": "0930",
+          "endTime": "1600",
+          "closePriceSendTime": "2031",
+          "nameKor": "나스닥 증권거래소",
+          "nameEng": "NASDAQ Stock Exchange",
+          "stockType": "worldstock",
+          "nationName": "미국",
+          "nationCode": "USA",
+          "name": "NASDAQ"
+        },
+        "stockExchange": "나스닥 증권거래소",
+        "currency": "USD",
+        "accountDate": "2026-01-25",
+        "listedAt": "1999-01-22T16:00:00-05:00",
+        "countOfListedStock": 24300000000,
+        "marketValue": "4,533,162,570",
+        "marketValueKrw": "6,678조 2,551억원",
+        "marketValueFull": "4,533,162,570,000"
+      },
+      "ownerInfoList": [
+        {
+          "investorName": "The Vanguard Group, Inc.",
+          "position": 2255253323,
+          "outstanding": "9.28%"
+        }
+      ]
+    }
+    """
+
+    const val JSON_FOREIGN_STOCK_BASIC_SUCCESS = """
+    {
+      "stockEndType": "stock",
+      "reutersCode": "NVDA.O",
+      "stockName": "엔비디아",
+      "stockNameEng": "NVIDIA Corp",
+      "symbolCode": "NVDA",
+      "stockExchangeType": {
+        "code": "NSQ",
+        "zoneId": "EST5EDT",
+        "nationType": "USA",
+        "delayTime": 0,
+        "startTime": "0930",
+        "endTime": "1600",
+        "closePriceSendTime": "2031",
+        "nameKor": "나스닥 증권거래소",
+        "nameEng": "NASDAQ Stock Exchange",
+        "nationName": "미국",
+        "stockType": "worldstock",
+        "nationCode": "USA",
+        "name": "NASDAQ"
+      },
+      "stockExchangeName": "NASDAQ",
+      "industryCodeType": {
+        "code": "57101010",
+        "industryGroupKor": "반도체",
+        "name": "INDUSTRY57101010"
+      },
+      "closePrice": "185.62",
+      "compareToPreviousClosePrice": "0.86",
+      "fluctuationsRatio": "0.47",
+      "localTradedAt": "2026-03-11T11:20:29-04:00",
+      "marketStatus": "OPEN",
+      "currencyType": {
+        "code": "USD",
+        "text": "US dollar",
+        "name": "USD"
+      },
+      "countOfListedStock": 24300000000,
+      "endUrl": "https://m.stock.naver.com/worldstock/stock/NVDA.O",
+      "stockItemTotalInfos": [
+        {
+          "code": "marketValue",
+          "key": "시총",
+          "value": "4조 5,106억 USD",
+          "valueDesc": "6,652조 1,827억원"
+        },
+        {
+          "code": "highPriceOf52Weeks",
+          "key": "52주 최고",
+          "keyDesc": "2025.10.29.",
+          "value": "212.19"
+        },
+        {
+          "code": "lowPriceOf52Weeks",
+          "key": "52주 최저",
+          "keyDesc": "2025.04.07.",
+          "value": "86.62"
+        },
+        {
+          "code": "per",
+          "key": "PER",
+          "keyDesc": "2026.01.",
+          "value": "37.73배"
+        },
+        {
+          "code": "pbr",
+          "key": "PBR",
+          "keyDesc": "2026.01.",
+          "value": "28.68배"
+        },
+        {
+          "code": "dividendYieldRatio",
+          "key": "배당수익률",
+          "keyDesc": "2026.04.",
+          "value": "0.02%"
+        }
+      ]
+    }
+    """
+
     const val JSON_NEWS_AGGREGATE_RANKING_SUCCESS = """
     {
       "rankingNews": [
