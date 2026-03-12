@@ -6,6 +6,7 @@ import com.github.myeoungdev.marketticker.infrastructure.naver.NaverClient
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverForeignStockBasic
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverForeignStockOverview
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverNewsArticle
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverResearchArticle
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
@@ -176,9 +177,14 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
             } else {
                 null
             }
+            val research = if (ticker.marketType.isKoreanMarket()) {
+                naverClient.fetchStockResearch(ticker.symbol, size = 1).firstOrNull()
+            } else {
+                null
+            }
             val articles = loadArticles(ticker)
             withContext(Dispatchers.Main) {
-                renderOverview(overview, basic)
+                renderOverview(ticker, overview, basic, research)
                 if (articles.isEmpty()) {
                     model.replaceAll(
                         listOf(
@@ -218,8 +224,13 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
         return StockNewsSummaryFormatter.mergeArticles(domesticArticles, foreignArticles)
     }
 
-    private fun renderOverview(overview: NaverForeignStockOverview?, basic: NaverForeignStockBasic?) {
-        val card = StockNewsSummaryFormatter.buildOverviewCard(overview, basic)
+    private fun renderOverview(
+        ticker: Ticker,
+        overview: NaverForeignStockOverview?,
+        basic: NaverForeignStockBasic?,
+        research: NaverResearchArticle?
+    ) {
+        val card = StockNewsSummaryFormatter.buildOverviewCard(ticker, overview, basic, research)
         if (card == null) {
             hideOverview()
             return

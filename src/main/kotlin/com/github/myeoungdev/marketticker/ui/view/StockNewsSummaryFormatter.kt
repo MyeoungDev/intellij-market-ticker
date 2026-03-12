@@ -1,8 +1,10 @@
 package com.github.myeoungdev.marketticker.ui.view
 
+import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverForeignStockBasic
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverForeignStockOverview
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverNewsArticle
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverResearchArticle
 
 /**
  * 하단 종목 뉴스 요약 패널용 표시 데이터입니다.
@@ -21,9 +23,15 @@ internal data class StockNewsOverviewCard(
 internal object StockNewsSummaryFormatter {
 
     fun buildOverviewCard(
+        ticker: Ticker,
         overview: NaverForeignStockOverview?,
-        basic: NaverForeignStockBasic?
+        basic: NaverForeignStockBasic?,
+        research: NaverResearchArticle? = null
     ): StockNewsOverviewCard? {
+        if (ticker.marketType.isKoreanMarket()) {
+            return buildDomesticOverviewCard(ticker, research)
+        }
+
         if (overview == null && basic == null) return null
 
         val title = listOfNotNull(
@@ -65,7 +73,7 @@ internal object StockNewsSummaryFormatter {
             title = title,
             meta = meta,
             metrics = metrics,
-            summary = summary,
+            summary = clipSummary(summary),
             siteUrl = overview?.summaries?.url ?: basic?.endUrl
         )
     }
@@ -89,6 +97,46 @@ internal object StockNewsSummaryFormatter {
             .replace("&nbsp;", " ")
             .replace(Regex("\\s+"), " ")
             .trim()
+    }
+
+    private fun buildDomesticOverviewCard(
+        ticker: Ticker,
+        research: NaverResearchArticle?
+    ): StockNewsOverviewCard? {
+        val article = research ?: return StockNewsOverviewCard(
+            title = ticker.name,
+            meta = listOfNotNull(ticker.nationName, ticker.marketType.name).joinToString(" · "),
+            metrics = "",
+            summary = "국내 종목 개요 정보가 제한되어 있습니다.",
+            siteUrl = null
+        )
+
+        val meta = listOfNotNull(
+            ticker.nationName,
+            ticker.marketType.name,
+            article.brokerName.takeIf { it.isNotBlank() },
+            article.writeDate.takeIf { it.isNotBlank() }
+        ).joinToString(" · ")
+
+        val metrics = listOfNotNull(
+            article.opinion?.takeIf { it.isNotBlank() }?.let { "의견 $it" },
+            article.goalPrice?.takeIf { it.isNotBlank() }?.let { "목표가 $it" },
+            article.prevGoalPrice?.takeIf { it.isNotBlank() }?.let { "이전 $it" }
+        ).joinToString(" · ")
+
+        return StockNewsOverviewCard(
+            title = ticker.name,
+            meta = meta,
+            metrics = metrics,
+            summary = clipSummary(plainText(article.content)),
+            siteUrl = article.endUrl.takeIf { it.isNotBlank() }
+        )
+    }
+
+    private fun clipSummary(text: String, maxLength: Int = 180): String {
+        val normalized = text.trim()
+        if (normalized.length <= maxLength) return normalized
+        return normalized.take(maxLength).trimEnd() + "..."
     }
 
     private fun metricValue(basic: NaverForeignStockBasic?, code: String): String? {

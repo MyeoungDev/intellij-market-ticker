@@ -1,5 +1,7 @@
 package com.github.myeoungdev.marketticker.ui.view
 
+import com.github.myeoungdev.marketticker.domain.model.MarketType
+import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.CurrencyResponse
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverForeignStockBasic
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverForeignStockIndustry
@@ -8,6 +10,7 @@ import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverForeignS
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverForeignStockOverview
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverForeignStockSummaryBlock
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverNewsArticle
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverResearchArticle
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.StockExchangeType
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.DisplayName
@@ -23,7 +26,7 @@ class StockNewsSummaryFormatterTest {
 
         @Test
         fun `overview와 basic이 함께 있으면 핵심 지표를 묶어 카드로 만든다`() {
-            val card = StockNewsSummaryFormatter.buildOverviewCard(createOverview(), createBasic())
+            val card = StockNewsSummaryFormatter.buildOverviewCard(createForeignTicker(), createOverview(), createBasic())
 
             assertThat(card).isNotNull
             assertThat(card?.title).contains("엔비디아")
@@ -35,7 +38,7 @@ class StockNewsSummaryFormatterTest {
 
         @Test
         fun `basic만 있어도 숫자 중심 카드가 만들어진다`() {
-            val card = StockNewsSummaryFormatter.buildOverviewCard(null, createBasic())
+            val card = StockNewsSummaryFormatter.buildOverviewCard(createForeignTicker(), null, createBasic())
 
             assertThat(card).isNotNull
             assertThat(card?.title).contains("엔비디아")
@@ -46,9 +49,27 @@ class StockNewsSummaryFormatterTest {
 
         @Test
         fun `입력이 모두 없으면 카드를 만들지 않는다`() {
-            val card = StockNewsSummaryFormatter.buildOverviewCard(null, null)
+            val card = StockNewsSummaryFormatter.buildOverviewCard(createForeignTicker(), null, null)
 
             assertThat(card).isNull()
+        }
+
+        @Test
+        fun `국내 종목은 최신 리서치 기반으로 개요 카드를 만든다`() {
+            val card = StockNewsSummaryFormatter.buildOverviewCard(
+                createDomesticTicker(),
+                overview = null,
+                basic = null,
+                research = createDomesticResearch()
+            )
+
+            assertThat(card).isNotNull
+            assertThat(card?.title).isEqualTo("삼성전자")
+            assertThat(card?.meta).contains("대한민국", "KOSPI", "미래에셋증권", "2026-03-10")
+            assertThat(card?.metrics).contains("의견 매수", "목표가 275000", "이전 173500")
+            assertThat(card?.summary).doesNotContain("<p>")
+            assertThat(card?.summary?.length).isLessThanOrEqualTo(183)
+            assertThat(card?.siteUrl).isEqualTo("https://stock.pstatic.net/report.pdf")
         }
     }
 
@@ -99,6 +120,43 @@ class StockNewsSummaryFormatterTest {
                 stockExchange = "NASDAQ",
                 marketValueKrw = "6,678조 2,551억원"
             )
+        )
+    }
+
+    private fun createForeignTicker(): Ticker {
+        return Ticker(
+            symbol = "NVDA",
+            tradingSymbol = "NVDA.O",
+            name = "엔비디아",
+            marketType = MarketType.NASDAQ,
+            nationCode = "USA",
+            nationName = "미국"
+        )
+    }
+
+    private fun createDomesticTicker(): Ticker {
+        return Ticker(
+            symbol = "005930",
+            tradingSymbol = "005930",
+            name = "삼성전자",
+            marketType = MarketType.KOSPI,
+            nationCode = "KOR",
+            nationName = "대한민국"
+        )
+    }
+
+    private fun createDomesticResearch(): NaverResearchArticle {
+        return NaverResearchArticle(
+            itemCode = "005930",
+            itemName = "삼성전자",
+            title = "주가 매력도가 더 높아졌다",
+            content = "<p><strong>동사에 대한 투자의견과 목표주가 유지</strong></p><p>삼성전자는 메모리 업황의 선행 지표가 여전히 견조하고, 가격 매력도와 배당 수익률이 유의미하게 높아졌다.</p>",
+            brokerName = "미래에셋증권",
+            writeDate = "2026-03-10",
+            endUrl = "https://stock.pstatic.net/report.pdf",
+            opinion = "매수",
+            goalPrice = "275000",
+            prevGoalPrice = "173500"
         )
     }
 
