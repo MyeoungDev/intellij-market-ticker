@@ -18,8 +18,10 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.ui.JBUI
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.awt.BorderLayout
@@ -40,6 +42,7 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
     private val localizationService = service<LocalizationService>()
     private val naverClient = NaverClient()
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private var requestJob: Job? = null
 
     private val titleLabel = JLabel(localizationService.text("선택 종목 뉴스", "Selected Stock News"))
     private val statusLabel = JLabel(localizationService.text("관심종목을 선택하면 뉴스를 표시합니다.", "Select a watchlist ticker to see news."))
@@ -166,6 +169,7 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
     }
 
     fun showTicker(ticker: Ticker) {
+        requestJob?.cancel()
         titleLabel.text = localizationService.text("${ticker.name} 뉴스", "${ticker.name} News")
         statusLabel.text = localizationService.text("뉴스를 불러오는 중...", "Loading news...")
         hideOverview()
@@ -175,7 +179,7 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
             )
         )
 
-        scope.launch {
+        requestJob = scope.launch {
             val overview = if (!ticker.marketType.isKoreanMarket() && !ticker.marketType.isCryptoMarket()) {
                 naverClient.fetchForeignStockOverview(ticker.tradingSymbol)
             } else {
@@ -193,6 +197,7 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
             }
             val articles = loadArticles(ticker)
             withContext(Dispatchers.Main) {
+                if (!isActive) return@withContext
                 renderOverview(ticker, overview, basic, research)
                 if (articles.isEmpty()) {
                     model.replaceAll(
@@ -216,6 +221,7 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
     }
 
     override fun dispose() {
+        requestJob?.cancel()
         scope.cancel()
     }
 

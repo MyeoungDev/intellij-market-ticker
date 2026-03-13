@@ -15,8 +15,10 @@ import com.intellij.ui.components.JBScrollPane
 import com.intellij.util.ui.JBUI
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.awt.BorderLayout
@@ -34,6 +36,7 @@ class StockResearchSummaryPanel : JPanel(BorderLayout()), Disposable {
     private val localizationService = service<LocalizationService>()
     private val naverClient = NaverClient()
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private var requestJob: Job? = null
 
     private val titleLabel = JLabel(localizationService.text("선택 종목 리서치", "Selected Stock Research"))
     private val statusLabel = JLabel(localizationService.text("관심종목을 선택하면 리서치를 표시합니다.", "Select a watchlist ticker to see research."))
@@ -89,6 +92,7 @@ class StockResearchSummaryPanel : JPanel(BorderLayout()), Disposable {
     }
 
     fun showTicker(ticker: Ticker) {
+        requestJob?.cancel()
         titleLabel.text = localizationService.text(
             "${ticker.name} 리서치",
             "${ticker.name} Research"
@@ -100,9 +104,10 @@ class StockResearchSummaryPanel : JPanel(BorderLayout()), Disposable {
             )
         )
 
-        scope.launch {
+        requestJob = scope.launch {
             val articles = naverClient.fetchStockResearch(ticker.symbol).take(3)
             withContext(Dispatchers.Main) {
+                if (!isActive) return@withContext
                 if (articles.isEmpty()) {
                     model.replaceAll(
                         listOf(
@@ -127,6 +132,7 @@ class StockResearchSummaryPanel : JPanel(BorderLayout()), Disposable {
     }
 
     override fun dispose() {
+        requestJob?.cancel()
         scope.cancel()
     }
 

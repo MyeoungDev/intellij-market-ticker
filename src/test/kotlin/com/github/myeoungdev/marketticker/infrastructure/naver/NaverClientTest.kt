@@ -718,6 +718,27 @@ class NaverClientTest {
         }
 
         @Test
+        fun `종목 상세 뉴스 API는 itemCode가 비어 있으면 빈 목록을 반환한다`() {
+            val result = naverClient.fetchDomesticDetailNews(itemCode = "   ", page = 1, pageSize = 15)
+
+            assertThat(result).isEmpty()
+            wireMockServer.verify(0, anyRequestedFor(anyUrl()))
+        }
+
+        @Test
+        fun `종목 상세 뉴스 API 실패 시 빈 목록을 반환한다`() {
+            wireMockServer.stubFor(
+                get(urlPathMatching("/domestic/detail/news.*"))
+                    .withQueryParam("itemCode", equalTo("NVDA.O"))
+                    .willReturn(aResponse().withStatus(500))
+            )
+
+            val result = naverClient.fetchDomesticDetailNews(itemCode = "NVDA.O", page = 1, pageSize = 15)
+
+            assertThat(result).isEmpty()
+        }
+
+        @Test
         fun `해외 종목 뉴스 API 성공 시 기사 목록을 반환한다`() {
             wireMockServer.stubFor(
                 get(urlPathMatching("/foreign/worldStock/list.*"))
@@ -737,6 +758,27 @@ class NaverClientTest {
             assertThat(result.first().officeHname).isEqualTo("로이터")
             assertThat(result.first().badgeLabel).isEqualTo("해외 종목뉴스")
             assertThat(result.first().articleUrl()).isEqualTo("https://stock.naver.com/news/worldnews/2512970")
+        }
+
+        @Test
+        fun `해외 종목 뉴스 API는 reutersCode가 비어 있으면 빈 목록을 반환한다`() {
+            val result = naverClient.fetchForeignStockNews(reutersCode = " ", page = 1, pageSize = 15)
+
+            assertThat(result).isEmpty()
+            wireMockServer.verify(0, anyRequestedFor(anyUrl()))
+        }
+
+        @Test
+        fun `해외 종목 뉴스 API 실패 시 빈 목록을 반환한다`() {
+            wireMockServer.stubFor(
+                get(urlPathMatching("/foreign/worldStock/list.*"))
+                    .withQueryParam("reutersCode", equalTo("NVDA.O"))
+                    .willReturn(aResponse().withStatus(502))
+            )
+
+            val result = naverClient.fetchForeignStockNews(reutersCode = "NVDA.O", page = 1, pageSize = 15)
+
+            assertThat(result).isEmpty()
         }
 
         @Test
@@ -761,6 +803,26 @@ class NaverClientTest {
         }
 
         @Test
+        fun `해외 종목 개요 API는 reutersCode가 비어 있으면 null을 반환한다`() {
+            val result = naverClient.fetchForeignStockOverview("   ")
+
+            assertThat(result).isNull()
+            wireMockServer.verify(0, anyRequestedFor(anyUrl()))
+        }
+
+        @Test
+        fun `해외 종목 개요 API 실패 시 null을 반환한다`() {
+            wireMockServer.stubFor(
+                get(urlEqualTo("/securityService/stock/NVDA.O/overview"))
+                    .willReturn(aResponse().withStatus(503))
+            )
+
+            val result = naverClient.fetchForeignStockOverview("NVDA.O")
+
+            assertThat(result).isNull()
+        }
+
+        @Test
         fun `해외 종목 기본 API 성공 시 핵심 지표를 반환한다`() {
             wireMockServer.stubFor(
                 get(urlEqualTo("/securityService/stock/NVDA.O/basic"))
@@ -780,6 +842,26 @@ class NaverClientTest {
             assertThat(result?.fluctuationsRatio).isEqualTo("0.47")
             assertThat(result?.stockItemTotalInfos?.first { it.code == "per" }?.value).isEqualTo("37.73배")
             assertThat(result?.stockItemTotalInfos?.first { it.code == "highPriceOf52Weeks" }?.value).isEqualTo("212.19")
+        }
+
+        @Test
+        fun `해외 종목 기본 API는 reutersCode가 비어 있으면 null을 반환한다`() {
+            val result = naverClient.fetchForeignStockBasic(" ")
+
+            assertThat(result).isNull()
+            wireMockServer.verify(0, anyRequestedFor(anyUrl()))
+        }
+
+        @Test
+        fun `해외 종목 기본 API 실패 시 null을 반환한다`() {
+            wireMockServer.stubFor(
+                get(urlEqualTo("/securityService/stock/NVDA.O/basic"))
+                    .willReturn(aResponse().withStatus(500))
+            )
+
+            val result = naverClient.fetchForeignStockBasic("NVDA.O")
+
+            assertThat(result).isNull()
         }
 
         @Test
