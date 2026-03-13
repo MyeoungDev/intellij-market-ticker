@@ -105,8 +105,6 @@ class WatchlistView(private val project: Project) {
                         val updatedEntry = entry.copy(
                             purchasePrice = dialog.purchasePrice,
                             quantity = dialog.quantity,
-                            targetWeightPercentage = dialog.targetWeightPercentage,
-                            realizedProfitLoss = dialog.realizedProfitLoss,
                             groupTag = dialog.groupTag
                         )
                         marketDataService.updateWatchlistEntryPortfolio(updatedEntry)

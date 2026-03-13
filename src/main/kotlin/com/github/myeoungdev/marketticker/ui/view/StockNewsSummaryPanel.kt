@@ -47,11 +47,13 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
     private val overviewMetaLabel = JLabel()
     private val overviewMetricsLabel = JLabel()
     private val overviewSummaryArea = JTextArea()
+    private val overviewToggleButton = JButton()
     private val overviewSiteButton = JButton(localizationService.text("공식 사이트", "Official Site"))
     private val overviewPanel = JPanel(BorderLayout(0, 6))
     private val model = CollectionListModel<NaverNewsArticle>()
     private val list = JBList(model)
     private var currentOverviewUrl: String? = null
+    private var isOverviewExpanded: Boolean = false
 
     init {
         border = JBUI.Borders.empty(8)
@@ -69,6 +71,12 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
         overviewSummaryArea.border = JBUI.Borders.empty()
         overviewSummaryArea.foreground = JBColor.foreground()
         overviewSummaryArea.font = overviewSummaryArea.font.deriveFont(12f)
+        overviewSummaryArea.isVisible = false
+        overviewToggleButton.isVisible = false
+        overviewToggleButton.addActionListener {
+            isOverviewExpanded = !isOverviewExpanded
+            updateOverviewExpansion()
+        }
         overviewSiteButton.isVisible = false
         overviewSiteButton.addActionListener {
             currentOverviewUrl?.let(BrowserUtil::browse)
@@ -94,8 +102,9 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
                         BorderLayout.CENTER
                     )
                     add(
-                        JPanel(FlowLayout(FlowLayout.RIGHT, 0, 0)).apply {
+                        JPanel(FlowLayout(FlowLayout.RIGHT, 6, 0)).apply {
                             isOpaque = false
+                            add(overviewToggleButton)
                             add(overviewSiteButton)
                         },
                         BorderLayout.EAST
@@ -241,7 +250,10 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
         overviewMetricsLabel.text = card.metrics
         overviewSummaryArea.text = card.summary
         currentOverviewUrl = card.siteUrl
+        isOverviewExpanded = false
+        overviewToggleButton.isVisible = card.summary.isNotBlank()
         overviewSiteButton.isVisible = !currentOverviewUrl.isNullOrBlank()
+        updateOverviewExpansion()
         overviewPanel.isVisible = true
     }
 
@@ -251,7 +263,10 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
         overviewMetaLabel.text = ""
         overviewMetricsLabel.text = ""
         overviewSummaryArea.text = ""
+        overviewSummaryArea.isVisible = false
         currentOverviewUrl = null
+        isOverviewExpanded = false
+        overviewToggleButton.isVisible = false
         overviewSiteButton.isVisible = false
     }
 
@@ -267,5 +282,15 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
 
     private fun escapeHtml(text: String): String {
         return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
+    }
+
+    private fun updateOverviewExpansion() {
+        overviewSummaryArea.isVisible = isOverviewExpanded
+        overviewToggleButton.text = localizationService.text(
+            if (isOverviewExpanded) "접기" else "더보기",
+            if (isOverviewExpanded) "Less" else "More"
+        )
+        overviewPanel.revalidate()
+        overviewPanel.repaint()
     }
 }
