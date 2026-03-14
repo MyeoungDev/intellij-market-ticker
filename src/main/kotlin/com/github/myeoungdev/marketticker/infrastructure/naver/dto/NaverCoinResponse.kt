@@ -121,7 +121,9 @@ data class NaverCoinOverview(
     val changeRate: Double,
     val changeValue: Double,
     val koreaTradedAt: String,
-    val totalInfos: List<NaverCoinOverviewInfo> = emptyList()
+    val krwPremiumRate: Double? = null,
+    val totalInfos: List<NaverCoinOverviewInfo> = emptyList(),
+    val profileInfo: NaverCoinProfileInfo? = null
 ) {
 
     /**
@@ -173,6 +175,22 @@ data class NaverCoinOverview(
 
     private fun totalInfoValue(code: String): Double? = totalInfos.firstOrNull { it.code == code }?.value
 }
+
+/**
+ * 코인 프로필 정보입니다.
+ */
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class NaverCoinProfileInfo(
+    val contentKr: String? = null,
+    val initialIssueDate: String? = null,
+    val maxSupply: Double? = null,
+    val totalSupply: Double? = null,
+    val marketCap: Double? = null,
+    val circulatingSupply: Double? = null,
+    val accumulatedTradingVolume24h: Double? = null,
+    val accumulatedTradingValue24h: Double? = null,
+    val symbolImageUrl: String? = null
+)
 
 /**
  * Naver 코인 상세 지표 항목입니다.

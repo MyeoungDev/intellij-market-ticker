@@ -195,17 +195,26 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
             } else {
                 null
             }
-            val articles = loadArticles(ticker)
+            val coinOverview = if (ticker.marketType.isCryptoMarket()) {
+                naverClient.fetchCoinOverview(ticker.marketType.name, ticker.symbol)
+            } else {
+                null
+            }
+            val articles = loadArticles(ticker, coinOverview)
             withContext(Dispatchers.Main) {
                 if (!isActive) return@withContext
-                renderOverview(ticker, overview, basic, research)
+                renderOverview(ticker, overview, basic, coinOverview, research)
                 if (articles.isEmpty()) {
                     model.replaceAll(
                         listOf(
                             NaverNewsArticle(title = localizationService.text("표시할 뉴스가 없습니다.", "No news available."))
                         )
                     )
-                    statusLabel.text = localizationService.text("최근 뉴스 없음", "No recent news")
+                    statusLabel.text = if (ticker.marketType.isCryptoMarket()) {
+                        localizationService.text("코인 개요만 표시합니다.", "Coin overview only")
+                    } else {
+                        localizationService.text("최근 뉴스 없음", "No recent news")
+                    }
                 } else {
                     model.replaceAll(articles)
                     if (list.selectedIndex == -1) {
@@ -225,8 +234,13 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
         scope.cancel()
     }
 
-    private fun loadArticles(ticker: Ticker): List<NaverNewsArticle> {
-        if (ticker.marketType.isCryptoMarket()) return emptyList()
+    private fun loadArticles(
+        ticker: Ticker,
+        coinOverview: com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCoinOverview? = null
+    ): List<NaverNewsArticle> {
+        if (ticker.marketType.isCryptoMarket()) {
+            return naverClient.fetchNewsSearch(buildCryptoNewsQuery(ticker, coinOverview), page = 1, pageSize = 7)
+        }
 
         val localItemCode = if (ticker.marketType.isKoreanMarket()) ticker.symbol else ticker.tradingSymbol
         val domesticArticles = naverClient.fetchDomesticDetailNews(itemCode = localItemCode, page = 1, pageSize = 15)
@@ -239,13 +253,34 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
         return StockNewsSummaryFormatter.mergeArticles(domesticArticles, foreignArticles)
     }
 
+    private fun buildCryptoNewsQuery(
+        ticker: Ticker,
+        coinOverview: com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCoinOverview?
+    ): String {
+        val aliases = CRYPTO_NEWS_ALIASES[ticker.symbol.uppercase()].orEmpty()
+        return buildList {
+            addAll(aliases)
+            add(ticker.name)
+            add(ticker.symbol)
+            add(ticker.tradingSymbol.substringBefore('_'))
+            coinOverview?.krName?.let(::add)
+            coinOverview?.enName?.let(::add)
+            coinOverview?.exchangeTicker?.let(::add)
+        }
+            .map { it.trim() }
+            .filter { it.isNotBlank() }
+            .distinct()
+            .joinToString(" | ")
+    }
+
     private fun renderOverview(
         ticker: Ticker,
         overview: NaverForeignStockOverview?,
         basic: NaverForeignStockBasic?,
+        coinOverview: com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCoinOverview?,
         research: NaverResearchArticle?
     ) {
-        val card = StockNewsSummaryFormatter.buildOverviewCard(ticker, overview, basic, research)
+        val card = StockNewsSummaryFormatter.buildOverviewCard(ticker, overview, basic, coinOverview, research)
         if (card == null) {
             hideOverview()
             return
@@ -284,6 +319,16 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
             raw.length >= 10 -> raw.substring(0, 10)
             else -> raw
         }
+    }
+
+    companion object {
+        private val CRYPTO_NEWS_ALIASES = mapOf(
+            "BTC" to listOf("비트코인", "BTC", "Bitcoin"),
+            "ETH" to listOf("이더리움", "ETH", "Ethereum"),
+            "XRP" to listOf("엑스알피", "리플", "XRP", "Ripple"),
+            "DOGE" to listOf("도지코인", "DOGE", "Dogecoin"),
+            "MATIC" to listOf("폴리곤", "MATIC", "Polygon")
+        )
     }
 
     private fun escapeHtml(text: String): String {

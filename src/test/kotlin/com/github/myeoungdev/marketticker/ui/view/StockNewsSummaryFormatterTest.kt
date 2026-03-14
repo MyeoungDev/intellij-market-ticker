@@ -3,6 +3,9 @@ package com.github.myeoungdev.marketticker.ui.view
 import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.CurrencyResponse
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCoinOverview
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCoinOverviewInfo
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCoinProfileInfo
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverForeignStockBasic
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverForeignStockIndustry
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverForeignStockListedInfo
@@ -26,7 +29,11 @@ class StockNewsSummaryFormatterTest {
 
         @Test
         fun `overview와 basic이 함께 있으면 핵심 지표를 묶어 카드로 만든다`() {
-            val card = StockNewsSummaryFormatter.buildOverviewCard(createForeignTicker(), createOverview(), createBasic())
+            val card = StockNewsSummaryFormatter.buildOverviewCard(
+                ticker = createForeignTicker(),
+                overview = createOverview(),
+                basic = createBasic()
+            )
 
             assertThat(card).isNotNull
             assertThat(card?.title).contains("엔비디아")
@@ -38,7 +45,11 @@ class StockNewsSummaryFormatterTest {
 
         @Test
         fun `basic만 있어도 숫자 중심 카드가 만들어진다`() {
-            val card = StockNewsSummaryFormatter.buildOverviewCard(createForeignTicker(), null, createBasic())
+            val card = StockNewsSummaryFormatter.buildOverviewCard(
+                ticker = createForeignTicker(),
+                overview = null,
+                basic = createBasic()
+            )
 
             assertThat(card).isNotNull
             assertThat(card?.title).contains("엔비디아")
@@ -49,7 +60,11 @@ class StockNewsSummaryFormatterTest {
 
         @Test
         fun `입력이 모두 없으면 카드를 만들지 않는다`() {
-            val card = StockNewsSummaryFormatter.buildOverviewCard(createForeignTicker(), null, null)
+            val card = StockNewsSummaryFormatter.buildOverviewCard(
+                ticker = createForeignTicker(),
+                overview = null,
+                basic = null
+            )
 
             assertThat(card).isNull()
         }
@@ -70,6 +85,22 @@ class StockNewsSummaryFormatterTest {
             assertThat(card?.summary).doesNotContain("<p>")
             assertThat(card?.summary?.length).isLessThanOrEqualTo(183)
             assertThat(card?.siteUrl).isEqualTo("https://stock.pstatic.net/report.pdf")
+        }
+
+        @Test
+        fun `코인은 상세 시세 기반으로 개요 카드를 만든다`() {
+            val card = StockNewsSummaryFormatter.buildOverviewCard(
+                ticker = createCryptoTicker(),
+                overview = null,
+                basic = null,
+                coinOverview = createCoinOverview()
+            )
+
+            assertThat(card).isNotNull
+            assertThat(card?.title).contains("비트코인", "Bitcoin")
+            assertThat(card?.meta).contains("업비트", "UPBIT", "거래가 104,491,000 KRW")
+            assertThat(card?.metrics).contains("+0.08%", "+87,000 KRW", "김프 -1.49%", "52주 89,000,000 - 179,869,000")
+            assertThat(card?.summary).contains("블록체인")
         }
     }
 
@@ -145,6 +176,17 @@ class StockNewsSummaryFormatterTest {
         )
     }
 
+    private fun createCryptoTicker(): Ticker {
+        return Ticker(
+            symbol = "BTC",
+            tradingSymbol = "BTC_KRW_UPBIT",
+            name = "비트코인",
+            marketType = MarketType.UPBIT,
+            nationCode = "KOR",
+            nationName = "대한민국"
+        )
+    }
+
     private fun createDomesticResearch(): NaverResearchArticle {
         return NaverResearchArticle(
             itemCode = "005930",
@@ -192,6 +234,32 @@ class StockNewsSummaryFormatterTest {
                 NaverForeignStockMetric(code = "per", value = "37.73배"),
                 NaverForeignStockMetric(code = "pbr", value = "28.68배"),
                 NaverForeignStockMetric(code = "dividendYieldRatio", value = "0.02%")
+            )
+        )
+    }
+
+    private fun createCoinOverview(): NaverCoinOverview {
+        return NaverCoinOverview(
+            fqnfTicker = "BTC_KRW_UPBIT",
+            nfTicker = "BTC",
+            exchangeTicker = "BTC",
+            krName = "비트코인",
+            enName = "Bitcoin",
+            exchangeType = "UPBIT",
+            exchangeName = "업비트",
+            tradePrice = 104491000.0,
+            change = "RISING",
+            changeRate = 0.08,
+            changeValue = 87000.0,
+            koreaTradedAt = "2026-03-14T20:18:41.334",
+            krwPremiumRate = -1.49,
+            totalInfos = listOf(
+                NaverCoinOverviewInfo(code = "lowest52weekPrice", value = 89000000.0),
+                NaverCoinOverviewInfo(code = "highest52weekPrice", value = 179869000.0)
+            ),
+            profileInfo = NaverCoinProfileInfo(
+                contentKr = "비트코인은 블록체인 기술 기반의 대표적인 디지털 자산입니다.",
+                marketCap = 2122689996543607.0
             )
         )
     }
