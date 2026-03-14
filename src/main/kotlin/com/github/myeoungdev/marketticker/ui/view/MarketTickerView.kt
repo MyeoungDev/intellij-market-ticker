@@ -56,6 +56,8 @@ class MarketTickerView(
     private val chartView = ChartView()
     private val newsView = NewsView()
     private val researchView = ResearchView()
+    private val stockNewsView = StockNewsSummaryPanel()
+    private val stockResearchView = StockResearchSummaryPanel()
 
     private val marketPulseTicker = MarketPulseTicker()
     private val marketPulseContainer = JPanel(BorderLayout())
@@ -69,6 +71,8 @@ class MarketTickerView(
     override fun dispose() {
         scope.cancel()
         researchView.dispose()
+        stockNewsView.dispose()
+        stockResearchView.dispose()
     }
 
     init {
@@ -137,6 +141,8 @@ class MarketTickerView(
         watchlistView.onTickerSelected = { ticker, _ ->
             chartView.updateSelection(ticker)
             researchView.showStockResearch(ticker)
+            stockNewsView.showTicker(ticker)
+            stockResearchView.showTicker(ticker)
         }
 
         applyDisplaySettings()
@@ -198,21 +204,14 @@ class MarketTickerView(
     private fun rebuildBottomTabs() {
         bottomTabbedPane.removeAll()
 
+        bottomTabbedPane.addTab(localizationService.text("뉴스", "News"), stockNewsView)
+        bottomTabbedPane.addTab(localizationService.text("리서치", "Research"), stockResearchView)
+
         if (appSettingsService.isChartTabVisible()) {
             bottomTabbedPane.addTab(localizationService.text("차트", "Chart"), chartView)
         }
         if (appSettingsService.isHeatmapTabVisible()) {
             bottomTabbedPane.addTab(localizationService.text("히트맵", "Heatmap"), heatmapView)
-        }
-
-        if (bottomTabbedPane.tabCount == 0) {
-            val emptyPanel = JPanel(BorderLayout()).apply {
-                add(
-                    JLabel(localizationService.text("설정에서 차트/히트맵 탭을 켜주세요.", "Enable chart/heatmap tab in Settings.")),
-                    BorderLayout.NORTH
-                )
-            }
-            bottomTabbedPane.addTab(localizationService.text("보기", "View"), emptyPanel)
         }
     }
 

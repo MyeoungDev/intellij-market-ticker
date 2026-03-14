@@ -31,16 +31,12 @@ class PortfolioView {
         object : DefaultTableModel(
             arrayOf(
                 localizationService.text("종목명", "Symbol"),
-                localizationService.text("현재가", "Price"),
                 localizationService.text("수량", "Qty"),
                 localizationService.text("매수평균", "Avg Buy"),
+                localizationService.text("현재가", "Price"),
                 localizationService.text("평가금액", "Market Value"),
-                localizationService.text("실현손익", "Realized"),
-                localizationService.text("미실현손익", "Unrealized"),
-                localizationService.text("총손익", "Total PnL"),
-                localizationService.text("비중", "Weight"),
-                localizationService.text("목표비중", "Target"),
-                localizationService.text("편차", "Deviation")
+                localizationService.text("평가손익", "PnL"),
+                localizationService.text("수익률", "Return")
             ),
             0
         ) {
@@ -91,8 +87,6 @@ class PortfolioView {
                         val updatedEntry = entry.copy(
                             purchasePrice = dialog.purchasePrice,
                             quantity = dialog.quantity,
-                            targetWeightPercentage = dialog.targetWeightPercentage,
-                            realizedProfitLoss = dialog.realizedProfitLoss,
                             groupTag = dialog.groupTag
                         )
                         marketDataService.updateWatchlistEntryPortfolio(updatedEntry)
@@ -136,32 +130,26 @@ class PortfolioView {
                     val currentPrice = price?.currentPrice ?: purchasePrice
                     val marketValue = currentPrice * quantity
                     val unrealized = (currentPrice - purchasePrice) * quantity
-                    val realized = entry.realizedProfitLoss ?: 0.0
-
-                    Triple(entry, price, PortfolioMetrics(marketValue, realized, unrealized))
+                    Triple(entry, price, PortfolioMetrics(marketValue, unrealized))
                 }
 
-            val totalMarketValue = portfolioRows.sumOf { it.third.marketValue }
-
             portfolioRows.forEach { (entry, price, metrics) ->
-                val totalPnL = metrics.realized + metrics.unrealized
-                val actualWeight = if (totalMarketValue > 0.0) (metrics.marketValue / totalMarketValue) * 100 else 0.0
-                val targetWeight = entry.targetWeightPercentage ?: 0.0
-                val deviation = actualWeight - targetWeight
+                val returnRate = if ((entry.purchasePrice ?: 0.0) > 0.0) {
+                    ((price?.currentPrice ?: entry.purchasePrice ?: 0.0) - (entry.purchasePrice ?: 0.0)) /
+                        (entry.purchasePrice ?: 1.0) * 100.0
+                } else {
+                    0.0
+                }
 
                 tableModel.addRow(
                     arrayOf(
                         entry.name,
-                        localizationService.formatDecimal(price?.currentPrice ?: 0.0, 2),
                         localizationService.formatDecimal(entry.quantity ?: 0.0, 2),
                         localizationService.formatDecimal(entry.purchasePrice ?: 0.0, 2),
+                        localizationService.formatDecimal(price?.currentPrice ?: 0.0, 2),
                         localizationService.formatDecimal(metrics.marketValue, 2),
-                        localizationService.formatDecimal(metrics.realized, 2),
                         localizationService.formatDecimal(metrics.unrealized, 2),
-                        localizationService.formatDecimal(totalPnL, 2),
-                        localizationService.formatPercent(actualWeight),
-                        localizationService.formatPercent(targetWeight),
-                        localizationService.formatPercent(deviation)
+                        localizationService.formatPercent(returnRate)
                     )
                 )
             }
@@ -181,12 +169,11 @@ class PortfolioView {
 
     private data class PortfolioMetrics(
         val marketValue: Double,
-        val realized: Double,
         val unrealized: Double
     )
 
     private class PriceCellRenderer : DefaultTableCellRenderer() {
-        private val signedColumns = setOf(5, 6, 7, 10)
+        private val signedColumns = setOf(5, 6)
 
         override fun getTableCellRendererComponent(
             table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int

@@ -20,8 +20,10 @@ import com.intellij.ui.components.panels.VerticalLayout
 import com.intellij.util.ui.JBUI
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.awt.BorderLayout
@@ -38,8 +40,6 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTabbedPane
 import javax.swing.ListSelectionModel
-import javax.swing.event.DocumentEvent
-import javax.swing.event.DocumentListener
 
 class ResearchView : JPanel(BorderLayout()) {
 
@@ -57,18 +57,19 @@ class ResearchView : JPanel(BorderLayout()) {
     private val localizationService = service<LocalizationService>()
     private val naverClient = NaverClient()
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
+    private var stockSearchJob: Job = Job()
 
     private val refreshButton = JButton(localizationService.text("새로고침", "Refresh"))
     private val openButton = JButton(localizationService.text("원문 열기", "Open"))
     private val relatedStockButton = JButton(localizationService.text("종목 리서치", "Stock Research"))
-    private val filterField = JBTextField()
     private val statusLabel = JLabel(localizationService.text("리서치를 불러오는 중...", "Loading research..."))
 
     private val coreCategoryCombo = JComboBox(DefaultComboBoxModel(ResearchCategoryKey.values()))
     private val rankingTypeCombo = JComboBox(DefaultComboBoxModel(ResearchRankingType.values()))
     private val rankingRankCombo = JComboBox(DefaultComboBoxModel(arrayOf(1, 2, 3, 4, 5)))
     private val stockCodeField = JBTextField()
-    private val stockResearchLoadButton = JButton(localizationService.text("종목 조회", "Load"))
+    private val stockSearchResultModel = CollectionListModel<NaverSearchItem>()
+    private val stockSearchResultList = JBList(stockSearchResultModel)
 
     private val coreModel = CollectionListModel<NaverResearchArticle>()
     private val rankingModel = CollectionListModel<NaverResearchArticle>()
@@ -100,14 +101,23 @@ class ResearchView : JPanel(BorderLayout()) {
     }
 
     private fun setupUi() {
-        filterField.emptyText.text = localizationService.text(
-            "리서치 검색 (제목, 종목, 증권사)",
-            "Filter research (title, symbol, broker)"
-        )
         stockCodeField.emptyText.text = localizationService.text(
-            "종목명 또는 코드 입력 (예: 삼성전자, 005930)",
-            "Enter item name or code (e.g. Samsung, 005930)"
+            "종목명 또는 코드 검색 후 선택 (예: 삼성전자, 005930)",
+            "Search name or code, then pick a ticker (e.g. Samsung, 005930)"
         )
+        stockSearchResultList.selectionMode = ListSelectionModel.SINGLE_SELECTION
+        stockSearchResultList.visibleRowCount = 4
+        stockSearchResultList.cellRenderer = SimpleListCellRenderer.create { label, value, _ ->
+            val item = value ?: return@create
+            val meta = listOfNotNull(item.code, item.typeCode).joinToString(" · ")
+            label.border = JBUI.Borders.empty(4, 6)
+            label.text = """
+                <html>
+                <div><b>${escapeHtml(item.name)}</b></div>
+                <div style="color:#8a8a8a; margin-top:2px;">${escapeHtml(meta)}</div>
+                </html>
+            """.trimIndent()
+        }
 
         add(buildToolbar(), BorderLayout.NORTH)
         add(buildCenterPanel(), BorderLayout.CENTER)
@@ -125,7 +135,6 @@ class ResearchView : JPanel(BorderLayout()) {
             add(
                 JPanel(FlowLayout(FlowLayout.RIGHT, 8, 0)).apply {
                     isOpaque = false
-                    add(filterField)
                     add(relatedStockButton)
                     add(openButton)
                     add(refreshButton)
@@ -160,9 +169,12 @@ class ResearchView : JPanel(BorderLayout()) {
         val stockPanel = JPanel(BorderLayout(0, 8)).apply {
             border = JBUI.Borders.empty(0, 8, 8, 8)
             add(
-                JPanel(BorderLayout(8, 0)).apply {
-                    add(stockCodeField, BorderLayout.CENTER)
-                    add(stockResearchLoadButton, BorderLayout.EAST)
+                JPanel(BorderLayout(0, 8)).apply {
+                    add(stockCodeField, BorderLayout.NORTH)
+                    add(JBScrollPane(stockSearchResultList).apply {
+                        preferredSize = Dimension(0, 96)
+                        minimumSize = Dimension(0, 84)
+                    }, BorderLayout.CENTER)
                 },
                 BorderLayout.NORTH
             )
@@ -189,8 +201,21 @@ class ResearchView : JPanel(BorderLayout()) {
             }
 
             add(header, BorderLayout.NORTH)
-            add(JBScrollPane(detailBodyPane), BorderLayout.CENTER)
+            add(
+                JBScrollPane(detailBodyPane).apply {
+                    border = BorderFactory.createEmptyBorder()
+                    viewport.background = JBColor.PanelBackground
+                },
+                BorderLayout.CENTER
+            )
         }
+
+        detailTitleLabel.font = detailTitleLabel.font.deriveFont(detailTitleLabel.font.size2D + 1f)
+        detailMetaLabel.foreground = JBColor.GRAY
+        detailBodyPane.isOpaque = true
+        detailBodyPane.background = JBColor.PanelBackground
+        detailBodyPane.foreground = JBColor.foreground()
+        detailBodyPane.border = JBUI.Borders.empty(10)
 
         return JPanel(BorderLayout(0, 10)).apply {
             add(tabs, BorderLayout.CENTER)
@@ -203,14 +228,13 @@ class ResearchView : JPanel(BorderLayout()) {
         rankingList.addListSelectionListener { if (!it.valueIsAdjusting) updateDetail(rankingList.selectedValue) }
         stockList.addListSelectionListener { if (!it.valueIsAdjusting) updateDetail(stockList.selectedValue) }
         tabs.addChangeListener {
-            applyFilter()
+            ensureSelection(currentList())
             updateDetail(currentList().selectedValue)
         }
 
         coreCategoryCombo.addActionListener { updateCoreList() }
         rankingTypeCombo.addActionListener { refreshRankingResearch() }
         rankingRankCombo.addActionListener { refreshRankingResearch() }
-        stockResearchLoadButton.addActionListener { refreshStockResearch() }
         refreshButton.addActionListener { refreshAll() }
         openButton.addActionListener {
             selectedArticle?.endUrl?.takeIf { it.isNotBlank() }?.let(BrowserUtil::browse)
@@ -221,10 +245,21 @@ class ResearchView : JPanel(BorderLayout()) {
             }
         }
 
-        filterField.document.addDocumentListener(object : DocumentListener {
-            override fun insertUpdate(e: DocumentEvent) = applyFilter()
-            override fun removeUpdate(e: DocumentEvent) = applyFilter()
-            override fun changedUpdate(e: DocumentEvent) = applyFilter()
+        stockCodeField.addActionListener {
+            val selected = stockSearchResultList.selectedValue
+                ?: stockSearchResultList.model.takeIf { it.size > 0 }?.getElementAt(0)
+            if (selected != null) {
+                showStockResearch(selected.name, selected.code, selected.name)
+            }
+        }
+        stockCodeField.document.addDocumentListener(simpleDocumentListener { refreshStockSuggestions() })
+        stockSearchResultList.addMouseListener(object : java.awt.event.MouseAdapter() {
+            override fun mouseClicked(e: java.awt.event.MouseEvent) {
+                if (e.clickCount == 2) {
+                    val selected = stockSearchResultList.selectedValue ?: return
+                    showStockResearch(selected.name, selected.code, selected.name)
+                }
+            }
         })
 
         coreList.addMouseListener(object : java.awt.event.MouseAdapter() {
@@ -276,6 +311,7 @@ class ResearchView : JPanel(BorderLayout()) {
                     )
                 }
                 stockData = emptyList()
+                stockSearchResultModel.replaceAll(emptyList())
 
                 updateCoreList()
                 updateRankingList()
@@ -298,7 +334,7 @@ class ResearchView : JPanel(BorderLayout()) {
         stockModel.replaceAll(
             listOf(
                 NaverResearchArticle(
-                    title = localizationService.text("종목 코드를 입력한 뒤 조회하세요", "Enter an item code and load research")
+                    title = localizationService.text("종목을 검색하고 선택하면 리서치를 불러옵니다.", "Search and select a ticker to load research")
                 )
             )
         )
@@ -308,17 +344,17 @@ class ResearchView : JPanel(BorderLayout()) {
     private fun updateCoreList() {
         val key = coreCategoryCombo.selectedItem as? ResearchCategoryKey ?: ResearchCategoryKey.MARKET
         coreModel.replaceAll(latestData[key].orEmpty())
-        applyFilter()
+        ensureSelection(coreList)
     }
 
     private fun updateRankingList() {
         rankingModel.replaceAll(rankingData)
-        applyFilter()
+        ensureSelection(rankingList)
     }
 
     private fun updateStockList() {
         stockModel.replaceAll(stockData)
-        applyFilter()
+        ensureSelection(stockList)
     }
 
     private fun refreshRankingResearch() {
@@ -345,13 +381,6 @@ class ResearchView : JPanel(BorderLayout()) {
                 )
             }
         }
-    }
-
-    private fun refreshStockResearch() {
-        val query = stockCodeField.text.trim()
-        if (query.isBlank()) return
-
-        loadStockResearch(query)
     }
 
     private fun loadStockResearch(query: String, preferredItemCode: String? = null, preferredName: String? = null) {
@@ -392,10 +421,37 @@ class ResearchView : JPanel(BorderLayout()) {
                 }
                 updateStockList()
                 stockCodeField.text = resolvedStock.itemName
+                stockSearchResultModel.replaceAll(emptyList())
                 statusLabel.text = localizationService.text(
                     "${resolvedStock.itemName}(${resolvedStock.itemCode}) 종목 리서치 ${stockResearch.size}건",
                     "${resolvedStock.itemName} (${resolvedStock.itemCode}) stock research ${stockResearch.size} items"
                 )
+            }
+        }
+    }
+
+    private fun refreshStockSuggestions() {
+        val query = stockCodeField.text.trim()
+        if (query.isBlank()) {
+            stockSearchJob.cancel()
+            stockSearchResultModel.replaceAll(emptyList())
+            return
+        }
+
+        stockSearchJob.cancel()
+        stockSearchJob = scope.launch {
+            delay(250)
+            val matches = naverClient.searchStocks(query)
+                .filter { it.category == "stock" }
+                .take(8)
+
+            withContext(Dispatchers.Main) {
+                if (stockCodeField.text.trim() == query) {
+                    stockSearchResultModel.replaceAll(matches)
+                    if (matches.isNotEmpty()) {
+                        stockSearchResultList.selectedIndex = 0
+                    }
+                }
             }
         }
     }
@@ -421,32 +477,6 @@ class ResearchView : JPanel(BorderLayout()) {
             ?: stockResults.firstOrNull { it.name.equals(query, ignoreCase = true) }
             ?: stockResults.firstOrNull { it.name.contains(query, ignoreCase = true) }
             ?: stockResults.first()
-    }
-
-    private fun applyFilter() {
-        val query = filterField.text.trim()
-        val sourceItems = when (currentSource()) {
-            SourceTab.CORE -> latestData[(coreCategoryCombo.selectedItem as? ResearchCategoryKey) ?: ResearchCategoryKey.MARKET].orEmpty()
-            SourceTab.RANKING -> rankingData
-            SourceTab.STOCK -> stockData
-        }
-
-        val filtered = if (query.isBlank()) {
-            sourceItems
-        } else {
-            sourceItems.filter { article ->
-                listOfNotNull(article.title, article.itemName, article.brokerName, article.category)
-                    .any { it.contains(query, ignoreCase = true) }
-            }
-        }
-
-        currentModel().replaceAll(filtered)
-        if (filtered.isNotEmpty() && currentList().selectedIndex == -1) {
-            currentList().selectedIndex = 0
-        }
-        if (filtered.isEmpty()) {
-            updateDetail(null)
-        }
     }
 
     private fun updateDetail(article: NaverResearchArticle?) {
@@ -488,7 +518,7 @@ class ResearchView : JPanel(BorderLayout()) {
 
         return """
             <html>
-            <body style="font-family: sans-serif; font-size: 12px; margin: 8px;">
+            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px; line-height: 1.55; margin: 0; color: #d7dae0; background: #2b2d30;">
                 $content
             </body>
             </html>
@@ -498,7 +528,7 @@ class ResearchView : JPanel(BorderLayout()) {
     private fun emptyHtmlBody(message: String): String {
         return """
             <html>
-            <body style="font-family: sans-serif; font-size: 12px; margin: 8px; color: #888888;">
+            <body style="font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; font-size: 13px; margin: 0; color: #888888; background: #2b2d30;">
                 <p>$message</p>
             </body>
             </html>
@@ -521,14 +551,6 @@ class ResearchView : JPanel(BorderLayout()) {
         }
     }
 
-    private fun currentModel(): CollectionListModel<NaverResearchArticle> {
-        return when (currentSource()) {
-            SourceTab.CORE -> coreModel
-            SourceTab.RANKING -> rankingModel
-            SourceTab.STOCK -> stockModel
-        }
-    }
-
     private fun createResearchList(model: CollectionListModel<NaverResearchArticle>): JBList<NaverResearchArticle> {
         return JBList(model).apply {
             selectionMode = ListSelectionModel.SINGLE_SELECTION
@@ -537,6 +559,20 @@ class ResearchView : JPanel(BorderLayout()) {
                 label.text = formatListText(value)
             }
         }
+    }
+
+    private fun ensureSelection(list: JBList<NaverResearchArticle>) {
+        if (list.model.size > 0 && list.selectedIndex == -1) {
+            list.selectedIndex = 0
+        } else if (list.model.size == 0 && currentList() === list) {
+            updateDetail(null)
+        }
+    }
+
+    private fun simpleDocumentListener(onChange: () -> Unit) = object : javax.swing.event.DocumentListener {
+        override fun insertUpdate(e: javax.swing.event.DocumentEvent) = onChange()
+        override fun removeUpdate(e: javax.swing.event.DocumentEvent) = onChange()
+        override fun changedUpdate(e: javax.swing.event.DocumentEvent) = onChange()
     }
 
     private fun formatListText(article: NaverResearchArticle?): String {

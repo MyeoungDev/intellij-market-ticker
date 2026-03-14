@@ -70,7 +70,11 @@ data class NaverWorldNewsArticle(
     /**
      * 공통 기사 모델로 변환합니다.
      */
-    fun toNewsArticle(): NaverNewsArticle {
+    fun toNewsArticle(
+        badgeLabel: String = "해외뉴스",
+        sectionKey: String = "WORLDNEWS",
+        sectionLabel: String = "해외뉴스"
+    ): NaverNewsArticle {
         return NaverNewsArticle(
             officeId = oid,
             officeHname = ohnm,
@@ -81,11 +85,67 @@ data class NaverWorldNewsArticle(
             type = type,
             subcontent = subcontent,
             thumbUrl = thumbUrl,
-            badgeLabel = "해외뉴스",
+            badgeLabel = badgeLabel,
             badgeColor = "gray",
-            sectionKey = "WORLDNEWS",
-            sectionLabel = "해외뉴스",
+            sectionKey = sectionKey,
+            sectionLabel = sectionLabel,
             isOverseas = true
+        )
+    }
+}
+
+/**
+ * 종목 상세 뉴스 응답입니다.
+ */
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class NaverDomesticDetailNewsResponse(
+    val total: String? = null,
+    val clusters: List<NaverDomesticDetailNewsCluster> = emptyList()
+)
+
+/**
+ * 종목 상세 뉴스 클러스터입니다.
+ */
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class NaverDomesticDetailNewsCluster(
+    val itemTotal: String? = null,
+    val items: List<NaverDomesticDetailNewsItem> = emptyList()
+)
+
+/**
+ * 종목 상세 뉴스 기사입니다.
+ */
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class NaverDomesticDetailNewsItem(
+    val id: String? = null,
+    val officeId: String? = null,
+    val articleId: String? = null,
+    val officeName: String? = null,
+    val datetime: String? = null,
+    val type: String? = null,
+    val title: String = "",
+    val body: String? = null,
+    val photoType: String? = null,
+    val imageOriginLink: String? = null
+) {
+
+    /**
+     * 공통 기사 모델로 변환합니다.
+     */
+    fun toNewsArticle(): NaverNewsArticle {
+        return NaverNewsArticle(
+            officeId = officeId,
+            officeHname = officeName,
+            articleId = articleId,
+            title = title,
+            datetime = datetime,
+            type = type,
+            subcontent = body,
+            thumbUrl = imageOriginLink,
+            badgeLabel = "종목뉴스",
+            badgeColor = "blue",
+            sectionKey = "ITEM_NEWS",
+            sectionLabel = "종목뉴스"
         )
     }
 }
