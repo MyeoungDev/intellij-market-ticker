@@ -13,6 +13,26 @@ data class NaverNewsListResponse(
 )
 
 /**
+ * 뉴스 검색 응답입니다.
+ */
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class NaverNewsSearchResponse(
+    val status: NaverResponseStatus = NaverResponseStatus(),
+    val total: String? = null,
+    val items: List<NaverNewsSearchItem> = emptyList()
+)
+
+/**
+ * 공통 상태 응답입니다.
+ */
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class NaverResponseStatus(
+    val code: String? = null,
+    val message: String? = null,
+    val isSuccess: Boolean = false
+)
+
+/**
  * 뉴스 탭에서 공통으로 사용하는 기사 모델입니다.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -46,6 +66,40 @@ data class NaverNewsArticle(
         }
         if (officeId.isNullOrBlank() || articleId.isNullOrBlank()) return null
         return "https://n.news.naver.com/article/$officeId/$articleId"
+    }
+}
+
+/**
+ * 뉴스 검색 기사입니다.
+ */
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class NaverNewsSearchItem(
+    val id: String? = null,
+    val officeId: String? = null,
+    val articleId: String? = null,
+    val officeName: String? = null,
+    val datetime: String? = null,
+    val type: String? = null,
+    val title: String = "",
+    val body: String? = null,
+    val photoType: String? = null,
+    val imageOriginLink: String? = null
+) {
+    fun toNewsArticle(badgeLabel: String = "코인뉴스"): NaverNewsArticle {
+        return NaverNewsArticle(
+            officeId = officeId,
+            officeHname = officeName,
+            articleId = articleId,
+            title = title,
+            datetime = datetime,
+            type = type,
+            subcontent = body,
+            thumbUrl = imageOriginLink,
+            badgeLabel = badgeLabel,
+            badgeColor = "orange",
+            sectionKey = "CRYPTO_NEWS",
+            sectionLabel = badgeLabel
+        )
     }
 }
 

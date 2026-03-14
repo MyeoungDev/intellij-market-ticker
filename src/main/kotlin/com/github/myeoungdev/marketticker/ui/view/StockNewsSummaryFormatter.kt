@@ -1,6 +1,7 @@
 package com.github.myeoungdev.marketticker.ui.view
 
 import com.github.myeoungdev.marketticker.domain.model.Ticker
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCoinOverview
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverForeignStockBasic
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverForeignStockOverview
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverNewsArticle
@@ -26,8 +27,13 @@ internal object StockNewsSummaryFormatter {
         ticker: Ticker,
         overview: NaverForeignStockOverview?,
         basic: NaverForeignStockBasic?,
+        coinOverview: NaverCoinOverview? = null,
         research: NaverResearchArticle? = null
     ): StockNewsOverviewCard? {
+        if (ticker.marketType.isCryptoMarket()) {
+            return buildCryptoOverviewCard(ticker, coinOverview)
+        }
+
         if (ticker.marketType.isKoreanMarket()) {
             return buildDomesticOverviewCard(ticker, research)
         }
@@ -89,6 +95,44 @@ internal object StockNewsSummaryFormatter {
             .take(limit)
     }
 
+    private fun buildCryptoOverviewCard(
+        ticker: Ticker,
+        coinOverview: NaverCoinOverview?
+    ): StockNewsOverviewCard? {
+        val overview = coinOverview ?: return null
+        val title = listOfNotNull(
+            overview.krName.takeIf { it.isNotBlank() },
+            overview.enName?.takeIf { it.isNotBlank() }
+        ).joinToString(" / ")
+
+        val meta = listOfNotNull(
+            overview.exchangeName?.takeIf { it.isNotBlank() } ?: ticker.marketType.displayName,
+            overview.exchangeType.takeIf { it.isNotBlank() },
+            "거래가 ${formatCoinNumber(overview.tradePrice)} KRW"
+        ).joinToString(" · ")
+
+        val metrics = listOfNotNull(
+            "${formatSignedPercent(overview.changeRate)} · ${formatSignedNumber(overview.changeValue)} KRW",
+            overview.krwPremiumRate?.let { "김프 ${formatSignedPercent(it)}" },
+            overview.totalInfoValue("highest52weekPrice")?.let { high ->
+                overview.totalInfoValue("lowest52weekPrice")?.let { low ->
+                    "52주 ${formatCoinNumber(low)} - ${formatCoinNumber(high)}"
+                }
+            },
+            overview.profileInfo?.marketCap?.let { "시총 ${formatLargeKrw(it)}" }
+        ).joinToString(" · ")
+
+        val summary = clipSummary(plainText(overview.profileInfo?.contentKr.orEmpty()))
+
+        return StockNewsOverviewCard(
+            title = title.ifBlank { ticker.name },
+            meta = meta,
+            metrics = metrics,
+            summary = summary,
+            siteUrl = null
+        )
+    }
+
     private fun plainText(text: String): String {
         return text.replace("<br>", "\n")
             .replace("<br/>", "\n")
@@ -145,5 +189,33 @@ internal object StockNewsSummaryFormatter {
 
     private fun metricValueDesc(basic: NaverForeignStockBasic?, code: String): String? {
         return basic?.stockItemTotalInfos?.firstOrNull { it.code == code }?.valueDesc?.takeIf { it.isNotBlank() }
+    }
+
+    private fun NaverCoinOverview.totalInfoValue(code: String): Double? {
+        return totalInfos.firstOrNull { it.code == code }?.value
+    }
+
+    private fun formatCoinNumber(value: Double): String {
+        val rounded = value.toLong()
+        return "%,d".format(rounded)
+    }
+
+    private fun formatSignedNumber(value: Double): String {
+        val rounded = value.toLong()
+        return if (rounded > 0) "+%,d".format(rounded) else "%,d".format(rounded)
+    }
+
+    private fun formatSignedPercent(value: Double): String {
+        val prefix = if (value > 0) "+" else ""
+        return prefix + "%.2f%%".format(value)
+    }
+
+    private fun formatLargeKrw(value: Double): String {
+        val trillion = value / 1_000_000_000_000.0
+        return if (trillion >= 1.0) {
+            "%.1f조원".format(trillion)
+        } else {
+            "%,.0f원".format(value)
+        }
     }
 }

@@ -75,7 +75,8 @@ class NaverClientTest {
             foreignStockOverviewUrl = "$baseUrl/securityService/stock",
             foreignStockBasicUrl = "$baseUrl/securityService/stock",
             newsAggregateUrl = "$baseUrl/news/aggregate/home",
-            noticeListUrl = "$baseUrl/home/noticeList"
+            noticeListUrl = "$baseUrl/home/noticeList",
+            newsSearchUrl = "$baseUrl/news/search"
         )
     }
 
@@ -546,7 +547,9 @@ class NaverClientTest {
 
             assertThat(result).isNotNull
             assertThat(result?.tradePrice).isEqualTo(102131000.0)
+            assertThat(result?.krwPremiumRate).isEqualTo(-0.77)
             assertThat(result?.totalInfos).isNotEmpty
+            assertThat(result?.profileInfo?.contentKr).contains("블록체인")
         }
 
         @Test
@@ -862,6 +865,36 @@ class NaverClientTest {
             val result = naverClient.fetchForeignStockBasic("NVDA.O")
 
             assertThat(result).isNull()
+        }
+
+        @Test
+        fun `뉴스 검색 API 성공 시 코인 뉴스 목록을 반환한다`() {
+            wireMockServer.stubFor(
+                get(urlPathMatching("/news/search.*"))
+                    .withQueryParam("query", containing("BTC"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", "application/json")
+                            .withBody(NaverFixtures.JSON_NEWS_SEARCH_CRYPTO_SUCCESS)
+                    )
+            )
+
+            val result = naverClient.fetchNewsSearch("비트코인 | BTC | Bitcoin", page = 1, pageSize = 7)
+
+            assertThat(result).hasSize(2)
+            assertThat(result.first().title).contains("코인시장")
+            assertThat(result.first().officeHname).isEqualTo("비즈워치")
+            assertThat(result.first().badgeLabel).isEqualTo("코인뉴스")
+            assertThat(result.first().articleUrl()).isEqualTo("https://n.news.naver.com/article/648/0000045277")
+        }
+
+        @Test
+        fun `뉴스 검색 API는 query가 비어 있으면 빈 목록을 반환한다`() {
+            val result = naverClient.fetchNewsSearch("   ", page = 1, pageSize = 7)
+
+            assertThat(result).isEmpty()
+            wireMockServer.verify(0, anyRequestedFor(anyUrl()))
         }
 
         @Test

@@ -72,6 +72,7 @@ class NaverClient(
     private val foreignStockBasicUrl: String = "https://stock.naver.com/api/securityService/stock",
     private val newsAggregateUrl: String = "https://stock.naver.com/api/domestic/news/aggregate/home",
     private val noticeListUrl: String = "https://stock.naver.com/api/domestic/home/noticeList",
+    private val newsSearchUrl: String = "https://stock.naver.com/api/domestic/news/search",
 ) {
 
     companion object {
@@ -486,6 +487,42 @@ class NaverClient(
         } catch (e: Exception) {
             logger.error(e) { "Failed to fetch foreign stock basic for reutersCode: $reutersCode" }
             null
+        }
+    }
+
+    /**
+     * 키워드 기반 뉴스 검색 결과를 조회합니다.
+     */
+    fun fetchNewsSearch(query: String, page: Int = 1, pageSize: Int = 7): List<NaverNewsArticle> {
+        checkBackgroundThread()
+        val normalizedQuery = query.trim()
+        if (normalizedQuery.isBlank()) return emptyList()
+
+        return try {
+            val encodedQuery = URLEncoder.encode(normalizedQuery, Charsets.UTF_8)
+            val fullUrl =
+                "$newsSearchUrl?query=$encodedQuery&page=${page.coerceAtLeast(1)}&pageSize=${pageSize.coerceIn(1, 30)}"
+
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(fullUrl))
+                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+                .header(ACCEPT_KEY, ACCEPT_VALUE)
+                .header(ORIGIN_KEY, ORIGIN_VALUE)
+                .GET()
+                .build()
+
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            if (response.statusCode() != 200) {
+                logger.error { "Naver news search API Error [${response.statusCode()}]: $fullUrl" }
+                return emptyList()
+            }
+
+            val body: NaverNewsSearchResponse = objectMapper.readValue(response.body())
+            if (!body.status.isSuccess) return emptyList()
+            body.items.map { it.toNewsArticle() }
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to fetch news search results for query: $query" }
+            emptyList()
         }
     }
 

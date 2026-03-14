@@ -26,6 +26,7 @@ object NaverFixtures {
       "change": "RISING",
       "changeRate": 4.38,
       "changeValue": 4286000,
+      "krwPremiumRate": -0.77,
       "koreaTradedAt": "2026-03-09T23:41:53.384",
       "totalInfos": [
         { "code": "previousClosePrice", "key": "전일", "value": 97845000 },
@@ -33,8 +34,15 @@ object NaverFixtures {
         { "code": "highPrice", "key": "고가", "value": 102200000 },
         { "code": "lowPrice", "key": "저가", "value": 97668000 },
         { "code": "tradePrice", "key": "거래가", "value": 102131000 },
-        { "code": "accumulatedTradingVolume", "key": "거래량", "value": 2083.76351566 }
-      ]
+        { "code": "accumulatedTradingVolume", "key": "거래량", "value": 2083.76351566 },
+        { "code": "lowest52weekPrice", "key": "52주 최저", "value": 89000000 },
+        { "code": "highest52weekPrice", "key": "52주 최고", "value": 179869000 }
+      ],
+      "profileInfo": {
+        "contentKr": "비트코인은 블록체인 기술을 적용해 만든 네트워크입니다.",
+        "marketCap": 2055450638697925.2,
+        "symbolImageUrl": "https://stock-phinf.pstatic.net/test/BTC_64.png"
+      }
     }
     """
 
@@ -422,6 +430,43 @@ object NaverFixtures {
         "relatedItems": []
       }
     ]
+    """
+
+    const val JSON_NEWS_SEARCH_CRYPTO_SUCCESS = """
+    {
+      "status": {
+        "code": "0",
+        "message": "OK",
+        "isSuccess": true
+      },
+      "total": "4177",
+      "items": [
+        {
+          "id": "6480000045277",
+          "officeId": "648",
+          "articleId": "0000045277",
+          "officeName": "비즈워치",
+          "datetime": "202603141100",
+          "type": "1",
+          "title": "\"유가 200달러 각오하라\"…코인시장 어디로?",
+          "body": "비트코인(BTC)과 이더리움(ETH) 등 주요 코인이 박스권에 머물고 있다.",
+          "photoType": "1",
+          "imageOriginLink": "https://imgnews.pstatic.net/image/origin/648/2026/03/14/45277.jpg"
+        },
+        {
+          "id": "0140005491218",
+          "officeId": "014",
+          "articleId": "0005491218",
+          "officeName": "파이낸셜뉴스",
+          "datetime": "202603131949",
+          "type": "1",
+          "title": "글로벌 증시 변동 속 비트코인 1억569만원…알트코인 동반 상승",
+          "body": "비트코인이 1억원선 부근에서 거래되며 비교적 소폭 상승했다.",
+          "photoType": "1",
+          "imageOriginLink": "https://imgnews.pstatic.net/image/origin/014/2026/03/13/5491218.jpg"
+        }
+      ]
+    }
     """
 
     const val JSON_DOMESTIC_DETAIL_NEWS_SUCCESS = """
