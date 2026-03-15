@@ -36,10 +36,15 @@ import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 
 /**
- * Some Descirption...
+ * Naver 증권/마켓 API를 호출하는 저수준 HTTP 클라이언트입니다.
  *
- * @author  : 강명관
- * @since   : 2025-11-30
+ * 이 클래스는 검색, 시세, 차트, 뉴스, 리서치처럼 외부 UI에서 직접 사용하는
+ * 원시 데이터를 조회하며, 모든 네트워크 호출은 EDT 밖에서만 수행되어야 합니다.
+ *
+ * 반환 규칙:
+ * - 조회 실패 시 리스트 계열은 가능한 한 `emptyList()`를 반환합니다.
+ * - 단건 조회 실패 시 `null`을 반환합니다.
+ * - UI 레이어는 이 반환값을 그대로 사용해 fallback 또는 빈 상태를 렌더링합니다.
  */
 private val logger = KotlinLogging.logger {}
 
@@ -67,6 +72,7 @@ class NaverClient(
     private val newsListUrl: String = "https://stock.naver.com/api/domestic/news/list",
     private val worldNewsUrl: String = "https://stock.naver.com/api/foreign/news/worldNews",
     private val domesticDetailNewsUrl: String = "https://stock.naver.com/api/domestic/detail/news",
+    private val domesticStockDetailUrl: String = "https://stock.naver.com/api/domestic/detail",
     private val foreignStockNewsUrl: String = "https://stock.naver.com/api/foreign/worldStock/list",
     private val foreignStockOverviewUrl: String = "https://stock.naver.com/api/securityService/stock",
     private val foreignStockBasicUrl: String = "https://stock.naver.com/api/securityService/stock",
@@ -91,7 +97,9 @@ class NaverClient(
     }
 
     /**
-     * EDT (UI 쓰레드) 에사 호출 시 강제 예외 발생 메서드 입니다.
+     * 네트워크 호출이 EDT에서 실행되는 것을 방지합니다.
+     *
+     * Swing UI 정지를 막기 위한 방어 코드이며, 위반 시 즉시 예외를 발생시킵니다.
      */
     private fun checkBackgroundThread() {
         val app = ApplicationManager.getApplication()
@@ -276,7 +284,10 @@ class NaverClient(
     }
 
     /**
-     * 국내 뉴스 리스트를 조회합니다.
+     * 국내 뉴스 탭용 카테고리 기사 목록을 조회합니다.
+     *
+     * `FLASHNEWS`, `MAINNEWS`, `RANKNEWS` 같은 카테고리를 그대로 전달하며,
+     * 응답은 목록 UI에서 바로 사용할 수 있도록 평탄한 기사 리스트로 반환합니다.
      */
     fun fetchNewsList(
         category: String = "FLASHNEWS",
@@ -312,7 +323,10 @@ class NaverClient(
     }
 
     /**
-     * 해외 뉴스 리스트를 조회합니다.
+     * 네이버 해외뉴스 메인 리스트를 조회합니다.
+     *
+     * 원본 응답은 Reuters 기반 별도 DTO를 사용하지만, 반환값은 국내 뉴스와 동일한
+     * `NaverNewsArticle` 형식으로 정규화됩니다.
      */
     fun fetchWorldNews(page: Int = 1, pageSize: Int = 15): List<NaverNewsArticle> {
         checkBackgroundThread()
@@ -342,6 +356,9 @@ class NaverClient(
 
     /**
      * 개별 종목의 국내 관련 뉴스 목록을 조회합니다.
+     *
+     * 네이버 상세 종목 페이지의 "관련 뉴스" 영역에 대응하는 API이며,
+     * 클러스터 응답을 UI에서 바로 쓸 수 있도록 평탄한 기사 리스트로 변환합니다.
      */
     fun fetchDomesticDetailNews(
         itemCode: String,
@@ -380,7 +397,51 @@ class NaverClient(
     }
 
     /**
+     * 국내 종목 상세 개요/핵심 지표를 조회합니다.
+     *
+     * 하단 뉴스 패널의 국내 종목 개요 카드에서 사용되며, 리서치 기반 fallback보다
+     * 우선해서 `PER`, `PBR`, `EPS`, `52주 범위`, 기업 설명을 구성할 때 사용합니다.
+     *
+     * @param itemCode KRX 종목코드
+     * @param codeType 기본값은 `KRX`이며, 네이버 상세 API가 요구하는 코드 구분자입니다.
+     * @return 조회 성공 시 상세 DTO, 실패 시 `null`
+     */
+    fun fetchDomesticStockDetail(itemCode: String, codeType: String = "KRX"): NaverDomesticStockDetail? {
+        checkBackgroundThread()
+        val normalizedItemCode = itemCode.trim()
+        if (normalizedItemCode.isBlank()) return null
+
+        return try {
+            val encodedItemCode = URLEncoder.encode(normalizedItemCode, Charsets.UTF_8)
+            val encodedCodeType = URLEncoder.encode(codeType.trim().ifBlank { "KRX" }, Charsets.UTF_8)
+            val fullUrl = "$domesticStockDetailUrl/$encodedItemCode/detail?codeType=$encodedCodeType"
+
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(fullUrl))
+                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+                .header(ACCEPT_KEY, ACCEPT_VALUE)
+                .header(ORIGIN_KEY, ORIGIN_VALUE)
+                .GET()
+                .build()
+
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            if (response.statusCode() != 200) {
+                logger.error { "Naver domestic stock detail API Error [${response.statusCode()}]: $fullUrl" }
+                return null
+            }
+
+            objectMapper.readValue<NaverDomesticStockDetail>(response.body())
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to fetch domestic stock detail for itemCode: $itemCode" }
+            null
+        }
+    }
+
+    /**
      * 개별 해외 종목의 글로벌 뉴스 목록을 조회합니다.
+     *
+     * Reuters 코드 기반으로 조회하며, 하단 뉴스 패널에서 해외 종목 뉴스 섹션을
+     * 구성할 때 사용합니다.
      */
     fun fetchForeignStockNews(
         reutersCode: String,
@@ -425,7 +486,10 @@ class NaverClient(
     }
 
     /**
-     * 해외 종목 개요 정보를 조회합니다.
+     * 해외 종목의 기업 개요 정보를 조회합니다.
+     *
+     * 기업 설명, 대표자, 주소, 업종, 시가총액 같은 정적/준정적 정보를 제공하며
+     * 하단 뉴스 패널의 개요 카드 본문을 구성할 때 사용합니다.
      */
     fun fetchForeignStockOverview(reutersCode: String): NaverForeignStockOverview? {
         checkBackgroundThread()
@@ -458,7 +522,10 @@ class NaverClient(
     }
 
     /**
-     * 해외 종목 기본 시세/지표 정보를 조회합니다.
+     * 해외 종목의 기본 시세/밸류에이션 지표를 조회합니다.
+     *
+     * `PER`, `PBR`, `52주 고저`, 배당수익률처럼 개요 카드에 노출할 핵심 숫자를
+     * 구성하는 용도이며, 기업 설명 API와 분리되어 있습니다.
      */
     fun fetchForeignStockBasic(reutersCode: String): NaverForeignStockBasic? {
         checkBackgroundThread()
@@ -492,6 +559,9 @@ class NaverClient(
 
     /**
      * 키워드 기반 뉴스 검색 결과를 조회합니다.
+     *
+     * 코인처럼 전용 종목 뉴스 API가 없거나 부족한 경우 보조 뉴스 소스로 사용합니다.
+     * query는 내부에서 trim 후 인코딩되며, 빈 문자열이면 즉시 빈 결과를 반환합니다.
      */
     fun fetchNewsSearch(query: String, page: Int = 1, pageSize: Int = 7): List<NaverNewsArticle> {
         checkBackgroundThread()

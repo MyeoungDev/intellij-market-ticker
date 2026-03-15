@@ -71,6 +71,7 @@ class NaverClientTest {
             newsListUrl = "$baseUrl/news/list",
             worldNewsUrl = "$baseUrl/foreign/news/worldNews",
             domesticDetailNewsUrl = "$baseUrl/domestic/detail/news",
+            domesticStockDetailUrl = "$baseUrl/domestic/detail",
             foreignStockNewsUrl = "$baseUrl/foreign/worldStock/list",
             foreignStockOverviewUrl = "$baseUrl/securityService/stock",
             foreignStockBasicUrl = "$baseUrl/securityService/stock",
@@ -718,6 +719,27 @@ class NaverClientTest {
             assertThat(result.first().officeHname).isEqualTo("서울경제")
             assertThat(result.first().subcontent).contains("AI 공급망")
             assertThat(result.first().articleUrl()).isEqualTo("https://n.news.naver.com/article/011/0004598294")
+        }
+
+        @Test
+        fun `국내 종목 상세 API 성공 시 핵심 지표와 기업 설명을 반환한다`() {
+            wireMockServer.stubFor(
+                get(urlEqualTo("/domestic/detail/003280/detail?codeType=KRX"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", "application/json")
+                            .withBody(NaverFixtures.JSON_DOMESTIC_STOCK_DETAIL_SUCCESS)
+                    )
+            )
+
+            val result = naverClient.fetchDomesticStockDetail("003280")
+
+            assertThat(result).isNotNull
+            assertThat(result?.itemname).isEqualTo("흥아해운")
+            assertThat(result?.per).isEqualTo("20.48")
+            assertThat(result?.pbr).isEqualTo("2.46")
+            assertThat(result?.summaryText()).contains("해운기업", "종합물류기업")
         }
 
         @Test

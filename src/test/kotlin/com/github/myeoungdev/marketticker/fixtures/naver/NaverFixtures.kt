@@ -46,6 +46,27 @@ object NaverFixtures {
     }
     """
 
+    const val JSON_DOMESTIC_STOCK_DETAIL_SUCCESS = """
+    {
+      "itemcode": "003280",
+      "itemname": "흥아해운",
+      "marketStatus": "CLOSE",
+      "nowVal": "2335",
+      "changeRate": "10.66",
+      "marketSum": "561392000000",
+      "per": "20.48",
+      "eps": "114.0",
+      "pbr": "2.46",
+      "high52week": "3290",
+      "low52week": "1414",
+      "dividendRate": null,
+      "upJongName": "해운사",
+      "comment1": "동사는 1961년 설립, 1976년 유가증권시장 상장한 해운기업으로 국내 7개, 해외 4개 계열회사를 보유하고 있음.",
+      "comment2": "아시아 지역 내 액체석유화학제품의 해상운송과 부동산 임대업을 병행하며, 연결재무제표 기준 케미컬탱커 사업이 86.56%, 부동산 임대 등 실적이 13.44%임.",
+      "comment3": "디지털 전환을 통한 스마트 해운 역량 강화, 친환경 선박 도입, 대체 연료 전환 등 ESG 경영을 추진하며 종합물류기업 전환을 모색하고 있음."
+    }
+    """
+
     /**
      * NaverSearchResponse (최상위 검색 응답 래퍼) 생성
      */

@@ -47,8 +47,10 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
     private val titleLabel = JLabel(localizationService.text("선택 종목 뉴스", "Selected Stock News"))
     private val statusLabel = JLabel(localizationService.text("관심종목을 선택하면 뉴스를 표시합니다.", "Select a watchlist ticker to see news."))
     private val overviewTitleLabel = JLabel()
-    private val overviewMetaLabel = JLabel()
-    private val overviewMetricsLabel = JLabel()
+    private val overviewMetaPrimaryLabel = JLabel()
+    private val overviewMetaSecondaryLabel = JLabel()
+    private val overviewPrimaryMetricsLabel = JLabel()
+    private val overviewSecondaryMetricsLabel = JLabel()
     private val overviewSummaryArea = JTextArea()
     private val overviewToggleButton = JButton()
     private val overviewSiteButton = JButton(localizationService.text("공식 사이트", "Official Site"))
@@ -64,8 +66,12 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
         titleLabel.font = titleLabel.font.deriveFont(titleLabel.font.size2D + 1f)
         statusLabel.foreground = JBColor.GRAY
         overviewTitleLabel.font = overviewTitleLabel.font.deriveFont(overviewTitleLabel.font.size2D + 1f)
-        overviewMetaLabel.foreground = JBColor.GRAY
-        overviewMetricsLabel.foreground = JBColor.foreground()
+        overviewMetaPrimaryLabel.foreground = JBColor.GRAY
+        overviewMetaSecondaryLabel.foreground = JBColor.GRAY
+        overviewPrimaryMetricsLabel.foreground = JBColor.foreground()
+        overviewSecondaryMetricsLabel.foreground = JBColor.GRAY
+        overviewMetaSecondaryLabel.isVisible = false
+        overviewSecondaryMetricsLabel.isVisible = false
         overviewSummaryArea.isEditable = false
         overviewSummaryArea.isOpaque = false
         overviewSummaryArea.lineWrap = true
@@ -92,15 +98,17 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
             )
             isVisible = false
             add(
-                JPanel(BorderLayout()).apply {
+                JPanel(BorderLayout(0, 6)).apply {
                     isOpaque = false
                     add(
                         JPanel().apply {
                             layout = javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS)
                             isOpaque = false
                             add(overviewTitleLabel)
-                            add(overviewMetaLabel)
-                            add(overviewMetricsLabel)
+                            add(overviewMetaPrimaryLabel)
+                            add(overviewMetaSecondaryLabel)
+                            add(overviewPrimaryMetricsLabel)
+                            add(overviewSecondaryMetricsLabel)
                         },
                         BorderLayout.CENTER
                     )
@@ -110,7 +118,7 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
                             add(overviewToggleButton)
                             add(overviewSiteButton)
                         },
-                        BorderLayout.EAST
+                        BorderLayout.SOUTH
                     )
                 },
                 BorderLayout.NORTH
@@ -195,6 +203,11 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
             } else {
                 null
             }
+            val domesticDetail = if (ticker.marketType.isKoreanMarket()) {
+                naverClient.fetchDomesticStockDetail(ticker.symbol)
+            } else {
+                null
+            }
             val coinOverview = if (ticker.marketType.isCryptoMarket()) {
                 naverClient.fetchCoinOverview(ticker.marketType.name, ticker.symbol)
             } else {
@@ -203,7 +216,7 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
             val articles = loadArticles(ticker, coinOverview)
             withContext(Dispatchers.Main) {
                 if (!isActive) return@withContext
-                renderOverview(ticker, overview, basic, coinOverview, research)
+                renderOverview(ticker, overview, basic, coinOverview, domesticDetail, research)
                 if (articles.isEmpty()) {
                     model.replaceAll(
                         listOf(
@@ -278,17 +291,20 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
         overview: NaverForeignStockOverview?,
         basic: NaverForeignStockBasic?,
         coinOverview: com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCoinOverview?,
+        domesticDetail: com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverDomesticStockDetail?,
         research: NaverResearchArticle?
     ) {
-        val card = StockNewsSummaryFormatter.buildOverviewCard(ticker, overview, basic, coinOverview, research)
+        val card = StockNewsSummaryFormatter.buildOverviewCard(ticker, overview, basic, coinOverview, domesticDetail, research)
         if (card == null) {
             hideOverview()
             return
         }
 
         overviewTitleLabel.text = card.title
-        overviewMetaLabel.text = card.meta
-        overviewMetricsLabel.text = card.metrics
+        overviewMetaPrimaryLabel.text = card.metaPrimary
+        overviewMetaSecondaryLabel.text = card.metaSecondary
+        overviewPrimaryMetricsLabel.text = card.primaryMetrics
+        overviewSecondaryMetricsLabel.text = card.secondaryMetrics
         overviewSummaryArea.text = card.summary
         currentOverviewUrl = card.siteUrl
         isOverviewExpanded = false
@@ -301,8 +317,10 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
     private fun hideOverview() {
         overviewPanel.isVisible = false
         overviewTitleLabel.text = ""
-        overviewMetaLabel.text = ""
-        overviewMetricsLabel.text = ""
+        overviewMetaPrimaryLabel.text = ""
+        overviewMetaSecondaryLabel.text = ""
+        overviewPrimaryMetricsLabel.text = ""
+        overviewSecondaryMetricsLabel.text = ""
         overviewSummaryArea.text = ""
         overviewSummaryArea.isVisible = false
         currentOverviewUrl = null
@@ -337,6 +355,8 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
 
     private fun updateOverviewExpansion() {
         overviewSummaryArea.isVisible = isOverviewExpanded
+        overviewMetaSecondaryLabel.isVisible = isOverviewExpanded && overviewMetaSecondaryLabel.text.isNotBlank()
+        overviewSecondaryMetricsLabel.isVisible = isOverviewExpanded && overviewSecondaryMetricsLabel.text.isNotBlank()
         overviewToggleButton.text = localizationService.text(
             if (isOverviewExpanded) "접기" else "더보기",
             if (isOverviewExpanded) "Less" else "More"
