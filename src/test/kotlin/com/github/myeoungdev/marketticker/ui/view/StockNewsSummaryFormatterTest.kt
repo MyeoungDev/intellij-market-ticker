@@ -6,6 +6,7 @@ import com.github.myeoungdev.marketticker.infrastructure.naver.dto.CurrencyRespo
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCoinOverview
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCoinOverviewInfo
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCoinProfileInfo
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverDomesticStockDetail
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverForeignStockBasic
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverForeignStockIndustry
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverForeignStockListedInfo
@@ -37,8 +38,10 @@ class StockNewsSummaryFormatterTest {
 
             assertThat(card).isNotNull
             assertThat(card?.title).contains("엔비디아")
-            assertThat(card?.meta).contains("NASDAQ", "반도체", "6,652조 1,827억원", "Jen-Hsun Huang")
-            assertThat(card?.metrics).contains("185.62 USD (0.47%)", "PER 37.73배", "PBR 28.68배", "52주 86.62 - 212.19")
+            assertThat(card?.metaPrimary).contains("NASDAQ", "반도체")
+            assertThat(card?.metaSecondary).contains("6,652조 1,827억원")
+            assertThat(card?.primaryMetrics).contains("PER 37.73배", "PBR 28.68배")
+            assertThat(card?.secondaryMetrics).contains("52주 86.62 - 212.19", "배당 0.02%")
             assertThat(card?.summary).doesNotContain("<br>")
             assertThat(card?.siteUrl).isEqualTo("https://www.nvidia.com/")
         }
@@ -53,8 +56,9 @@ class StockNewsSummaryFormatterTest {
 
             assertThat(card).isNotNull
             assertThat(card?.title).contains("엔비디아")
-            assertThat(card?.meta).contains("NASDAQ", "반도체", "6,652조 1,827억원")
-            assertThat(card?.metrics).contains("PER 37.73배")
+            assertThat(card?.metaPrimary).contains("NASDAQ", "반도체")
+            assertThat(card?.metaSecondary).contains("6,652조 1,827억원")
+            assertThat(card?.primaryMetrics).isEqualTo("PER 37.73배 · PBR 28.68배")
             assertThat(card?.siteUrl).isEqualTo("https://m.stock.naver.com/worldstock/stock/NVDA.O")
         }
 
@@ -70,21 +74,24 @@ class StockNewsSummaryFormatterTest {
         }
 
         @Test
-        fun `국내 종목은 최신 리서치 기반으로 개요 카드를 만든다`() {
+        fun `국내 종목은 상세 API 기반으로 개요 카드를 만든다`() {
             val card = StockNewsSummaryFormatter.buildOverviewCard(
                 createDomesticTicker(),
                 overview = null,
                 basic = null,
+                domesticDetail = createDomesticDetail(),
                 research = createDomesticResearch()
             )
 
             assertThat(card).isNotNull
-            assertThat(card?.title).isEqualTo("삼성전자")
-            assertThat(card?.meta).contains("대한민국", "KOSPI", "미래에셋증권", "2026-03-10")
-            assertThat(card?.metrics).contains("의견 매수", "목표가 275000", "이전 173500")
-            assertThat(card?.summary).doesNotContain("<p>")
+            assertThat(card?.title).isEqualTo("흥아해운")
+            assertThat(card?.metaPrimary).contains("대한민국", "KOSPI", "해운사")
+            assertThat(card?.metaSecondary).contains("시총")
+            assertThat(card?.primaryMetrics).contains("PER 20.48배", "PBR 2.46배", "EPS 114.0")
+            assertThat(card?.secondaryMetrics).contains("52주 1414 - 3290")
+            assertThat(card?.summary).contains("해운기업")
             assertThat(card?.summary?.length).isLessThanOrEqualTo(183)
-            assertThat(card?.siteUrl).isEqualTo("https://stock.pstatic.net/report.pdf")
+            assertThat(card?.siteUrl).isNull()
         }
 
         @Test
@@ -98,8 +105,10 @@ class StockNewsSummaryFormatterTest {
 
             assertThat(card).isNotNull
             assertThat(card?.title).contains("비트코인", "Bitcoin")
-            assertThat(card?.meta).contains("업비트", "UPBIT", "거래가 104,491,000 KRW")
-            assertThat(card?.metrics).contains("+0.08%", "+87,000 KRW", "김프 -1.49%", "52주 89,000,000 - 179,869,000")
+            assertThat(card?.metaPrimary).contains("업비트", "UPBIT")
+            assertThat(card?.metaSecondary).contains("시총")
+            assertThat(card?.primaryMetrics).contains("+0.08% · +87,000 KRW", "김프 -1.49%")
+            assertThat(card?.secondaryMetrics).isEqualTo("52주 89,000,000 - 179,869,000")
             assertThat(card?.summary).contains("블록체인")
         }
     }
@@ -199,6 +208,23 @@ class StockNewsSummaryFormatterTest {
             opinion = "매수",
             goalPrice = "275000",
             prevGoalPrice = "173500"
+        )
+    }
+
+    private fun createDomesticDetail(): NaverDomesticStockDetail {
+        return NaverDomesticStockDetail(
+            itemcode = "003280",
+            itemname = "흥아해운",
+            marketSum = "561392000000",
+            per = "20.48",
+            eps = "114.0",
+            pbr = "2.46",
+            high52week = "3290",
+            low52week = "1414",
+            upJongName = "해운사",
+            comment1 = "동사는 1961년 설립, 1976년 유가증권시장 상장한 해운기업으로 국내 7개, 해외 4개 계열회사를 보유하고 있음.",
+            comment2 = "아시아 지역 내 액체석유화학제품의 해상운송과 부동산 임대업을 병행하며, 연결재무제표 기준 케미컬탱커 사업이 86.56%, 부동산 임대 등 실적이 13.44%임.",
+            comment3 = "디지털 전환을 통한 스마트 해운 역량 강화, 친환경 선박 도입, 대체 연료 전환 등 ESG 경영을 추진하며 종합물류기업 전환을 모색하고 있음."
         )
     }
 

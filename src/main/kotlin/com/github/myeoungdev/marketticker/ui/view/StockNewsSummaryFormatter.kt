@@ -2,6 +2,7 @@ package com.github.myeoungdev.marketticker.ui.view
 
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCoinOverview
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverDomesticStockDetail
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverForeignStockBasic
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverForeignStockOverview
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverNewsArticle
@@ -12,8 +13,10 @@ import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverResearch
  */
 internal data class StockNewsOverviewCard(
     val title: String,
-    val meta: String,
-    val metrics: String,
+    val metaPrimary: String,
+    val metaSecondary: String,
+    val primaryMetrics: String,
+    val secondaryMetrics: String,
     val summary: String,
     val siteUrl: String?
 )
@@ -28,6 +31,7 @@ internal object StockNewsSummaryFormatter {
         overview: NaverForeignStockOverview?,
         basic: NaverForeignStockBasic?,
         coinOverview: NaverCoinOverview? = null,
+        domesticDetail: NaverDomesticStockDetail? = null,
         research: NaverResearchArticle? = null
     ): StockNewsOverviewCard? {
         if (ticker.marketType.isCryptoMarket()) {
@@ -35,7 +39,7 @@ internal object StockNewsSummaryFormatter {
         }
 
         if (ticker.marketType.isKoreanMarket()) {
-            return buildDomesticOverviewCard(ticker, research)
+            return buildDomesticOverviewCard(ticker, domesticDetail, research)
         }
 
         if (overview == null && basic == null) return null
@@ -47,22 +51,22 @@ internal object StockNewsSummaryFormatter {
             basic?.stockNameEng?.takeIf { it.isNotBlank() }
         ).distinct().joinToString(" / ")
 
-        val meta = listOfNotNull(
+        val metaPrimary = listOfNotNull(
             overview?.stockItemListedInfo?.stockExchange ?: basic?.stockExchangeName,
-            overview?.industry?.industryGroupKor ?: basic?.industryCodeType?.industryGroupKor,
-            metricValue(basic, "marketValue")?.let { metricValueDesc(basic, "marketValue") ?: it }
-                ?: overview?.stockItemListedInfo?.marketValueKrw,
-            overview?.summaries?.representativeName
+            overview?.industry?.industryGroupKor ?: basic?.industryCodeType?.industryGroupKor
         ).joinToString(" · ")
 
-        val metrics = listOfNotNull(
-            basic?.closePrice?.let { price ->
-                basic.fluctuationsRatio?.let { ratio ->
-                    "${price}${basic.currencyType?.code?.let { " $it" }.orEmpty()} (${ratio}%)"
-                }
-            },
+        val metaSecondary = listOfNotNull(
+            metricValue(basic, "marketValue")?.let { metricValueDesc(basic, "marketValue") ?: it }
+                ?: overview?.stockItemListedInfo?.marketValueKrw
+        ).joinToString(" · ")
+
+        val primaryMetrics = listOfNotNull(
             metricValue(basic, "per")?.let { "PER $it" },
-            metricValue(basic, "pbr")?.let { "PBR $it" },
+            metricValue(basic, "pbr")?.let { "PBR $it" }
+        ).joinToString(" · ")
+
+        val secondaryMetrics = listOfNotNull(
             metricValue(basic, "highPriceOf52Weeks")?.let { high ->
                 metricValue(basic, "lowPriceOf52Weeks")?.let { low -> "52주 $low - $high" }
             },
@@ -77,8 +81,10 @@ internal object StockNewsSummaryFormatter {
 
         return StockNewsOverviewCard(
             title = title,
-            meta = meta,
-            metrics = metrics,
+            metaPrimary = metaPrimary,
+            metaSecondary = metaSecondary,
+            primaryMetrics = primaryMetrics,
+            secondaryMetrics = secondaryMetrics,
             summary = clipSummary(summary),
             siteUrl = overview?.summaries?.url ?: basic?.endUrl
         )
@@ -105,29 +111,36 @@ internal object StockNewsSummaryFormatter {
             overview.enName?.takeIf { it.isNotBlank() }
         ).joinToString(" / ")
 
-        val meta = listOfNotNull(
+        val metaPrimary = listOfNotNull(
             overview.exchangeName?.takeIf { it.isNotBlank() } ?: ticker.marketType.displayName,
-            overview.exchangeType.takeIf { it.isNotBlank() },
-            "거래가 ${formatCoinNumber(overview.tradePrice)} KRW"
+            overview.exchangeType.takeIf { it.isNotBlank() }
         ).joinToString(" · ")
 
-        val metrics = listOfNotNull(
+        val metaSecondary = listOfNotNull(
+            overview.profileInfo?.marketCap?.let { "시총 ${formatLargeKrw(it)}" }
+        ).joinToString(" · ")
+
+        val primaryMetrics = listOfNotNull(
             "${formatSignedPercent(overview.changeRate)} · ${formatSignedNumber(overview.changeValue)} KRW",
-            overview.krwPremiumRate?.let { "김프 ${formatSignedPercent(it)}" },
+            overview.krwPremiumRate?.let { "김프 ${formatSignedPercent(it)}" }
+        ).joinToString(" · ")
+
+        val secondaryMetrics = listOfNotNull(
             overview.totalInfoValue("highest52weekPrice")?.let { high ->
                 overview.totalInfoValue("lowest52weekPrice")?.let { low ->
                     "52주 ${formatCoinNumber(low)} - ${formatCoinNumber(high)}"
                 }
-            },
-            overview.profileInfo?.marketCap?.let { "시총 ${formatLargeKrw(it)}" }
+            }
         ).joinToString(" · ")
 
         val summary = clipSummary(plainText(overview.profileInfo?.contentKr.orEmpty()))
 
         return StockNewsOverviewCard(
             title = title.ifBlank { ticker.name },
-            meta = meta,
-            metrics = metrics,
+            metaPrimary = metaPrimary,
+            metaSecondary = metaSecondary,
+            primaryMetrics = primaryMetrics,
+            secondaryMetrics = secondaryMetrics,
             summary = summary,
             siteUrl = null
         )
@@ -145,33 +158,79 @@ internal object StockNewsSummaryFormatter {
 
     private fun buildDomesticOverviewCard(
         ticker: Ticker,
+        domesticDetail: NaverDomesticStockDetail?,
         research: NaverResearchArticle?
     ): StockNewsOverviewCard? {
+        domesticDetail?.let { detail ->
+            val metaPrimary = listOfNotNull(
+                ticker.nationName,
+                ticker.marketType.name,
+                detail.upJongName?.takeIf { it.isNotBlank() }
+            ).joinToString(" · ")
+
+            val metaSecondary = listOfNotNull(
+                detail.marketSum?.takeIf { it.isNotBlank() }?.let { "시총 ${formatKrwValue(it)}" }
+            ).joinToString(" · ")
+
+            val primaryMetrics = listOfNotNull(
+                detail.per?.takeIf { !it.isNullOrBlank() }?.let { "PER ${it}배" },
+                detail.pbr?.takeIf { !it.isNullOrBlank() }?.let { "PBR ${it}배" },
+                detail.eps?.takeIf { !it.isNullOrBlank() }?.let { "EPS $it" }
+            ).joinToString(" · ")
+
+            val secondaryMetrics = listOfNotNull(
+                detail.high52week?.takeIf { !it.isNullOrBlank() }?.let { high ->
+                    detail.low52week?.takeIf { !it.isNullOrBlank() }?.let { low -> "52주 $low - $high" }
+                },
+                detail.dividendRate?.takeIf { !it.isNullOrBlank() }?.let { "배당 $it%" }
+            ).joinToString(" · ")
+
+            return StockNewsOverviewCard(
+                title = detail.itemname?.takeIf { it.isNotBlank() } ?: ticker.name,
+                metaPrimary = metaPrimary,
+                metaSecondary = metaSecondary,
+                primaryMetrics = primaryMetrics,
+                secondaryMetrics = secondaryMetrics,
+                summary = clipSummary(plainText(detail.summaryText())),
+                siteUrl = null
+            )
+        }
+
         val article = research ?: return StockNewsOverviewCard(
             title = ticker.name,
-            meta = listOfNotNull(ticker.nationName, ticker.marketType.name).joinToString(" · "),
-            metrics = "",
+            metaPrimary = listOfNotNull(ticker.nationName, ticker.marketType.name).joinToString(" · "),
+            metaSecondary = "",
+            primaryMetrics = "",
+            secondaryMetrics = "",
             summary = "국내 종목 개요 정보가 제한되어 있습니다.",
             siteUrl = null
         )
 
-        val meta = listOfNotNull(
+        val metaPrimary = listOfNotNull(
             ticker.nationName,
-            ticker.marketType.name,
+            ticker.marketType.name
+        ).joinToString(" · ")
+
+        val metaSecondary = listOfNotNull(
             article.brokerName.takeIf { it.isNotBlank() },
             article.writeDate.takeIf { it.isNotBlank() }
         ).joinToString(" · ")
 
-        val metrics = listOfNotNull(
+        val primaryMetrics = listOfNotNull(
             article.opinion?.takeIf { it.isNotBlank() }?.let { "의견 $it" },
-            article.goalPrice?.takeIf { it.isNotBlank() }?.let { "목표가 $it" },
+            article.goalPrice?.takeIf { it.isNotBlank() }?.let { "목표가 $it" }
+        ).joinToString(" · ")
+
+        val secondaryMetrics = listOfNotNull(
             article.prevGoalPrice?.takeIf { it.isNotBlank() }?.let { "이전 $it" }
         ).joinToString(" · ")
 
         return StockNewsOverviewCard(
             title = ticker.name,
-            meta = meta,
-            metrics = metrics,
+            metaPrimary = metaPrimary,
+            metaSecondary = metaSecondary,
+            primaryMetrics = primaryMetrics,
+            secondaryMetrics = secondaryMetrics,
             summary = clipSummary(plainText(article.content)),
             siteUrl = article.endUrl.takeIf { it.isNotBlank() }
         )
@@ -189,6 +248,20 @@ internal object StockNewsSummaryFormatter {
 
     private fun metricValueDesc(basic: NaverForeignStockBasic?, code: String): String? {
         return basic?.stockItemTotalInfos?.firstOrNull { it.code == code }?.valueDesc?.takeIf { it.isNotBlank() }
+    }
+
+    private fun formatKrwValue(value: String): String {
+        val amount = value.filter { it.isDigit() }
+        if (amount.isBlank()) return value
+        val numeric = amount.toLongOrNull() ?: return value
+        val eok = numeric / 100_000_000L
+        val jo = eok / 10_000L
+        val remainEok = eok % 10_000L
+        return when {
+            jo > 0 && remainEok > 0 -> "${jo}조 ${"%,d".format(remainEok)}억원"
+            jo > 0 -> "${jo}조원"
+            else -> "${"%,d".format(eok)}억원"
+        }
     }
 
     private fun NaverCoinOverview.totalInfoValue(code: String): Double? {
