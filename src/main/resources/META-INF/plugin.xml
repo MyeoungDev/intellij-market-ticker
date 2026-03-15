@@ -4,6 +4,15 @@
     <name>Market Ticker</name>
     <vendor>myeoungdev</vendor>
 
+    <description><![CDATA[
+        Market Ticker lets you track Korean stocks, global stocks, and crypto inside IntelliJ IDEA with watchlists,
+        portfolio view, alerts, charts, news, and research.
+        <br/><br/>
+        Some market, news, and research data may be retrieved from third-party public web endpoints.
+        Market Ticker is not affiliated with or endorsed by Naver, Yahoo Finance or any brokerage or exchange.
+        Data availability and accuracy may change without notice.
+    ]]></description>
+
     <depends>com.intellij.modules.platform</depends>
 
     <resource-bundle>messages.MyBundle</resource-bundle>
