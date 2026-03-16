@@ -1,9 +1,9 @@
 package com.github.myeoungdev.marketticker.ui.view
 
 import com.github.myeoungdev.marketticker.application.service.LocalizationService
+import com.github.myeoungdev.marketticker.application.service.ResearchFacadeService
 import com.github.myeoungdev.marketticker.domain.model.Ticker
-import com.github.myeoungdev.marketticker.infrastructure.naver.NaverClient
-import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverResearchArticle
+import com.github.myeoungdev.marketticker.domain.model.research.ResearchArticle
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
@@ -26,21 +26,16 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.ListSelectionModel
 
-/**
- * 주식 탭 하단에 노출되는 간단한 종목 리서치 요약 패널입니다.
- *
- * 선택된 종목 기준 최근 리서치 헤드라인 3개만 보여줍니다.
- */
 class StockResearchSummaryPanel : JPanel(BorderLayout()), Disposable {
 
     private val localizationService = service<LocalizationService>()
-    private val naverClient = NaverClient()
+    private val researchFacadeService = service<ResearchFacadeService>()
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var requestJob: Job? = null
 
     private val titleLabel = JLabel(localizationService.text("선택 종목 리서치", "Selected Stock Research"))
     private val statusLabel = JLabel(localizationService.text("관심종목을 선택하면 리서치를 표시합니다.", "Select a watchlist ticker to see research."))
-    private val model = CollectionListModel<NaverResearchArticle>()
+    private val model = CollectionListModel<ResearchArticle>()
     private val list = JBList(model)
 
     init {
@@ -100,33 +95,29 @@ class StockResearchSummaryPanel : JPanel(BorderLayout()), Disposable {
         statusLabel.text = localizationService.text("리서치를 불러오는 중...", "Loading research...")
         model.replaceAll(
             listOf(
-                NaverResearchArticle(title = localizationService.text("리서치를 불러오는 중...", "Loading research..."))
+                ResearchArticle(title = localizationService.text("리서치를 불러오는 중...", "Loading research..."))
             )
         )
 
         requestJob = scope.launch {
-            val articles = naverClient.fetchStockResearch(ticker.symbol).take(3)
+            val viewData = researchFacadeService.loadTickerResearchSummary(ticker)
             withContext(Dispatchers.Main) {
                 if (!isActive) return@withContext
-                if (articles.isEmpty()) {
+                if (viewData.articles.isEmpty()) {
                     model.replaceAll(
                         listOf(
-                            NaverResearchArticle(
+                            ResearchArticle(
                                 title = localizationService.text("표시할 리서치가 없습니다.", "No research available.")
                             )
                         )
                     )
-                    statusLabel.text = localizationService.text("최근 리서치 없음", "No recent research")
                 } else {
-                    model.replaceAll(articles)
+                    model.replaceAll(viewData.articles)
                     if (list.selectedIndex == -1) {
                         list.selectedIndex = 0
                     }
-                    statusLabel.text = localizationService.text(
-                        "최근 리서치 ${articles.size}건",
-                        "${articles.size} recent items"
-                    )
                 }
+                statusLabel.text = localizationService.text(viewData.statusMessage, viewData.statusMessage)
             }
         }
     }

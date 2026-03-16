@@ -2,14 +2,13 @@ package com.github.myeoungdev.marketticker.application.service
 
 import com.github.myeoungdev.marketticker.application.listener.TickerUpdateListener
 import com.github.myeoungdev.marketticker.application.listener.WatchlistEntryUpdateListener
+import com.github.myeoungdev.marketticker.application.provider.DefaultDataSourceRegistry
 import com.github.myeoungdev.marketticker.application.provider.PriceProvider
 import com.github.myeoungdev.marketticker.application.provider.SearchProvider
 import com.github.myeoungdev.marketticker.application.repository.WatchlistRepository
 import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.domain.model.TickerPrice
-import com.github.myeoungdev.marketticker.infrastructure.naver.NaverPriceProvider
-import com.github.myeoungdev.marketticker.infrastructure.naver.NaverSearchProvider
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -38,16 +37,23 @@ class MarketDataService(
     private val cs: CoroutineScope,
 ) {
 
+    private data class SearchCacheEntry(
+        val expiresAt: Long,
+        val results: List<Ticker>
+    )
+
     private val watchlistRepository = service<WatchlistRepository>()
     private val notificationService = service<NotificationService>()
     private val priceHistoryService = service<PriceHistoryService>()
 
-    private val priceProvider: PriceProvider = NaverPriceProvider()
-    private val searchProvider: SearchProvider = NaverSearchProvider()
+    private val priceProvider: PriceProvider = DefaultDataSourceRegistry.priceProvider()
+    private val searchProvider: SearchProvider = DefaultDataSourceRegistry.searchProvider()
 
     private val _currentPrices = MutableStateFlow<List<TickerPrice>>(emptyList())
     val currentPrices: StateFlow<List<TickerPrice>> = _currentPrices.asStateFlow()
     private val refreshMutex = Mutex()
+    private val searchMutex = Mutex()
+    private val searchCache = mutableMapOf<String, SearchCacheEntry>()
 
     /**
      * 등록된 Ticker 의 실시간 가격을 갱신하는 메서드 입니다.
@@ -103,12 +109,31 @@ class MarketDataService(
     }
 
     suspend fun search(query: String): List<Ticker> {
-        if (query.length < 2) {
+        val normalizedQuery = query.trim()
+        if (normalizedQuery.length < 2) {
             return emptyList()
         }
-        return withContext(Dispatchers.IO) {
-            searchProvider.search(query)
+
+        val cacheKey = normalizedQuery.lowercase()
+        val now = System.currentTimeMillis()
+        searchMutex.withLock {
+            val cached = searchCache[cacheKey]
+            if (cached != null && cached.expiresAt > now) {
+                return cached.results
+            }
         }
+
+        val results = withContext(Dispatchers.IO) {
+            searchProvider.search(normalizedQuery)
+        }
+
+        searchMutex.withLock {
+            searchCache[cacheKey] = SearchCacheEntry(
+                expiresAt = System.currentTimeMillis() + 30_000L,
+                results = results
+            )
+        }
+        return results
     }
 
     /**
