@@ -5,6 +5,7 @@ import com.github.myeoungdev.marketticker.application.model.news.NewsHomeViewDat
 import com.github.myeoungdev.marketticker.application.service.NewsFacadeService
 import com.github.myeoungdev.marketticker.application.service.LocalizationService
 import com.intellij.ide.BrowserUtil
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBList
@@ -21,6 +22,7 @@ import java.awt.Component
 import java.awt.Dimension
 import java.awt.FlowLayout
 import java.awt.Font
+import java.awt.Insets
 import javax.swing.Box
 import javax.swing.BorderFactory
 import javax.swing.BoxLayout
@@ -41,7 +43,7 @@ import javax.swing.SwingConstants
  * 툴윈도우 폭이 좁아도 카테고리별 원본 뉴스 리스트를 빠르게 훑을 수 있도록
  * `헤드라인 / 많이 본 뉴스` 2개 정보 축으로 구성합니다.
  */
-class NewsView : JPanel(BorderLayout()) {
+class NewsView : JPanel(BorderLayout()), Disposable {
 
     private val localizationService = service<LocalizationService>()
     private val newsFacadeService = service<NewsFacadeService>()
@@ -73,6 +75,7 @@ class NewsView : JPanel(BorderLayout()) {
 
     private val rankingListModel = DefaultListModel<NewsArticle>()
     private val rankingList = createNewsList(rankingListModel, RankingNewsRenderer())
+    private var currentDetailArticle: NewsArticle? = null
 
     init {
         border = JBUI.Borders.empty(10)
@@ -110,8 +113,7 @@ class NewsView : JPanel(BorderLayout()) {
         }
     }
 
-    override fun removeNotify() {
-        super.removeNotify()
+    override fun dispose() {
         scope.cancel()
     }
 
@@ -133,7 +135,7 @@ class NewsView : JPanel(BorderLayout()) {
             )
         }.also {
             refreshButton.addActionListener { refreshNews() }
-            openButton.addActionListener { selectedArticle()?.url?.let(BrowserUtil::browse) }
+            openButton.addActionListener { currentDetailArticle?.url?.let(BrowserUtil::browse) }
             openButton.isEnabled = false
         }
     }
@@ -145,9 +147,12 @@ class NewsView : JPanel(BorderLayout()) {
         detailSummaryArea.background = JBColor.PanelBackground
         detailSummaryArea.foreground = JBColor.foreground()
         detailSummaryArea.font = detailSummaryArea.font.deriveFont(13f)
+        detailSummaryArea.margin = Insets(6, 4, 6, 4)
 
         detailMetaLabel.foreground = JBColor.GRAY
         detailLinkLabel.foreground = JBColor.GRAY
+        detailTitleLabel.font = detailTitleLabel.font.deriveFont(Font.BOLD, detailTitleLabel.font.size2D + 2f)
+        detailBadgeLabel.border = JBUI.Borders.emptyBottom(4)
 
         val detailHeader = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -162,7 +167,7 @@ class NewsView : JPanel(BorderLayout()) {
             add(detailHeader, BorderLayout.NORTH)
             add(JBScrollPane(detailSummaryArea), BorderLayout.CENTER)
             add(detailLinkLabel, BorderLayout.SOUTH)
-            preferredSize = Dimension(0, 220)
+            preferredSize = Dimension(0, 240)
         }
 
         newsTabs.addTab(localizationService.text("헤드라인", "Headlines"), buildHeadlinesTab())
@@ -184,7 +189,7 @@ class NewsView : JPanel(BorderLayout()) {
             isOpaque = false
             add(wrapSection(localizationService.text("뉴스 카테고리", "News Category"), headlineCategoryPanel))
             add(spacer())
-            add(wrapSection(localizationService.text("주요 뉴스", "Headlines"), JBScrollPane(headlineList).fixedHeight(260)))
+            add(wrapSection(localizationService.text("헤드라인", "Headlines"), JBScrollPane(headlineList).fixedHeight(280)))
             add(spacer())
             add(wrapSection(localizationService.text("포커스", "Focus"), focusContainer))
             add(spacer())
@@ -224,7 +229,7 @@ class NewsView : JPanel(BorderLayout()) {
         homeData.headlines.focusSections.forEach { section ->
             focusContainer.add(
                 wrapSection(
-                    section.title,
+                    mapCategoryTitle(section.title),
                     JBScrollPane(
                         createNewsList(
                             DefaultListModel<NewsArticle>().apply {
@@ -259,13 +264,14 @@ class NewsView : JPanel(BorderLayout()) {
         val categoryItems = listOf(
             "FLASHNEWS" to localizationService.text("속보", "Flash"),
             "MAINNEWS" to localizationService.text("주요", "Main"),
-            "WORLDNEWS" to localizationService.text("해외뉴스", "World News")
+            "WORLDNEWS" to localizationService.text("해외", "World")
         )
 
         categoryItems.forEach { (key, label) ->
             val button = JButton(label).apply {
-                margin = JBUI.insets(4, 8)
+                margin = JBUI.insets(6, 12)
                 isFocusPainted = false
+                font = font.deriveFont(Font.BOLD, font.size2D)
                 addActionListener {
                     selectedHeadlineCategoryKey = key
                     applyHeadlineCategory(key)
@@ -293,13 +299,17 @@ class NewsView : JPanel(BorderLayout()) {
     private fun updateHeadlineCategoryStyles() {
         headlineCategoryButtons.forEach { (key, button) ->
             val selected = key == selectedHeadlineCategoryKey
-            button.background = if (selected) JBColor(0x3559B7, 0x3559B7) else JBColor(0x3A3D42, 0x3A3D42)
-            button.foreground = if (selected) JBColor.WHITE else JBColor(0xC8CDD5, 0xC8CDD5)
-            button.border = BorderFactory.createEmptyBorder(4, 8, 4, 8)
+            button.background = if (selected) JBColor(0x2F5BD3, 0x2F5BD3) else JBColor(0x2B2F36, 0x2B2F36)
+            button.foreground = if (selected) JBColor.WHITE else JBColor(0xD5DAE3, 0xD5DAE3)
+            button.border = BorderFactory.createCompoundBorder(
+                BorderFactory.createLineBorder(if (selected) JBColor(0x5E86F5, 0x5E86F5) else JBColor(0x4B5260, 0x4B5260)),
+                JBUI.Borders.empty(4, 8)
+            )
         }
     }
 
     private fun renderDetail(article: NewsArticle?) {
+        currentDetailArticle = article
         if (article == null) {
             detailBadgeLabel.text = ""
             detailTitleLabel.text = localizationService.text("뉴스를 선택하세요", "Select a news item")
@@ -326,14 +336,6 @@ class NewsView : JPanel(BorderLayout()) {
             localizationService.text("원문: ", "Source: ") + it
         } ?: localizationService.text("플러그인 내부 요약 항목입니다.", "This is an internal summary item.")
         openButton.isEnabled = !article.url.isNullOrBlank()
-    }
-
-    private fun selectedArticle(): NewsArticle? {
-        return when (newsTabs.selectedIndex) {
-            0 -> headlineList.selectedValue ?: overseasList.selectedValue ?: moneyStoryList.selectedValue
-            1 -> rankingList.selectedValue
-            else -> null
-        }
     }
 
     private fun createNewsList(
@@ -367,12 +369,16 @@ class NewsView : JPanel(BorderLayout()) {
     private fun wrapSection(title: String, component: Component): JPanel {
         return JPanel(BorderLayout()).apply {
             border = titledPanelBorder(title)
+            background = JBColor.PanelBackground
             add(component, BorderLayout.CENTER)
         }
     }
 
     private fun titledPanelBorder(title: String) = BorderFactory.createCompoundBorder(
-        BorderFactory.createTitledBorder(title),
+        BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(JBColor(0x3A404A, 0x3A404A)),
+            BorderFactory.createTitledBorder(title)
+        ),
         JBUI.Borders.empty(8)
     )
 
@@ -407,6 +413,23 @@ class NewsView : JPanel(BorderLayout()) {
         return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     }
 
+    private fun mapCategoryTitle(raw: String): String {
+        return when (raw.trim().uppercase()) {
+            "FLASHNEWS", "FLASH" -> localizationService.text("속보", "Flash")
+            "MAINNEWS", "MAIN" -> localizationService.text("주요", "Main")
+            "WORLDNEWS", "WORLD" -> localizationService.text("해외", "World")
+            "RANKNEWS", "RANK" -> localizationService.text("많이 본 뉴스", "Most Viewed")
+            "MONEYSTORY", "MONEY" -> localizationService.text("머니스토리", "Money Story")
+            else -> raw
+        }
+    }
+
+    private fun trimSummary(text: String, maxLength: Int = 90): String {
+        val normalized = text.replace("\n", " ").trim()
+        if (normalized.length <= maxLength) return normalized
+        return normalized.take(maxLength - 1).trimEnd() + "…"
+    }
+
     private fun JBScrollPane.fixedHeight(height: Int): JBScrollPane {
         preferredSize = Dimension(0, height)
         minimumSize = Dimension(0, height)
@@ -434,13 +457,17 @@ class NewsView : JPanel(BorderLayout()) {
             val badgeHtml = article.badgeLabel.takeIf { it.isNotBlank() }?.let {
                 "<span style='color:${badgeColor(article.badgeColor)}; font-weight:700;'>${escapeHtml(it)}</span> "
             } ?: ""
+            val summaryHtml = article.summary.takeIf { it.isNotBlank() }?.let {
+                "<div style='margin-top:6px; color:$metaColor; line-height:1.35;'>${escapeHtml(trimSummary(it))}</div>"
+            }.orEmpty()
             label.verticalAlignment = SwingConstants.TOP
-            label.border = JBUI.Borders.empty(8, 6)
+            label.border = JBUI.Borders.empty(10, 8)
             label.text = """
                 <html>
-                  <div style='width:280px;'>
-                    <div style='line-height:1.35; font-weight:500; font-size:12px;'>$badgeHtml${escapeHtml(article.title)}</div>
+                  <div style='width:320px;'>
+                    <div style='line-height:1.38; font-weight:700; font-size:12px;'>$badgeHtml${escapeHtml(article.title)}</div>
                     <div style='margin-top:5px; color:$metaColor;'>${escapeHtml(article.source.ifBlank { "-" })} · ${escapeHtml(article.publishedAt.ifBlank { "-" })}</div>
+                    $summaryHtml
                   </div>
                 </html>
             """.trimIndent()
@@ -465,17 +492,17 @@ class NewsView : JPanel(BorderLayout()) {
             val metaColor = if (isSelected) "#DCE8FF" else "#89909A"
 
             label.verticalAlignment = SwingConstants.TOP
-            label.border = JBUI.Borders.empty(10, 6)
+            label.border = JBUI.Borders.empty(12, 8)
             label.text = """
                 <html>
-                  <div style='width:280px;'>
+                  <div style='width:320px;'>
                     <table cellspacing='0' cellpadding='0'>
                       <tr>
                         <td style='width:28px; color:#5B8CFF; font-weight:700; vertical-align:top;'>$rank</td>
                         <td>
-                            <div style='line-height:1.35;'>${escapeHtml(article.title)}</div>
+                            <div style='line-height:1.38; font-weight:700;'>${escapeHtml(article.title)}</div>
                             <div style='margin-top:5px; color:$metaColor;'>${escapeHtml(article.source.ifBlank { "-" })} · ${escapeHtml(article.publishedAt.ifBlank { "-" })}</div>
-                            <div style='margin-top:5px; color:$metaColor;'>${escapeHtml(article.summary.ifBlank { localizationService.text("요약 정보 없음", "No summary") })}</div>
+                            <div style='margin-top:6px; color:$metaColor; line-height:1.35;'>${escapeHtml(trimSummary(article.summary.ifBlank { localizationService.text("요약 정보 없음", "No summary") }, 110))}</div>
                         </td>
                       </tr>
                     </table>

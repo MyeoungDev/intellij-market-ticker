@@ -6,6 +6,7 @@ import com.github.myeoungdev.marketticker.application.model.research.StockResear
 import com.github.myeoungdev.marketticker.application.provider.DefaultDataSourceRegistry
 import com.github.myeoungdev.marketticker.application.provider.ResearchProvider
 import com.github.myeoungdev.marketticker.application.provider.SearchProvider
+import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.domain.model.research.ResearchArticle
 import com.github.myeoungdev.marketticker.domain.model.research.ResearchRankingBundle
@@ -132,11 +133,18 @@ class ResearchFacadeService(
 
     private suspend fun resolveStock(query: String, preferredItemCode: String?, preferredName: String?): Ticker? {
         preferredItemCode?.takeIf { it.isNotBlank() }?.let { code ->
+            val exactMatch = searchProvider.search(code)
+                .filter { it.marketType.isKoreanMarket() }
+                .firstOrNull { it.symbol.equals(code, ignoreCase = true) }
+            if (exactMatch != null) {
+                return exactMatch
+            }
+
             return Ticker(
                 symbol = code,
                 tradingSymbol = code,
                 name = preferredName?.takeIf { it.isNotBlank() } ?: code,
-                marketType = com.github.myeoungdev.marketticker.domain.model.MarketType.KOSPI,
+                marketType = MarketType.UNKNOWN,
                 nationCode = "KOR",
                 nationName = "대한민국"
             )
