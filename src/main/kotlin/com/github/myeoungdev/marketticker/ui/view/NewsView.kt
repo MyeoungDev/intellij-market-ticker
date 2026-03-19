@@ -26,6 +26,7 @@ import java.awt.Insets
 import javax.swing.Box
 import javax.swing.BorderFactory
 import javax.swing.BoxLayout
+import javax.swing.JComboBox
 import javax.swing.DefaultListCellRenderer
 import javax.swing.DefaultListModel
 import javax.swing.JButton
@@ -60,8 +61,8 @@ class NewsView : JPanel(BorderLayout()), Disposable {
     private val detailLinkLabel = JLabel()
 
     private val newsTabs = JTabbedPane()
-    private val headlineCategoryPanel = JPanel(FlowLayout(FlowLayout.LEFT, 6, 0))
-    private val headlineCategoryButtons = linkedMapOf<String, JButton>()
+    private val headlineCategorySelector = JComboBox<String>()
+    private val headlineCategoryKeys = mutableListOf<String>()
     private var selectedHeadlineCategoryKey: String = "MAINNEWS"
     private var headlineCategoryArticles: Map<String, List<NewsArticle>> = emptyMap()
 
@@ -182,12 +183,11 @@ class NewsView : JPanel(BorderLayout()), Disposable {
     private fun buildHeadlinesTab(): JBScrollPane {
         focusContainer.layout = BoxLayout(focusContainer, BoxLayout.Y_AXIS)
         focusContainer.isOpaque = false
-        headlineCategoryPanel.isOpaque = false
 
         val content = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             isOpaque = false
-            add(wrapSection(localizationService.text("뉴스 카테고리", "News Category"), headlineCategoryPanel))
+            add(wrapSection(localizationService.text("뉴스 카테고리", "News Category"), buildHeadlineCategorySelectorPanel()))
             add(spacer())
             add(wrapSection(localizationService.text("헤드라인", "Headlines"), JBScrollPane(headlineList).fixedHeight(280)))
             add(spacer())
@@ -207,6 +207,26 @@ class NewsView : JPanel(BorderLayout()), Disposable {
     private fun buildRankingTab(): JPanel {
         return JPanel(BorderLayout()).apply {
             add(wrapSection(localizationService.text("많이 본 뉴스", "Most Viewed"), JBScrollPane(rankingList)), BorderLayout.CENTER)
+        }
+    }
+
+    private fun buildHeadlineCategorySelectorPanel(): JPanel {
+        headlineCategorySelector.maximumRowCount = 6
+        headlineCategorySelector.font = headlineCategorySelector.font.deriveFont(Font.BOLD, headlineCategorySelector.font.size2D)
+        headlineCategorySelector.addActionListener {
+            val selectedIndex = headlineCategorySelector.selectedIndex
+            if (selectedIndex >= 0 && selectedIndex < headlineCategoryKeys.size) {
+                val key = headlineCategoryKeys[selectedIndex]
+                if (selectedHeadlineCategoryKey != key) {
+                    selectedHeadlineCategoryKey = key
+                    applyHeadlineCategory(key)
+                }
+            }
+        }
+
+        return JPanel(BorderLayout()).apply {
+            isOpaque = false
+            add(headlineCategorySelector, BorderLayout.CENTER)
         }
     }
 
@@ -258,8 +278,8 @@ class NewsView : JPanel(BorderLayout()), Disposable {
     }
 
     private fun rebuildHeadlineCategories() {
-        headlineCategoryPanel.removeAll()
-        headlineCategoryButtons.clear()
+        headlineCategorySelector.removeAllItems()
+        headlineCategoryKeys.clear()
 
         val categoryItems = listOf(
             "FLASHNEWS" to localizationService.text("속보", "Flash"),
@@ -268,23 +288,10 @@ class NewsView : JPanel(BorderLayout()), Disposable {
         )
 
         categoryItems.forEach { (key, label) ->
-            val button = JButton(label).apply {
-                margin = JBUI.insets(6, 12)
-                isFocusPainted = false
-                font = font.deriveFont(Font.BOLD, font.size2D)
-                addActionListener {
-                    selectedHeadlineCategoryKey = key
-                    applyHeadlineCategory(key)
-                }
-            }
-            headlineCategoryButtons[key] = button
-            headlineCategoryPanel.add(button)
+            headlineCategoryKeys += key
+            headlineCategorySelector.addItem(label)
         }
-
-        headlineCategoryPanel.add(Box.createHorizontalStrut(4))
         updateHeadlineCategoryStyles()
-        headlineCategoryPanel.revalidate()
-        headlineCategoryPanel.repaint()
     }
 
     private fun applyHeadlineCategory(categoryKey: String) {
@@ -297,15 +304,16 @@ class NewsView : JPanel(BorderLayout()), Disposable {
     }
 
     private fun updateHeadlineCategoryStyles() {
-        headlineCategoryButtons.forEach { (key, button) ->
-            val selected = key == selectedHeadlineCategoryKey
-            button.background = if (selected) JBColor(0x2F5BD3, 0x2F5BD3) else JBColor(0x2B2F36, 0x2B2F36)
-            button.foreground = if (selected) JBColor.WHITE else JBColor(0xD5DAE3, 0xD5DAE3)
-            button.border = BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(if (selected) JBColor(0x5E86F5, 0x5E86F5) else JBColor(0x4B5260, 0x4B5260)),
-                JBUI.Borders.empty(4, 8)
-            )
+        val selectedIndex = headlineCategoryKeys.indexOf(selectedHeadlineCategoryKey)
+        if (selectedIndex >= 0 && headlineCategorySelector.selectedIndex != selectedIndex) {
+            headlineCategorySelector.selectedIndex = selectedIndex
         }
+        headlineCategorySelector.background = JBColor(0x2B2F36, 0x2B2F36)
+        headlineCategorySelector.foreground = JBColor(0xE4E8EF, 0xE4E8EF)
+        headlineCategorySelector.border = BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(JBColor(0x4B5260, 0x4B5260)),
+            JBUI.Borders.empty(4, 8)
+        )
     }
 
     private fun renderDetail(article: NewsArticle?) {
