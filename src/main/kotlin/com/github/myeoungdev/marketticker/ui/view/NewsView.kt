@@ -1,10 +1,11 @@
 package com.github.myeoungdev.marketticker.ui.view
 
+import com.github.myeoungdev.marketticker.domain.model.news.NewsArticle
+import com.github.myeoungdev.marketticker.application.model.news.NewsHomeViewData
+import com.github.myeoungdev.marketticker.application.service.NewsFacadeService
 import com.github.myeoungdev.marketticker.application.service.LocalizationService
-import com.github.myeoungdev.marketticker.infrastructure.naver.NaverClient
-import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverNewsAggregateResponse
-import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverNewsArticle
 import com.intellij.ide.BrowserUtil
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBList
@@ -21,9 +22,11 @@ import java.awt.Component
 import java.awt.Dimension
 import java.awt.FlowLayout
 import java.awt.Font
+import java.awt.Insets
 import javax.swing.Box
 import javax.swing.BorderFactory
 import javax.swing.BoxLayout
+import javax.swing.JComboBox
 import javax.swing.DefaultListCellRenderer
 import javax.swing.DefaultListModel
 import javax.swing.JButton
@@ -41,10 +44,10 @@ import javax.swing.SwingConstants
  * 툴윈도우 폭이 좁아도 카테고리별 원본 뉴스 리스트를 빠르게 훑을 수 있도록
  * `헤드라인 / 많이 본 뉴스` 2개 정보 축으로 구성합니다.
  */
-class NewsView : JPanel(BorderLayout()) {
+class NewsView : JPanel(BorderLayout()), Disposable {
 
     private val localizationService = service<LocalizationService>()
-    private val naverClient = NaverClient()
+    private val newsFacadeService = service<NewsFacadeService>()
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private val refreshButton = JButton(localizationService.text("새로고침", "Refresh"))
@@ -58,21 +61,22 @@ class NewsView : JPanel(BorderLayout()) {
     private val detailLinkLabel = JLabel()
 
     private val newsTabs = JTabbedPane()
-    private val headlineCategoryPanel = JPanel(FlowLayout(FlowLayout.LEFT, 6, 0))
-    private val headlineCategoryButtons = linkedMapOf<String, JButton>()
+    private val headlineCategorySelector = JComboBox<String>()
+    private val headlineCategoryKeys = mutableListOf<String>()
     private var selectedHeadlineCategoryKey: String = "MAINNEWS"
-    private var headlineCategoryArticles: Map<String, List<NaverNewsArticle>> = emptyMap()
+    private var headlineCategoryArticles: Map<String, List<NewsArticle>> = emptyMap()
 
-    private val headlineListModel = DefaultListModel<NaverNewsArticle>()
+    private val headlineListModel = DefaultListModel<NewsArticle>()
     private val headlineList = createNewsList(headlineListModel, CompactNewsRenderer())
-    private val overseasListModel = DefaultListModel<NaverNewsArticle>()
+    private val overseasListModel = DefaultListModel<NewsArticle>()
     private val overseasList = createNewsList(overseasListModel, CompactNewsRenderer())
-    private val moneyStoryListModel = DefaultListModel<NaverNewsArticle>()
+    private val moneyStoryListModel = DefaultListModel<NewsArticle>()
     private val moneyStoryList = createNewsList(moneyStoryListModel, CompactNewsRenderer())
     private val focusContainer = JPanel()
 
-    private val rankingListModel = DefaultListModel<NaverNewsArticle>()
+    private val rankingListModel = DefaultListModel<NewsArticle>()
     private val rankingList = createNewsList(rankingListModel, RankingNewsRenderer())
+    private var currentDetailArticle: NewsArticle? = null
 
     init {
         border = JBUI.Borders.empty(10)
@@ -88,44 +92,29 @@ class NewsView : JPanel(BorderLayout()) {
         bindList(rankingList)
 
         renderDetail(null)
-        refreshNews()
+        loadNews(forceRefresh = false)
     }
 
     /**
      * 뉴스 데이터를 새로 불러와 화면에 반영합니다.
      */
     fun refreshNews() {
+        loadNews(forceRefresh = true)
+    }
+
+    private fun loadNews(forceRefresh: Boolean) {
         statusLabel.text = localizationService.text("뉴스를 불러오는 중...", "Loading news...")
 
         scope.launch {
-            val home = naverClient.fetchNewsHome(
-                flashNewsSize = 4,
-                mainNewsSize = 6,
-                rankingNewsSize = 10,
-                overseasNewsSize = 6,
-                focusSize = 6,
-                moneyStorySize = 8,
-                noticeSize = 8
-            )
-            val flashArticles = naverClient.fetchNewsList(category = "FLASHNEWS", page = 1, pageSize = 15)
-            val mainArticles = naverClient.fetchNewsList(category = "MAINNEWS", page = 1, pageSize = 15)
-            val worldArticles = naverClient.fetchWorldNews(page = 1, pageSize = 15)
-            val rankArticles = naverClient.fetchNewsList(category = "RANKNEWS", page = 1, pageSize = 15)
+            val homeData = newsFacadeService.loadNewsHome(forceRefresh = forceRefresh)
 
             withContext(Dispatchers.Main) {
-                applyNewsHome(
-                    home = home,
-                    flashArticles = flashArticles,
-                    mainArticles = mainArticles,
-                    worldArticles = worldArticles,
-                    rankArticles = rankArticles
-                )
+                applyNewsHome(homeData)
             }
         }
     }
 
-    override fun removeNotify() {
-        super.removeNotify()
+    override fun dispose() {
         scope.cancel()
     }
 
@@ -147,7 +136,7 @@ class NewsView : JPanel(BorderLayout()) {
             )
         }.also {
             refreshButton.addActionListener { refreshNews() }
-            openButton.addActionListener { selectedArticle()?.articleUrl()?.let(BrowserUtil::browse) }
+            openButton.addActionListener { currentDetailArticle?.url?.let(BrowserUtil::browse) }
             openButton.isEnabled = false
         }
     }
@@ -159,9 +148,12 @@ class NewsView : JPanel(BorderLayout()) {
         detailSummaryArea.background = JBColor.PanelBackground
         detailSummaryArea.foreground = JBColor.foreground()
         detailSummaryArea.font = detailSummaryArea.font.deriveFont(13f)
+        detailSummaryArea.margin = Insets(6, 4, 6, 4)
 
         detailMetaLabel.foreground = JBColor.GRAY
         detailLinkLabel.foreground = JBColor.GRAY
+        detailTitleLabel.font = detailTitleLabel.font.deriveFont(Font.BOLD, detailTitleLabel.font.size2D + 2f)
+        detailBadgeLabel.border = JBUI.Borders.emptyBottom(4)
 
         val detailHeader = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -176,7 +168,7 @@ class NewsView : JPanel(BorderLayout()) {
             add(detailHeader, BorderLayout.NORTH)
             add(JBScrollPane(detailSummaryArea), BorderLayout.CENTER)
             add(detailLinkLabel, BorderLayout.SOUTH)
-            preferredSize = Dimension(0, 220)
+            preferredSize = Dimension(0, 240)
         }
 
         newsTabs.addTab(localizationService.text("헤드라인", "Headlines"), buildHeadlinesTab())
@@ -191,14 +183,13 @@ class NewsView : JPanel(BorderLayout()) {
     private fun buildHeadlinesTab(): JBScrollPane {
         focusContainer.layout = BoxLayout(focusContainer, BoxLayout.Y_AXIS)
         focusContainer.isOpaque = false
-        headlineCategoryPanel.isOpaque = false
 
         val content = JPanel().apply {
             layout = BoxLayout(this, BoxLayout.Y_AXIS)
             isOpaque = false
-            add(wrapSection(localizationService.text("뉴스 카테고리", "News Category"), headlineCategoryPanel))
+            add(wrapSection(localizationService.text("뉴스 카테고리", "News Category"), buildHeadlineCategorySelectorPanel()))
             add(spacer())
-            add(wrapSection(localizationService.text("주요 뉴스", "Headlines"), JBScrollPane(headlineList).fixedHeight(260)))
+            add(wrapSection(localizationService.text("헤드라인", "Headlines"), JBScrollPane(headlineList).fixedHeight(280)))
             add(spacer())
             add(wrapSection(localizationService.text("포커스", "Focus"), focusContainer))
             add(spacer())
@@ -219,72 +210,50 @@ class NewsView : JPanel(BorderLayout()) {
         }
     }
 
-    private fun applyNewsHome(
-        home: NaverNewsAggregateResponse?,
-        flashArticles: List<NaverNewsArticle>,
-        mainArticles: List<NaverNewsArticle>,
-        worldArticles: List<NaverNewsArticle>,
-        rankArticles: List<NaverNewsArticle>
-    ) {
+    private fun buildHeadlineCategorySelectorPanel(): JPanel {
+        headlineCategorySelector.maximumRowCount = 6
+        headlineCategorySelector.font = headlineCategorySelector.font.deriveFont(Font.BOLD, headlineCategorySelector.font.size2D)
+        headlineCategorySelector.addActionListener {
+            val selectedIndex = headlineCategorySelector.selectedIndex
+            if (selectedIndex >= 0 && selectedIndex < headlineCategoryKeys.size) {
+                val key = headlineCategoryKeys[selectedIndex]
+                if (selectedHeadlineCategoryKey != key) {
+                    selectedHeadlineCategoryKey = key
+                    applyHeadlineCategory(key)
+                }
+            }
+        }
+
+        return JPanel(BorderLayout()).apply {
+            isOpaque = false
+            add(headlineCategorySelector, BorderLayout.CENTER)
+        }
+    }
+
+    private fun applyNewsHome(homeData: NewsHomeViewData) {
         headlineListModel.clear()
         overseasListModel.clear()
         moneyStoryListModel.clear()
         rankingListModel.clear()
         focusContainer.removeAll()
 
-        if (home == null) {
-            statusLabel.text = localizationService.text("뉴스를 불러오지 못했습니다.", "Failed to load news.")
-            renderDetail(null)
-            return
-        }
-
-        val flashSectionLabel = localizationService.text("속보", "Flash")
-        val mainSectionLabel = localizationService.text("주요", "Main")
-        val enrichedFlashArticles = flashArticles.map {
-            it.copy(
-                badgeLabel = flashSectionLabel,
-                badgeColor = "red",
-                sectionKey = "FLASHNEWS",
-                sectionLabel = flashSectionLabel
-            )
-        }
-        val enrichedMainArticles = mainArticles.map {
-            it.copy(
-                badgeLabel = mainSectionLabel,
-                badgeColor = "blue",
-                sectionKey = "MAINNEWS",
-                sectionLabel = mainSectionLabel
-            )
-        }
-
-        headlineCategoryArticles = linkedMapOf(
-            "FLASHNEWS" to enrichedFlashArticles,
-            "MAINNEWS" to enrichedMainArticles,
-            "WORLDNEWS" to worldArticles.map {
-                it.copy(
-                    badgeLabel = localizationService.text("해외", "Global"),
-                    badgeColor = "gray",
-                    sectionKey = "WORLDNEWS",
-                    sectionLabel = localizationService.text("해외뉴스", "World News")
-                )
-            }
-        )
+        headlineCategoryArticles = homeData.headlines.headlines
 
         rebuildHeadlineCategories()
         applyHeadlineCategory(selectedHeadlineCategoryKey)
 
-        home.overseasNews.map { it.toNewsArticle() }.take(6).forEach(overseasListModel::addElement)
-        home.moneyStory.map { it.toNewsArticle() }.take(6).forEach(moneyStoryListModel::addElement)
-        rankArticles.forEach(rankingListModel::addElement)
+        homeData.headlines.worldNews.forEach(overseasListModel::addElement)
+        homeData.headlines.moneyStories.forEach(moneyStoryListModel::addElement)
+        homeData.mostViewed.forEach(rankingListModel::addElement)
 
-        home.newsFocus.take(4).forEach { section ->
+        homeData.headlines.focusSections.forEach { section ->
             focusContainer.add(
                 wrapSection(
-                    section.category,
+                    mapCategoryTitle(section.title),
                     JBScrollPane(
                         createNewsList(
-                            DefaultListModel<NaverNewsArticle>().apply {
-                                section.news.take(4).map { it.toNewsArticle(section.category) }.forEach(::addElement)
+                            DefaultListModel<NewsArticle>().apply {
+                                section.articles.take(4).forEach(::addElement)
                             },
                             CompactNewsRenderer()
                         ).also { bindList(it) }
@@ -302,39 +271,27 @@ class NewsView : JPanel(BorderLayout()) {
             "선택 카테고리 ${headlineListModel.size()}건, 많이 본 뉴스 ${rankingListModel.size()}건",
             "Selected category ${headlineListModel.size()}, most viewed ${rankingListModel.size()}"
         )
-        openButton.isEnabled = !firstSelectable?.articleUrl().isNullOrBlank()
+        openButton.isEnabled = !firstSelectable?.url.isNullOrBlank()
 
         revalidate()
         repaint()
     }
 
     private fun rebuildHeadlineCategories() {
-        headlineCategoryPanel.removeAll()
-        headlineCategoryButtons.clear()
+        headlineCategorySelector.removeAllItems()
+        headlineCategoryKeys.clear()
 
         val categoryItems = listOf(
             "FLASHNEWS" to localizationService.text("속보", "Flash"),
             "MAINNEWS" to localizationService.text("주요", "Main"),
-            "WORLDNEWS" to localizationService.text("해외뉴스", "World News")
+            "WORLDNEWS" to localizationService.text("해외", "World")
         )
 
         categoryItems.forEach { (key, label) ->
-            val button = JButton(label).apply {
-                margin = JBUI.insets(4, 8)
-                isFocusPainted = false
-                addActionListener {
-                    selectedHeadlineCategoryKey = key
-                    applyHeadlineCategory(key)
-                }
-            }
-            headlineCategoryButtons[key] = button
-            headlineCategoryPanel.add(button)
+            headlineCategoryKeys += key
+            headlineCategorySelector.addItem(label)
         }
-
-        headlineCategoryPanel.add(Box.createHorizontalStrut(4))
         updateHeadlineCategoryStyles()
-        headlineCategoryPanel.revalidate()
-        headlineCategoryPanel.repaint()
     }
 
     private fun applyHeadlineCategory(categoryKey: String) {
@@ -347,15 +304,20 @@ class NewsView : JPanel(BorderLayout()) {
     }
 
     private fun updateHeadlineCategoryStyles() {
-        headlineCategoryButtons.forEach { (key, button) ->
-            val selected = key == selectedHeadlineCategoryKey
-            button.background = if (selected) JBColor(0x3559B7, 0x3559B7) else JBColor(0x3A3D42, 0x3A3D42)
-            button.foreground = if (selected) JBColor.WHITE else JBColor(0xC8CDD5, 0xC8CDD5)
-            button.border = BorderFactory.createEmptyBorder(4, 8, 4, 8)
+        val selectedIndex = headlineCategoryKeys.indexOf(selectedHeadlineCategoryKey)
+        if (selectedIndex >= 0 && headlineCategorySelector.selectedIndex != selectedIndex) {
+            headlineCategorySelector.selectedIndex = selectedIndex
         }
+        headlineCategorySelector.background = JBColor(0x2B2F36, 0x2B2F36)
+        headlineCategorySelector.foreground = JBColor(0xE4E8EF, 0xE4E8EF)
+        headlineCategorySelector.border = BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(JBColor(0x4B5260, 0x4B5260)),
+            JBUI.Borders.empty(4, 8)
+        )
     }
 
-    private fun renderDetail(article: NaverNewsArticle?) {
+    private fun renderDetail(article: NewsArticle?) {
+        currentDetailArticle = article
         if (article == null) {
             detailBadgeLabel.text = ""
             detailTitleLabel.text = localizationService.text("뉴스를 선택하세요", "Select a news item")
@@ -374,28 +336,20 @@ class NewsView : JPanel(BorderLayout()) {
 
         detailBadgeLabel.text = buildBadgeText(article.badgeLabel, article.badgeColor)
         detailTitleLabel.text = article.title
-        detailMetaLabel.text = listOfNotNull(article.officeHname, article.datetime).joinToString("  |  ")
-        detailSummaryArea.text = article.subcontent?.takeIf { it.isNotBlank() }
+        detailMetaLabel.text = listOfNotNull(article.source.takeIf { it.isNotBlank() }, article.publishedAt.takeIf { it.isNotBlank() }).joinToString("  |  ")
+        detailSummaryArea.text = article.summary.takeIf { it.isNotBlank() }
             ?: localizationService.text("요약 정보가 없습니다.", "No summary available.")
         detailSummaryArea.caretPosition = 0
-        detailLinkLabel.text = article.articleUrl()?.let {
+        detailLinkLabel.text = article.url?.let {
             localizationService.text("원문: ", "Source: ") + it
         } ?: localizationService.text("플러그인 내부 요약 항목입니다.", "This is an internal summary item.")
-        openButton.isEnabled = !article.articleUrl().isNullOrBlank()
-    }
-
-    private fun selectedArticle(): NaverNewsArticle? {
-        return when (newsTabs.selectedIndex) {
-            0 -> headlineList.selectedValue ?: overseasList.selectedValue ?: moneyStoryList.selectedValue
-            1 -> rankingList.selectedValue
-            else -> null
-        }
+        openButton.isEnabled = !article.url.isNullOrBlank()
     }
 
     private fun createNewsList(
-        model: DefaultListModel<NaverNewsArticle>,
+        model: DefaultListModel<NewsArticle>,
         renderer: DefaultListCellRenderer
-    ): JBList<NaverNewsArticle> {
+    ): JBList<NewsArticle> {
         return JBList(model).apply {
             cellRenderer = renderer
             selectionMode = ListSelectionModel.SINGLE_SELECTION
@@ -404,7 +358,7 @@ class NewsView : JPanel(BorderLayout()) {
         }
     }
 
-    private fun bindList(list: JBList<NaverNewsArticle>) {
+    private fun bindList(list: JBList<NewsArticle>) {
         list.addListSelectionListener {
             if (!it.valueIsAdjusting) {
                 renderDetail(list.selectedValue)
@@ -414,7 +368,7 @@ class NewsView : JPanel(BorderLayout()) {
             override fun mouseClicked(e: java.awt.event.MouseEvent) {
                 val article = list.selectedValue ?: return
                 if (e.clickCount == 2) {
-                    article.articleUrl()?.let(BrowserUtil::browse)
+                    article.url?.let(BrowserUtil::browse)
                 }
             }
         })
@@ -423,12 +377,16 @@ class NewsView : JPanel(BorderLayout()) {
     private fun wrapSection(title: String, component: Component): JPanel {
         return JPanel(BorderLayout()).apply {
             border = titledPanelBorder(title)
+            background = JBColor.PanelBackground
             add(component, BorderLayout.CENTER)
         }
     }
 
     private fun titledPanelBorder(title: String) = BorderFactory.createCompoundBorder(
-        BorderFactory.createTitledBorder(title),
+        BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(JBColor(0x3A404A, 0x3A404A)),
+            BorderFactory.createTitledBorder(title)
+        ),
         JBUI.Borders.empty(8)
     )
 
@@ -463,13 +421,30 @@ class NewsView : JPanel(BorderLayout()) {
         return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     }
 
+    private fun mapCategoryTitle(raw: String): String {
+        return when (raw.trim().uppercase()) {
+            "FLASHNEWS", "FLASH" -> localizationService.text("속보", "Flash")
+            "MAINNEWS", "MAIN" -> localizationService.text("주요", "Main")
+            "WORLDNEWS", "WORLD" -> localizationService.text("해외", "World")
+            "RANKNEWS", "RANK" -> localizationService.text("많이 본 뉴스", "Most Viewed")
+            "MONEYSTORY", "MONEY" -> localizationService.text("머니스토리", "Money Story")
+            else -> raw
+        }
+    }
+
+    private fun trimSummary(text: String, maxLength: Int = 90): String {
+        val normalized = text.replace("\n", " ").trim()
+        if (normalized.length <= maxLength) return normalized
+        return normalized.take(maxLength - 1).trimEnd() + "…"
+    }
+
     private fun JBScrollPane.fixedHeight(height: Int): JBScrollPane {
         preferredSize = Dimension(0, height)
         minimumSize = Dimension(0, height)
         return this
     }
 
-    private fun DefaultListModel<NaverNewsArticle>.firstOrNull(): NaverNewsArticle? {
+    private fun DefaultListModel<NewsArticle>.firstOrNull(): NewsArticle? {
         return if (isEmpty) null else getElementAt(0)
     }
 
@@ -485,18 +460,22 @@ class NewsView : JPanel(BorderLayout()) {
             cellHasFocus: Boolean
         ): Component {
             val label = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus) as JLabel
-            val article = value as? NaverNewsArticle ?: return label
+            val article = value as? NewsArticle ?: return label
             val metaColor = if (isSelected) "#DCE8FF" else "#89909A"
-            val badgeHtml = article.badgeLabel?.let {
+            val badgeHtml = article.badgeLabel.takeIf { it.isNotBlank() }?.let {
                 "<span style='color:${badgeColor(article.badgeColor)}; font-weight:700;'>${escapeHtml(it)}</span> "
             } ?: ""
+            val summaryHtml = article.summary.takeIf { it.isNotBlank() }?.let {
+                "<div style='margin-top:6px; color:$metaColor; line-height:1.35;'>${escapeHtml(trimSummary(it))}</div>"
+            }.orEmpty()
             label.verticalAlignment = SwingConstants.TOP
-            label.border = JBUI.Borders.empty(8, 6)
+            label.border = JBUI.Borders.empty(10, 8)
             label.text = """
                 <html>
-                  <div style='width:280px;'>
-                    <div style='line-height:1.35; font-weight:500; font-size:12px;'>$badgeHtml${escapeHtml(article.title)}</div>
-                    <div style='margin-top:5px; color:$metaColor;'>${escapeHtml(article.officeHname ?: "-")} · ${escapeHtml(article.datetime ?: "-")}</div>
+                  <div style='width:320px;'>
+                    <div style='line-height:1.38; font-weight:700; font-size:12px;'>$badgeHtml${escapeHtml(article.title)}</div>
+                    <div style='margin-top:5px; color:$metaColor;'>${escapeHtml(article.source.ifBlank { "-" })} · ${escapeHtml(article.publishedAt.ifBlank { "-" })}</div>
+                    $summaryHtml
                   </div>
                 </html>
             """.trimIndent()
@@ -516,22 +495,22 @@ class NewsView : JPanel(BorderLayout()) {
             cellHasFocus: Boolean
         ): Component {
             val label = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus) as JLabel
-            val article = value as? NaverNewsArticle ?: return label
+            val article = value as? NewsArticle ?: return label
             val rank = article.ranking ?: (index + 1).toString()
             val metaColor = if (isSelected) "#DCE8FF" else "#89909A"
 
             label.verticalAlignment = SwingConstants.TOP
-            label.border = JBUI.Borders.empty(10, 6)
+            label.border = JBUI.Borders.empty(12, 8)
             label.text = """
                 <html>
-                  <div style='width:280px;'>
+                  <div style='width:320px;'>
                     <table cellspacing='0' cellpadding='0'>
                       <tr>
                         <td style='width:28px; color:#5B8CFF; font-weight:700; vertical-align:top;'>$rank</td>
                         <td>
-                            <div style='line-height:1.35;'>${escapeHtml(article.title)}</div>
-                            <div style='margin-top:5px; color:$metaColor;'>${escapeHtml(article.officeHname ?: "-")} · ${escapeHtml(article.datetime ?: "-")}</div>
-                            <div style='margin-top:5px; color:$metaColor;'>${escapeHtml(article.subcontent ?: localizationService.text("요약 정보 없음", "No summary"))}</div>
+                            <div style='line-height:1.38; font-weight:700;'>${escapeHtml(article.title)}</div>
+                            <div style='margin-top:5px; color:$metaColor;'>${escapeHtml(article.source.ifBlank { "-" })} · ${escapeHtml(article.publishedAt.ifBlank { "-" })}</div>
+                            <div style='margin-top:6px; color:$metaColor; line-height:1.35;'>${escapeHtml(trimSummary(article.summary.ifBlank { localizationService.text("요약 정보 없음", "No summary") }, 110))}</div>
                         </td>
                       </tr>
                     </table>

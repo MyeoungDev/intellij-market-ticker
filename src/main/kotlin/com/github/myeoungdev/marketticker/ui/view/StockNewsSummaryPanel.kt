@@ -1,12 +1,11 @@
 package com.github.myeoungdev.marketticker.ui.view
 
+import com.github.myeoungdev.marketticker.domain.model.news.NewsArticle
+import com.github.myeoungdev.marketticker.application.model.news.TickerNewsSummaryViewData
+import com.github.myeoungdev.marketticker.domain.model.news.TickerOverviewCard
 import com.github.myeoungdev.marketticker.application.service.LocalizationService
+import com.github.myeoungdev.marketticker.application.service.NewsFacadeService
 import com.github.myeoungdev.marketticker.domain.model.Ticker
-import com.github.myeoungdev.marketticker.infrastructure.naver.NaverClient
-import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverForeignStockBasic
-import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverForeignStockOverview
-import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverNewsArticle
-import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverResearchArticle
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
@@ -34,13 +33,11 @@ import javax.swing.ListSelectionModel
 
 /**
  * 주식 탭 하단에 노출되는 종목 뉴스 요약 패널입니다.
- *
- * 선택된 종목 기준 최근 뉴스 헤드라인만 가볍게 보여줍니다.
  */
 class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
 
     private val localizationService = service<LocalizationService>()
-    private val naverClient = NaverClient()
+    private val newsFacadeService = service<NewsFacadeService>()
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var requestJob: Job? = null
 
@@ -55,7 +52,7 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
     private val overviewToggleButton = JButton()
     private val overviewSiteButton = JButton(localizationService.text("공식 사이트", "Official Site"))
     private val overviewPanel = JPanel(BorderLayout(0, 6))
-    private val model = CollectionListModel<NaverNewsArticle>()
+    private val model = CollectionListModel<NewsArticle>()
     private val list = JBList(model)
     private var currentOverviewUrl: String? = null
     private var isOverviewExpanded: Boolean = false
@@ -131,9 +128,9 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
         list.cellRenderer = SimpleListCellRenderer.create { label, value, _ ->
             val article = value ?: return@create
             val meta = listOfNotNull(
-                article.badgeLabel.takeIf { !it.isNullOrBlank() },
-                article.officeHname.takeIf { !it.isNullOrBlank() },
-                article.datetime?.takeIf { it.isNotBlank() }?.let(::formatDate)
+                article.badgeLabel.takeIf { it.isNotBlank() },
+                article.source.takeIf { it.isNotBlank() },
+                article.publishedAt.takeIf { it.isNotBlank() }?.let(::formatDate)
             ).joinToString(" · ")
             label.border = JBUI.Borders.empty(6, 6)
             label.text = """
@@ -147,7 +144,7 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
         list.addMouseListener(object : java.awt.event.MouseAdapter() {
             override fun mouseClicked(e: java.awt.event.MouseEvent) {
                 if (e.clickCount == 2) {
-                    list.selectedValue?.articleUrl()?.let(BrowserUtil::browse)
+                    list.selectedValue?.url?.let(BrowserUtil::browse)
                 }
             }
         })
@@ -183,61 +180,15 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
         hideOverview()
         model.replaceAll(
             listOf(
-                NaverNewsArticle(title = localizationService.text("뉴스를 불러오는 중...", "Loading news..."))
+                NewsArticle(id = "loading", title = localizationService.text("뉴스를 불러오는 중...", "Loading news..."))
             )
         )
 
         requestJob = scope.launch {
-            val overview = if (!ticker.marketType.isKoreanMarket() && !ticker.marketType.isCryptoMarket()) {
-                naverClient.fetchForeignStockOverview(ticker.tradingSymbol)
-            } else {
-                null
-            }
-            val basic = if (!ticker.marketType.isKoreanMarket() && !ticker.marketType.isCryptoMarket()) {
-                naverClient.fetchForeignStockBasic(ticker.tradingSymbol)
-            } else {
-                null
-            }
-            val research = if (ticker.marketType.isKoreanMarket()) {
-                naverClient.fetchStockResearch(ticker.symbol, size = 1).firstOrNull()
-            } else {
-                null
-            }
-            val domesticDetail = if (ticker.marketType.isKoreanMarket()) {
-                naverClient.fetchDomesticStockDetail(ticker.symbol)
-            } else {
-                null
-            }
-            val coinOverview = if (ticker.marketType.isCryptoMarket()) {
-                naverClient.fetchCoinOverview(ticker.marketType.name, ticker.symbol)
-            } else {
-                null
-            }
-            val articles = loadArticles(ticker, coinOverview)
+            val viewData = newsFacadeService.loadTickerNewsSummary(ticker)
             withContext(Dispatchers.Main) {
                 if (!isActive) return@withContext
-                renderOverview(ticker, overview, basic, coinOverview, domesticDetail, research)
-                if (articles.isEmpty()) {
-                    model.replaceAll(
-                        listOf(
-                            NaverNewsArticle(title = localizationService.text("표시할 뉴스가 없습니다.", "No news available."))
-                        )
-                    )
-                    statusLabel.text = if (ticker.marketType.isCryptoMarket()) {
-                        localizationService.text("코인 개요만 표시합니다.", "Coin overview only")
-                    } else {
-                        localizationService.text("최근 뉴스 없음", "No recent news")
-                    }
-                } else {
-                    model.replaceAll(articles)
-                    if (list.selectedIndex == -1) {
-                        list.selectedIndex = 0
-                    }
-                    statusLabel.text = localizationService.text(
-                        "최근 뉴스 ${articles.size}건",
-                        "${articles.size} recent items"
-                    )
-                }
+                applyViewData(viewData)
             }
         }
     }
@@ -247,54 +198,28 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
         scope.cancel()
     }
 
-    private fun loadArticles(
-        ticker: Ticker,
-        coinOverview: com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCoinOverview? = null
-    ): List<NaverNewsArticle> {
-        if (ticker.marketType.isCryptoMarket()) {
-            return naverClient.fetchNewsSearch(buildCryptoNewsQuery(ticker, coinOverview), page = 1, pageSize = 7)
+    private fun applyViewData(viewData: TickerNewsSummaryViewData) {
+        titleLabel.text = localizationService.text(viewData.title, viewData.title)
+        renderOverview(viewData.overviewCard)
+
+        if (viewData.articles.isEmpty()) {
+            model.replaceAll(
+                listOf(
+                    NewsArticle(id = "empty", title = localizationService.text("표시할 뉴스가 없습니다.", "No news available."))
+                )
+            )
+            statusLabel.text = localizationService.text(viewData.statusMessage, viewData.statusMessage)
+            return
         }
 
-        val localItemCode = if (ticker.marketType.isKoreanMarket()) ticker.symbol else ticker.tradingSymbol
-        val domesticArticles = naverClient.fetchDomesticDetailNews(itemCode = localItemCode, page = 1, pageSize = 15)
-        val foreignArticles = if (ticker.marketType.isKoreanMarket()) {
-            emptyList()
-        } else {
-            naverClient.fetchForeignStockNews(reutersCode = ticker.tradingSymbol, page = 1, pageSize = 15)
+        model.replaceAll(viewData.articles)
+        if (list.selectedIndex == -1) {
+            list.selectedIndex = 0
         }
-
-        return StockNewsSummaryFormatter.mergeArticles(domesticArticles, foreignArticles)
+        statusLabel.text = localizationService.text(viewData.subtitle, viewData.subtitle)
     }
 
-    private fun buildCryptoNewsQuery(
-        ticker: Ticker,
-        coinOverview: com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCoinOverview?
-    ): String {
-        val aliases = CRYPTO_NEWS_ALIASES[ticker.symbol.uppercase()].orEmpty()
-        return buildList {
-            addAll(aliases)
-            add(ticker.name)
-            add(ticker.symbol)
-            add(ticker.tradingSymbol.substringBefore('_'))
-            coinOverview?.krName?.let(::add)
-            coinOverview?.enName?.let(::add)
-            coinOverview?.exchangeTicker?.let(::add)
-        }
-            .map { it.trim() }
-            .filter { it.isNotBlank() }
-            .distinct()
-            .joinToString(" | ")
-    }
-
-    private fun renderOverview(
-        ticker: Ticker,
-        overview: NaverForeignStockOverview?,
-        basic: NaverForeignStockBasic?,
-        coinOverview: com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCoinOverview?,
-        domesticDetail: com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverDomesticStockDetail?,
-        research: NaverResearchArticle?
-    ) {
-        val card = StockNewsSummaryFormatter.buildOverviewCard(ticker, overview, basic, coinOverview, domesticDetail, research)
+    private fun renderOverview(card: TickerOverviewCard?) {
         if (card == null) {
             hideOverview()
             return
@@ -337,16 +262,6 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
             raw.length >= 10 -> raw.substring(0, 10)
             else -> raw
         }
-    }
-
-    companion object {
-        private val CRYPTO_NEWS_ALIASES = mapOf(
-            "BTC" to listOf("비트코인", "BTC", "Bitcoin"),
-            "ETH" to listOf("이더리움", "ETH", "Ethereum"),
-            "XRP" to listOf("엑스알피", "리플", "XRP", "Ripple"),
-            "DOGE" to listOf("도지코인", "DOGE", "Dogecoin"),
-            "MATIC" to listOf("폴리곤", "MATIC", "Polygon")
-        )
     }
 
     private fun escapeHtml(text: String): String {

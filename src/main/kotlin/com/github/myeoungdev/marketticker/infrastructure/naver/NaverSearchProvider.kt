@@ -15,8 +15,6 @@ class NaverSearchProvider(
 
     override fun search(query: String): List<Ticker> {
         val searchStocks = naverClient.searchStocks(query)
-        print("검색 결과: $searchStocks")
-
         return searchStocks.map { stock -> stock.toTicker() }
     }
 }
