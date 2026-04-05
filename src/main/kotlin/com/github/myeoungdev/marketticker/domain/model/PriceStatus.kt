@@ -1,10 +1,7 @@
 package com.github.myeoungdev.marketticker.domain.model
 
 /**
- * Some Descirption...
- *
- * @author  : 강명관
- * @since   : 2025-12-03
+ * 가격 변동 방향을 표현하는 도메인 모델입니다.
  */
 enum class PriceStatus {
     RISING,   // 상승 (빨강)

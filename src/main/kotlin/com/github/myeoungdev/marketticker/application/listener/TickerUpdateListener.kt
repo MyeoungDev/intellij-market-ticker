@@ -3,10 +3,7 @@ package com.github.myeoungdev.marketticker.application.listener
 import com.github.myeoungdev.marketticker.domain.model.TickerPrice
 
 /**
- * Some Descirption...
- *
- * @author  : 강명관
- * @since   : 2025-12-26
+ * 시세 갱신 이벤트를 브로드캐스트하는 메시지 버스 리스너입니다.
  */
 interface TickerUpdateListener {
     companion object {

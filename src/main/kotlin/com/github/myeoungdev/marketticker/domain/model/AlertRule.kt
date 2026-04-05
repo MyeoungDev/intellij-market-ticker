@@ -1,10 +1,7 @@
 package com.github.myeoungdev.marketticker.domain.model
 
 /**
- * Some Descirption...
- *
- * @author  : 강명관
- * @since   : 2025-12-23
+ * 사용자 정의 가격 알림 규칙입니다.
  */
 data class AlertRule(
     var symbol: String = "",

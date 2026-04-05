@@ -1,10 +1,7 @@
 package com.github.myeoungdev.marketticker.domain.model
 
 /**
- * Some Descirption...
- *
- * @author  : 강명관
- * @since   : 2025-12-02
+ * 화면과 알림 계산에서 사용하는 현재가 스냅샷 모델입니다.
  */
 data class TickerPrice(
     val symbol: String,
@@ -22,8 +19,7 @@ data class TickerPrice(
     val tradeValue: Double = 0.0,               // 누적 거래대금
     val marketStatus: MarketStatus,             // 장 상태 (OPEN, CLOSED)
     val marketType: MarketType,                 // 시장 (KOREA, USA, COIN)
-    val currency: CurrencyType,                       // 통화 (KRW, USD)
-    // TODO: Convert to Country Domain Type
+    val currency: CurrencyType,               // 통화 (KRW, USD)
     val nationCode: String?,
     val nationName: String?
 )

@@ -7,10 +7,7 @@ import com.github.myeoungdev.marketticker.common.extenion.parseCommaToLong
 import com.github.myeoungdev.marketticker.domain.model.*
 
 /**
- * Some Descirption...
- *
- * @author  : 강명관
- * @since   : 2025-12-02
+ * Naver 실시간 시세 응답 DTO입니다.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class NaverRealTimeStockPriceResponse(
