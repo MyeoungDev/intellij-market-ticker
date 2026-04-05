@@ -21,6 +21,7 @@
         <toolWindow
                 id="Market Ticker"
                 anchor="right"
+                icon="/icons/marketTickerToolWindow.svg"
                 factoryClass="com.github.myeoungdev.marketticker.ui.toolwindow.MarketTickerToolWindowFactory"/>
 
         <statusBarWidgetFactory

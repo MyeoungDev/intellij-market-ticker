@@ -1,8 +1,27 @@
 # Market Ticker
 
-Market Ticker is a JetBrains IDE plugin for tracking Korean stocks, global stocks, and crypto inside the IDE.
+<p align="center">
+  <img src="src/main/resources/META-INF/pluginIcon.svg" alt="Market Ticker Icon" width="88" height="88" />
+</p>
 
-It focuses on a compact, watchlist-first workflow with quotes, overview, news, research, screener, calendar, alerts, charts, heatmap, and portfolio tracking in one tool window.
+<p align="center">
+  <img alt="JetBrains Platform" src="https://img.shields.io/badge/JetBrains-2024.3+-000000?logo=intellijidea&logoColor=white">
+  <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.x-7F52FF?logo=kotlin&logoColor=white">
+  <img alt="JDK" src="https://img.shields.io/badge/JDK-21-ED8B00?logo=openjdk&logoColor=white">
+  <img alt="License" src="https://img.shields.io/badge/License-Apache_2.0-4D7A97.svg">
+  <img alt="Tests" src="https://img.shields.io/badge/Tests-Gradle%20test-success">
+</p>
+
+> Track Korean stocks, global stocks, and crypto from inside JetBrains IDEs.
+
+Market Ticker is a JetBrains IDE plugin for developers who want a compact market dashboard without leaving the editor. It combines watchlists, overview, news, research, screener, calendar, alerts, chart, heatmap, and portfolio tracking in a single tool window.
+
+## Preview
+
+- Watchlist-first stock workspace inside the IDE
+- Selector-based news categories optimized for narrow tool-window space
+- Dedicated overview panel separated from news for faster reading
+- Naver-backed screener presets and compact earnings / macro calendar
 
 <!-- Plugin description -->
 Market Ticker is an IntelliJ Platform plugin for tracking Korean stocks, global stocks, and crypto inside the IDE with watchlists, portfolio view, alerts, charts, screener, calendar, news, and research.
@@ -10,41 +29,81 @@ Market Ticker is an IntelliJ Platform plugin for tracking Korean stocks, global 
 Some market, news, research, screener, and calendar data may be retrieved from third-party public web endpoints. Market Ticker is not affiliated with or endorsed by Naver, Finviz, Yahoo Finance, or any brokerage or exchange. Data availability and accuracy may change without notice.
 <!-- Plugin description end -->
 
+## Why This Exists
+
+Most investor tools assume you are willing to context-switch into a browser, open multiple tabs, and keep a separate workflow for market monitoring.
+
+Market Ticker takes the opposite approach:
+
+- keep a watchlist visible while coding
+- inspect market context quickly in a narrow tool window
+- move between overview, news, research, and calendar without leaving the IDE
+- stay lightweight enough for day-to-day use
+
 ## Features
 
-- Real-time Market Tracking
-  - Track Korean stocks, global stocks, indexes, and crypto from inside the IDE
-- Watchlist-first Workflow
-  - Search, add, group, and monitor symbols without leaving the editor
-- Compact Stock Workspace
-  - `Overview / News / Research / Chart / Heatmap` panels optimized for small tool-window space
-- News And Research
-  - Naver-backed selector-based news categories and research views
-- Screener
-  - Naver ranking-based discovery for search top, value top, rising, and falling names
-- Calendar
-  - Earnings and economic event list with a detail panel
-- Portfolio And Alerts
-  - Track PnL / return and configure target price or volatility alerts
-- Status Bar Widget
-  - Passive price monitoring without opening the tool window
+- `🔎 Search`
+  Fast symbol lookup across Korean stocks, global stocks, indexes, and crypto.
 
-## Supported Scope
+- `📌 Watchlist`
+  Add, group, tag, edit, and remove tracked symbols without leaving the IDE.
+
+- `⚡ Quotes`
+  Real-time refresh with `AUTO / FIXED / MANUAL` modes.
+
+- `🧾 Overview`
+  Compact per-ticker summary optimized for small tool-window space.
+
+- `📰 News`
+  Selector-based Naver news categories instead of long stacked scrolling sections.
+
+- `📚 Research`
+  Core research, ranking research, and domestic stock research.
+
+- `📈 Screener`
+  Naver ranking-based discovery for search top, value top, rising, and falling names.
+
+- `📅 Calendar`
+  Earnings and economic event list with a detail panel.
+
+- `💼 Portfolio`
+  Market value, PnL, and return tracking.
+
+- `🔔 Alerts`
+  Target price and volatility alerts with repeat options.
+
+- `🧩 Widget`
+  Status bar ticker monitoring for passive market checks.
+
+## Workflow
+
+1. `Search`
+   Search a symbol you care about from the stock tab.
+
+2. `Add To Watchlist`
+   Add the ticker and keep it visible while you code.
+
+3. `Inspect Context`
+   Read the overview, scan the latest news, check research, and glance at the chart.
+
+4. `Discover More`
+   Use the screener when you want ranked ideas, movers, or broader market discovery.
+
+5. `Check Event Risk`
+   Open the calendar to see earnings and macro events that may affect price action.
+
+6. `Monitor Passively`
+   Leave the tool window closed and keep an eye on prices from the status bar widget.
+
+## Current Scope
+
+Supported market scope:
 
 - Korean stocks
 - Global stocks
 - Crypto
 - Market indicators
 - Naver-backed news and research
-
-## Data Sources
-
-- Quotes / news / research / domestic overview / screener
-  - Naver public web endpoints
-- Calendar supplemental data
-  - Finviz public web endpoints
-- Some auxiliary data
-  - other third-party public web endpoints
 
 ## Quick Start
 
@@ -62,6 +121,7 @@ Some market, news, research, screener, and calendar data may be retrieved from t
 ## Development
 
 Requirements:
+
 - JDK 21
 - IntelliJ IDEA 2024.3+
 - macOS / Linux / Windows
@@ -81,6 +141,7 @@ Run tests:
 ```
 
 Current local verification:
+
 - Java 21
 - `BUILD SUCCESSFUL`
 
@@ -106,23 +167,6 @@ src/main/kotlin/com/github/myeoungdev/marketticker
 └── ui               # tool window, dialogs, status bar, views
 ```
 
-## UI Layout
-
-- Top tabs
-  - `주식 / 스크리너 / 캘린더 / 뉴스 / 리서치`
-- Stock tab
-  - Search results
-  - Watchlist / portfolio
-  - Bottom panels: `개요 / 뉴스 / 리서치 / 차트 / 히트맵`
-- News tab
-  - Category selector
-  - Most viewed tab
-  - Detail panel
-- Research tab
-  - Core research
-  - Ranking research
-  - Domestic stock research
-
 ## Persistent State
 
 The plugin stores state in the IDE config directory:
@@ -139,14 +183,6 @@ The plugin stores state in the IDE config directory:
 - The plugin is intended for monitoring and information use, not order execution.
 - Users remain responsible for investment decisions.
 
-## Release Checklist
-
-- Review `plugin.xml` name / description / vendor
-- Configure signing and publishing secrets
-- Run tests
-- Run Plugin Verifier
-- Re-check README and Marketplace copy
-
 ## License
 
-Apache-2.0
+[Apache-2.0 License](LICENSE)
