@@ -7,10 +7,7 @@ import com.intellij.openapi.wm.ToolWindowFactory
 import com.intellij.ui.content.ContentFactory
 
 /**
- * Some Descirption...
- *
- * @author  : 강명관
- * @since   : 2025-12-01
+ * Market Ticker 툴윈도우 내용을 생성합니다.
  */
 class MarketTickerToolWindowFactory : ToolWindowFactory {
 
@@ -21,4 +18,3 @@ class MarketTickerToolWindowFactory : ToolWindowFactory {
         toolWindow.contentManager.addContent(content)
     }
 }
-

@@ -4,10 +4,7 @@ import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.domain.model.TickerPrice
 
 /**
- * Some Descirption...
- *
- * @author  : 강명관
- * @since   : 2025-12-09
+ * 현재가 데이터를 공급하는 provider 인터페이스입니다.
  */
 interface PriceProvider {
     fun getPrices(tickers: List<Ticker>): List<TickerPrice>

@@ -6,10 +6,7 @@ import com.intellij.ui.SimpleTextAttributes
 import javax.swing.JList
 
 /**
- * Some Descirption...
- *
- * @author  : 강명관
- * @since   : 2025-12-01
+ * 검색 결과 목록에서 종목명을 읽기 쉽게 렌더링합니다.
  */
 class SearchResultRenderer : ColoredListCellRenderer<Ticker>() {
 

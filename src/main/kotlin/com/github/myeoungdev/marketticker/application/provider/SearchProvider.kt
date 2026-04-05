@@ -3,10 +3,7 @@ package com.github.myeoungdev.marketticker.application.provider
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 
 /**
- * Some Descirption...
- *
- * @author  : 강명관
- * @since   : 2025-12-02
+ * 종목 검색 데이터를 공급하는 provider 인터페이스입니다.
  */
 interface SearchProvider {
     fun search(query: String): List<Ticker>

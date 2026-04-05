@@ -5,10 +5,7 @@ import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.domain.model.TickerPrice
 
 /**
- * Some Descirption...
- *
- * @author  : 강명관
- * @since   : 2025-12-09
+ * Naver 시세 응답을 플러그인 가격 모델로 변환하는 provider 구현체입니다.
  */
 class NaverPriceProvider(
     private val client: NaverClient = NaverClient()

@@ -4,10 +4,7 @@ import com.github.myeoungdev.marketticker.application.provider.SearchProvider
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 
 /**
- * Some Descirption...
- *
- * @author  : 강명관
- * @since   : 2025-12-02
+ * Naver 검색 응답을 플러그인 종목 모델로 변환하는 provider 구현체입니다.
  */
 class NaverSearchProvider(
     private val naverClient: NaverClient = NaverClient()
