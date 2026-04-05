@@ -54,10 +54,10 @@ class NaverNewsProvider(
             )
         }
 
-        val focusSections = home.newsFocus.take(4).map { section ->
+        val focusSections = home.newsFocus.map { section ->
             NewsSection(
                 title = section.category,
-                articles = section.news.take(4).map { it.toNewsArticle(section.category).toAppNewsArticle() }
+                articles = section.news.map { it.toNewsArticle(section.category).toAppNewsArticle() }
             )
         }
 
@@ -305,11 +305,14 @@ class NaverNewsProvider(
                     detail.marketSum?.takeIf { it.isNotBlank() }?.let { "시총 ${formatKrwValue(it)}" }
                 ).joinToString(" · "),
                 primaryMetrics = listOfNotNull(
+                    detail.nowVal?.takeIf { it.isNotBlank() }?.let { "현재가 $it" },
+                    detail.changeRate?.takeIf { it.isNotBlank() }?.let { "등락률 ${it}%" },
                     detail.per?.takeIf { it.isNotBlank() }?.let { "PER ${it}배" },
-                    detail.pbr?.takeIf { it.isNotBlank() }?.let { "PBR ${it}배" },
-                    detail.eps?.takeIf { it.isNotBlank() }?.let { "EPS $it" }
+                    detail.pbr?.takeIf { it.isNotBlank() }?.let { "PBR ${it}배" }
                 ).joinToString(" · "),
                 secondaryMetrics = listOfNotNull(
+                    detail.eps?.takeIf { it.isNotBlank() }?.let { "EPS $it" },
+                    detail.bps?.takeIf { it.isNotBlank() }?.let { "BPS $it" },
                     detail.high52week?.takeIf { it.isNotBlank() }?.let { high ->
                         detail.low52week?.takeIf { it.isNotBlank() }?.let { low -> "52주 $low - $high" }
                     },

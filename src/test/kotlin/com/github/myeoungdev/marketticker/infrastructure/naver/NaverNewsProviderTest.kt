@@ -72,7 +72,8 @@ class NaverNewsProviderTest {
 
         assertThat(result.overviewCard).isNotNull
         assertThat(result.overviewCard?.title).isEqualTo("흥아해운")
-        assertThat(result.overviewCard?.primaryMetrics).contains("PER", "PBR", "EPS")
+        assertThat(result.overviewCard?.primaryMetrics).contains("현재가", "등락률", "PER", "PBR")
+        assertThat(result.overviewCard?.secondaryMetrics).contains("EPS")
         assertThat(result.articles).isNotEmpty
     }
 

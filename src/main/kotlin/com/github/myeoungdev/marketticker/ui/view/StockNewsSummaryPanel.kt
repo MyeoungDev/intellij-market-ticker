@@ -2,7 +2,6 @@ package com.github.myeoungdev.marketticker.ui.view
 
 import com.github.myeoungdev.marketticker.domain.model.news.NewsArticle
 import com.github.myeoungdev.marketticker.application.model.news.TickerNewsSummaryViewData
-import com.github.myeoungdev.marketticker.domain.model.news.TickerOverviewCard
 import com.github.myeoungdev.marketticker.application.service.LocalizationService
 import com.github.myeoungdev.marketticker.application.service.NewsFacadeService
 import com.github.myeoungdev.marketticker.domain.model.Ticker
@@ -24,11 +23,8 @@ import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.awt.BorderLayout
-import java.awt.FlowLayout
-import javax.swing.JButton
 import javax.swing.JLabel
 import javax.swing.JPanel
-import javax.swing.JTextArea
 import javax.swing.ListSelectionModel
 
 /**
@@ -43,85 +39,14 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
 
     private val titleLabel = JLabel(localizationService.text("선택 종목 뉴스", "Selected Stock News"))
     private val statusLabel = JLabel(localizationService.text("관심종목을 선택하면 뉴스를 표시합니다.", "Select a watchlist ticker to see news."))
-    private val overviewTitleLabel = JLabel()
-    private val overviewMetaPrimaryLabel = JLabel()
-    private val overviewMetaSecondaryLabel = JLabel()
-    private val overviewPrimaryMetricsLabel = JLabel()
-    private val overviewSecondaryMetricsLabel = JLabel()
-    private val overviewSummaryArea = JTextArea()
-    private val overviewToggleButton = JButton()
-    private val overviewSiteButton = JButton(localizationService.text("공식 사이트", "Official Site"))
-    private val overviewPanel = JPanel(BorderLayout(0, 6))
     private val model = CollectionListModel<NewsArticle>()
     private val list = JBList(model)
-    private var currentOverviewUrl: String? = null
-    private var isOverviewExpanded: Boolean = false
 
     init {
         border = JBUI.Borders.empty(8)
 
         titleLabel.font = titleLabel.font.deriveFont(titleLabel.font.size2D + 1f)
         statusLabel.foreground = JBColor.GRAY
-        overviewTitleLabel.font = overviewTitleLabel.font.deriveFont(overviewTitleLabel.font.size2D + 1f)
-        overviewMetaPrimaryLabel.foreground = JBColor.GRAY
-        overviewMetaSecondaryLabel.foreground = JBColor.GRAY
-        overviewPrimaryMetricsLabel.foreground = JBColor.foreground()
-        overviewSecondaryMetricsLabel.foreground = JBColor.GRAY
-        overviewMetaSecondaryLabel.isVisible = false
-        overviewSecondaryMetricsLabel.isVisible = false
-        overviewSummaryArea.isEditable = false
-        overviewSummaryArea.isOpaque = false
-        overviewSummaryArea.lineWrap = true
-        overviewSummaryArea.wrapStyleWord = true
-        overviewSummaryArea.rows = 3
-        overviewSummaryArea.border = JBUI.Borders.empty()
-        overviewSummaryArea.foreground = JBColor.foreground()
-        overviewSummaryArea.font = overviewSummaryArea.font.deriveFont(12f)
-        overviewSummaryArea.isVisible = false
-        overviewToggleButton.isVisible = false
-        overviewToggleButton.addActionListener {
-            isOverviewExpanded = !isOverviewExpanded
-            updateOverviewExpansion()
-        }
-        overviewSiteButton.isVisible = false
-        overviewSiteButton.addActionListener {
-            currentOverviewUrl?.let(BrowserUtil::browse)
-        }
-
-        overviewPanel.apply {
-            border = JBUI.Borders.compound(
-                JBUI.Borders.customLine(JBColor.border(), 1),
-                JBUI.Borders.empty(8)
-            )
-            isVisible = false
-            add(
-                JPanel(BorderLayout(0, 6)).apply {
-                    isOpaque = false
-                    add(
-                        JPanel().apply {
-                            layout = javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS)
-                            isOpaque = false
-                            add(overviewTitleLabel)
-                            add(overviewMetaPrimaryLabel)
-                            add(overviewMetaSecondaryLabel)
-                            add(overviewPrimaryMetricsLabel)
-                            add(overviewSecondaryMetricsLabel)
-                        },
-                        BorderLayout.CENTER
-                    )
-                    add(
-                        JPanel(FlowLayout(FlowLayout.RIGHT, 6, 0)).apply {
-                            isOpaque = false
-                            add(overviewToggleButton)
-                            add(overviewSiteButton)
-                        },
-                        BorderLayout.SOUTH
-                    )
-                },
-                BorderLayout.NORTH
-            )
-            add(overviewSummaryArea, BorderLayout.CENTER)
-        }
 
         list.selectionMode = ListSelectionModel.SINGLE_SELECTION
         list.visibleRowCount = 4
@@ -160,7 +85,6 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
                     },
                     BorderLayout.NORTH
                 )
-                add(overviewPanel, BorderLayout.CENTER)
             },
             BorderLayout.NORTH
         )
@@ -177,7 +101,6 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
         requestJob?.cancel()
         titleLabel.text = localizationService.text("${ticker.name} 뉴스", "${ticker.name} News")
         statusLabel.text = localizationService.text("뉴스를 불러오는 중...", "Loading news...")
-        hideOverview()
         model.replaceAll(
             listOf(
                 NewsArticle(id = "loading", title = localizationService.text("뉴스를 불러오는 중...", "Loading news..."))
@@ -200,7 +123,6 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
 
     private fun applyViewData(viewData: TickerNewsSummaryViewData) {
         titleLabel.text = localizationService.text(viewData.title, viewData.title)
-        renderOverview(viewData.overviewCard)
 
         if (viewData.articles.isEmpty()) {
             model.replaceAll(
@@ -219,41 +141,6 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
         statusLabel.text = localizationService.text(viewData.subtitle, viewData.subtitle)
     }
 
-    private fun renderOverview(card: TickerOverviewCard?) {
-        if (card == null) {
-            hideOverview()
-            return
-        }
-
-        overviewTitleLabel.text = card.title
-        overviewMetaPrimaryLabel.text = card.metaPrimary
-        overviewMetaSecondaryLabel.text = card.metaSecondary
-        overviewPrimaryMetricsLabel.text = card.primaryMetrics
-        overviewSecondaryMetricsLabel.text = card.secondaryMetrics
-        overviewSummaryArea.text = card.summary
-        currentOverviewUrl = card.siteUrl
-        isOverviewExpanded = false
-        overviewToggleButton.isVisible = card.summary.isNotBlank()
-        overviewSiteButton.isVisible = !currentOverviewUrl.isNullOrBlank()
-        updateOverviewExpansion()
-        overviewPanel.isVisible = true
-    }
-
-    private fun hideOverview() {
-        overviewPanel.isVisible = false
-        overviewTitleLabel.text = ""
-        overviewMetaPrimaryLabel.text = ""
-        overviewMetaSecondaryLabel.text = ""
-        overviewPrimaryMetricsLabel.text = ""
-        overviewSecondaryMetricsLabel.text = ""
-        overviewSummaryArea.text = ""
-        overviewSummaryArea.isVisible = false
-        currentOverviewUrl = null
-        isOverviewExpanded = false
-        overviewToggleButton.isVisible = false
-        overviewSiteButton.isVisible = false
-    }
-
     private fun formatDate(raw: String): String {
         return when {
             raw.length >= 12 && raw.all(Char::isDigit) ->
@@ -266,17 +153,5 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
 
     private fun escapeHtml(text: String): String {
         return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
-    }
-
-    private fun updateOverviewExpansion() {
-        overviewSummaryArea.isVisible = isOverviewExpanded
-        overviewMetaSecondaryLabel.isVisible = isOverviewExpanded && overviewMetaSecondaryLabel.text.isNotBlank()
-        overviewSecondaryMetricsLabel.isVisible = isOverviewExpanded && overviewSecondaryMetricsLabel.text.isNotBlank()
-        overviewToggleButton.text = localizationService.text(
-            if (isOverviewExpanded) "접기" else "더보기",
-            if (isOverviewExpanded) "Less" else "More"
-        )
-        overviewPanel.revalidate()
-        overviewPanel.repaint()
     }
 }
