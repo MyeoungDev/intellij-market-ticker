@@ -1,9 +1,9 @@
 package com.github.myeoungdev.marketticker.ui.view
 
-import com.github.myeoungdev.marketticker.domain.model.news.NewsArticle
 import com.github.myeoungdev.marketticker.application.model.news.NewsHomeViewData
-import com.github.myeoungdev.marketticker.application.service.NewsFacadeService
 import com.github.myeoungdev.marketticker.application.service.LocalizationService
+import com.github.myeoungdev.marketticker.application.service.NewsFacadeService
+import com.github.myeoungdev.marketticker.domain.model.news.NewsArticle
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
@@ -23,13 +23,12 @@ import java.awt.Dimension
 import java.awt.FlowLayout
 import java.awt.Font
 import java.awt.Insets
-import javax.swing.Box
 import javax.swing.BorderFactory
-import javax.swing.BoxLayout
-import javax.swing.JComboBox
+import javax.swing.DefaultComboBoxModel
 import javax.swing.DefaultListCellRenderer
 import javax.swing.DefaultListModel
 import javax.swing.JButton
+import javax.swing.JComboBox
 import javax.swing.JLabel
 import javax.swing.JList
 import javax.swing.JPanel
@@ -41,8 +40,8 @@ import javax.swing.SwingConstants
 /**
  * 뉴스 탭입니다.
  *
- * 툴윈도우 폭이 좁아도 카테고리별 원본 뉴스 리스트를 빠르게 훑을 수 있도록
- * `헤드라인 / 많이 본 뉴스` 2개 정보 축으로 구성합니다.
+ * 카테고리별 긴 스크롤 패널 대신 단일 selector 기반으로
+ * 네이버 뉴스 섹션을 빠르게 전환하도록 구성합니다.
  */
 class NewsView : JPanel(BorderLayout()), Disposable {
 
@@ -61,19 +60,13 @@ class NewsView : JPanel(BorderLayout()), Disposable {
     private val detailLinkLabel = JLabel()
 
     private val newsTabs = JTabbedPane()
-    private val headlineCategorySelector = JComboBox<String>()
-    private val headlineCategoryKeys = mutableListOf<String>()
-    private var selectedHeadlineCategoryKey: String = "MAINNEWS"
-    private var headlineCategoryArticles: Map<String, List<NewsArticle>> = emptyMap()
+    private val categorySelector = JComboBox<String>()
+    private val categoryKeys = mutableListOf<String>()
+    private var selectedCategoryKey: String = "MAINNEWS"
+    private var categoryArticles: Map<String, List<NewsArticle>> = emptyMap()
 
-    private val headlineListModel = DefaultListModel<NewsArticle>()
-    private val headlineList = createNewsList(headlineListModel, CompactNewsRenderer())
-    private val overseasListModel = DefaultListModel<NewsArticle>()
-    private val overseasList = createNewsList(overseasListModel, CompactNewsRenderer())
-    private val moneyStoryListModel = DefaultListModel<NewsArticle>()
-    private val moneyStoryList = createNewsList(moneyStoryListModel, CompactNewsRenderer())
-    private val focusContainer = JPanel()
-
+    private val categoryListModel = DefaultListModel<NewsArticle>()
+    private val categoryList = createNewsList(categoryListModel, CompactNewsRenderer())
     private val rankingListModel = DefaultListModel<NewsArticle>()
     private val rankingList = createNewsList(rankingListModel, RankingNewsRenderer())
     private var currentDetailArticle: NewsArticle? = null
@@ -86,36 +79,29 @@ class NewsView : JPanel(BorderLayout()), Disposable {
         add(buildCenterPanel(), BorderLayout.CENTER)
         add(statusLabel, BorderLayout.SOUTH)
 
-        bindList(headlineList)
-        bindList(overseasList)
-        bindList(moneyStoryList)
+        bindList(categoryList)
         bindList(rankingList)
 
         renderDetail(null)
         loadNews(forceRefresh = false)
     }
 
-    /**
-     * 뉴스 데이터를 새로 불러와 화면에 반영합니다.
-     */
     fun refreshNews() {
         loadNews(forceRefresh = true)
     }
 
+    override fun dispose() {
+        scope.cancel()
+    }
+
     private fun loadNews(forceRefresh: Boolean) {
         statusLabel.text = localizationService.text("뉴스를 불러오는 중...", "Loading news...")
-
         scope.launch {
             val homeData = newsFacadeService.loadNewsHome(forceRefresh = forceRefresh)
-
             withContext(Dispatchers.Main) {
                 applyNewsHome(homeData)
             }
         }
-    }
-
-    override fun dispose() {
-        scope.cancel()
     }
 
     private fun buildToolbar(): JPanel {
@@ -156,7 +142,7 @@ class NewsView : JPanel(BorderLayout()), Disposable {
         detailBadgeLabel.border = JBUI.Borders.emptyBottom(4)
 
         val detailHeader = JPanel().apply {
-            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+            layout = javax.swing.BoxLayout(this, javax.swing.BoxLayout.Y_AXIS)
             isOpaque = false
             add(detailBadgeLabel)
             add(detailTitleLabel)
@@ -171,7 +157,7 @@ class NewsView : JPanel(BorderLayout()), Disposable {
             preferredSize = Dimension(0, 240)
         }
 
-        newsTabs.addTab(localizationService.text("헤드라인", "Headlines"), buildHeadlinesTab())
+        newsTabs.addTab(localizationService.text("뉴스 필터", "News Filter"), buildCategoryTab())
         newsTabs.addTab(localizationService.text("많이 본 뉴스", "Most Viewed"), buildRankingTab())
 
         return JPanel(BorderLayout(0, 10)).apply {
@@ -180,140 +166,150 @@ class NewsView : JPanel(BorderLayout()), Disposable {
         }
     }
 
-    private fun buildHeadlinesTab(): JBScrollPane {
-        focusContainer.layout = BoxLayout(focusContainer, BoxLayout.Y_AXIS)
-        focusContainer.isOpaque = false
-
-        val content = JPanel().apply {
-            layout = BoxLayout(this, BoxLayout.Y_AXIS)
-            isOpaque = false
-            add(wrapSection(localizationService.text("뉴스 카테고리", "News Category"), buildHeadlineCategorySelectorPanel()))
-            add(spacer())
-            add(wrapSection(localizationService.text("헤드라인", "Headlines"), JBScrollPane(headlineList).fixedHeight(280)))
-            add(spacer())
-            add(wrapSection(localizationService.text("포커스", "Focus"), focusContainer))
-            add(spacer())
-            add(wrapSection(localizationService.text("해외 뉴스", "Overseas"), JBScrollPane(overseasList).fixedHeight(170)))
-            add(spacer())
-            add(wrapSection(localizationService.text("머니스토리", "Money Story"), JBScrollPane(moneyStoryList).fixedHeight(170)))
+    private fun buildCategoryTab(): JPanel {
+        categorySelector.maximumRowCount = 12
+        categorySelector.font = categorySelector.font.deriveFont(Font.BOLD, categorySelector.font.size2D)
+        categorySelector.renderer = object : DefaultListCellRenderer() {
+            override fun getListCellRendererComponent(
+                list: JList<*>?,
+                value: Any?,
+                index: Int,
+                isSelected: Boolean,
+                cellHasFocus: Boolean
+            ): Component {
+                val label = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus) as JLabel
+                label.border = JBUI.Borders.empty(2, 4)
+                return label
+            }
+        }
+        categorySelector.addActionListener {
+            val selectedIndex = categorySelector.selectedIndex
+            if (selectedIndex >= 0 && selectedIndex < categoryKeys.size) {
+                val key = categoryKeys[selectedIndex]
+                if (selectedCategoryKey != key) {
+                    selectedCategoryKey = key
+                    applyCategory(key)
+                }
+            }
         }
 
-        return JBScrollPane(content).apply {
-            border = BorderFactory.createEmptyBorder()
-            horizontalScrollBarPolicy = JBScrollPane.HORIZONTAL_SCROLLBAR_NEVER
+        return JPanel(BorderLayout(0, 8)).apply {
+            add(
+                wrapSection(
+                    localizationService.text("카테고리 선택", "Select Category"),
+                    JPanel(BorderLayout()).apply {
+                        isOpaque = false
+                        add(categorySelector, BorderLayout.CENTER)
+                    }
+                ),
+                BorderLayout.NORTH
+            )
+            add(
+                wrapSection(
+                    localizationService.text("기사 목록", "Articles"),
+                    JBScrollPane(categoryList)
+                ),
+                BorderLayout.CENTER
+            )
         }
     }
 
     private fun buildRankingTab(): JPanel {
         return JPanel(BorderLayout()).apply {
-            add(wrapSection(localizationService.text("많이 본 뉴스", "Most Viewed"), JBScrollPane(rankingList)), BorderLayout.CENTER)
-        }
-    }
-
-    private fun buildHeadlineCategorySelectorPanel(): JPanel {
-        headlineCategorySelector.maximumRowCount = 6
-        headlineCategorySelector.font = headlineCategorySelector.font.deriveFont(Font.BOLD, headlineCategorySelector.font.size2D)
-        headlineCategorySelector.addActionListener {
-            val selectedIndex = headlineCategorySelector.selectedIndex
-            if (selectedIndex >= 0 && selectedIndex < headlineCategoryKeys.size) {
-                val key = headlineCategoryKeys[selectedIndex]
-                if (selectedHeadlineCategoryKey != key) {
-                    selectedHeadlineCategoryKey = key
-                    applyHeadlineCategory(key)
-                }
-            }
-        }
-
-        return JPanel(BorderLayout()).apply {
-            isOpaque = false
-            add(headlineCategorySelector, BorderLayout.CENTER)
+            add(
+                wrapSection(
+                    localizationService.text("많이 본 뉴스", "Most Viewed"),
+                    JBScrollPane(rankingList)
+                ),
+                BorderLayout.CENTER
+            )
         }
     }
 
     private fun applyNewsHome(homeData: NewsHomeViewData) {
-        headlineListModel.clear()
-        overseasListModel.clear()
-        moneyStoryListModel.clear()
         rankingListModel.clear()
-        focusContainer.removeAll()
-
-        headlineCategoryArticles = homeData.headlines.headlines
-
-        rebuildHeadlineCategories()
-        applyHeadlineCategory(selectedHeadlineCategoryKey)
-
-        homeData.headlines.worldNews.forEach(overseasListModel::addElement)
-        homeData.headlines.moneyStories.forEach(moneyStoryListModel::addElement)
         homeData.mostViewed.forEach(rankingListModel::addElement)
 
-        homeData.headlines.focusSections.forEach { section ->
-            focusContainer.add(
-                wrapSection(
-                    mapCategoryTitle(section.title),
-                    JBScrollPane(
-                        createNewsList(
-                            DefaultListModel<NewsArticle>().apply {
-                                section.articles.take(4).forEach(::addElement)
-                            },
-                            CompactNewsRenderer()
-                        ).also { bindList(it) }
-                    ).fixedHeight(140)
-                )
-            )
-            focusContainer.add(spacer())
+        categoryArticles = buildCategoryMap(homeData)
+        rebuildCategories()
+        applyCategory(selectedCategoryKey)
+
+        val firstSelectable = categoryListModel.firstOrNull() ?: rankingListModel.firstOrNull()
+        if (firstSelectable != null) {
+            renderDetail(firstSelectable)
         }
 
-        val firstSelectable = headlineListModel.firstOrNull()
-            ?: rankingListModel.firstOrNull()
-        renderDetail(firstSelectable)
-
         statusLabel.text = localizationService.text(
-            "선택 카테고리 ${headlineListModel.size()}건, 많이 본 뉴스 ${rankingListModel.size()}건",
-            "Selected category ${headlineListModel.size()}, most viewed ${rankingListModel.size()}"
+            "${displayCategory(selectedCategoryKey)} ${categoryListModel.size()}건 · 많이 본 뉴스 ${rankingListModel.size()}건",
+            "${displayCategory(selectedCategoryKey)} ${categoryListModel.size()} items · most viewed ${rankingListModel.size()}"
         )
-        openButton.isEnabled = !firstSelectable?.url.isNullOrBlank()
-
         revalidate()
         repaint()
     }
 
-    private fun rebuildHeadlineCategories() {
-        headlineCategorySelector.removeAllItems()
-        headlineCategoryKeys.clear()
-
-        val categoryItems = listOf(
-            "FLASHNEWS" to localizationService.text("속보", "Flash"),
-            "MAINNEWS" to localizationService.text("주요", "Main"),
-            "WORLDNEWS" to localizationService.text("해외", "World")
-        )
-
-        categoryItems.forEach { (key, label) ->
-            headlineCategoryKeys += key
-            headlineCategorySelector.addItem(label)
+    private fun buildCategoryMap(homeData: NewsHomeViewData): Map<String, List<NewsArticle>> {
+        val map = linkedMapOf<String, List<NewsArticle>>()
+        homeData.headlines.headlines.forEach { (key, value) ->
+            if (value.isNotEmpty()) {
+                map[key] = value
+            }
         }
-        updateHeadlineCategoryStyles()
+        homeData.headlines.focusSections.forEachIndexed { index, section ->
+            if (section.articles.isNotEmpty()) {
+                map["FOCUS_$index"] = section.articles
+            }
+        }
+        if (homeData.headlines.worldNews.isNotEmpty()) {
+            map["OVERSEAS"] = homeData.headlines.worldNews
+        }
+        if (homeData.headlines.moneyStories.isNotEmpty()) {
+            map["MONEY"] = homeData.headlines.moneyStories
+        }
+        return map
     }
 
-    private fun applyHeadlineCategory(categoryKey: String) {
-        headlineListModel.clear()
-        headlineCategoryArticles[categoryKey].orEmpty().take(18).forEach(headlineListModel::addElement)
-        if (!headlineListModel.isEmpty) {
-            headlineList.selectedIndex = 0
+    private fun rebuildCategories() {
+        categorySelector.removeAllItems()
+        categoryKeys.clear()
+
+        categoryArticles.keys.forEach { key ->
+            categoryKeys += key
+            categorySelector.addItem(displayCategory(key))
         }
-        updateHeadlineCategoryStyles()
+
+        if (!categoryKeys.contains(selectedCategoryKey)) {
+            selectedCategoryKey = categoryKeys.firstOrNull() ?: "MAINNEWS"
+        }
+
+        val selectedIndex = categoryKeys.indexOf(selectedCategoryKey)
+        if (selectedIndex >= 0) {
+            categorySelector.selectedIndex = selectedIndex
+        }
     }
 
-    private fun updateHeadlineCategoryStyles() {
-        val selectedIndex = headlineCategoryKeys.indexOf(selectedHeadlineCategoryKey)
-        if (selectedIndex >= 0 && headlineCategorySelector.selectedIndex != selectedIndex) {
-            headlineCategorySelector.selectedIndex = selectedIndex
+    private fun applyCategory(categoryKey: String) {
+        categoryListModel.clear()
+        categoryArticles[categoryKey].orEmpty().forEach(categoryListModel::addElement)
+        if (!categoryListModel.isEmpty) {
+            categoryList.selectedIndex = 0
+        } else {
+            renderDetail(null)
         }
-        headlineCategorySelector.background = JBColor(0x2B2F36, 0x2B2F36)
-        headlineCategorySelector.foreground = JBColor(0xE4E8EF, 0xE4E8EF)
-        headlineCategorySelector.border = BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(JBColor(0x4B5260, 0x4B5260)),
-            JBUI.Borders.empty(4, 8)
-        )
+    }
+
+    private fun displayCategory(categoryKey: String): String {
+        return when {
+            categoryKey == "FLASHNEWS" -> localizationService.text("속보", "Flash")
+            categoryKey == "MAINNEWS" -> localizationService.text("주요 뉴스", "Main News")
+            categoryKey == "WORLDNEWS" || categoryKey == "OVERSEAS" ->
+                localizationService.text("해외증시", "Overseas")
+            categoryKey == "MONEY" -> localizationService.text("머니스토리", "Money Story")
+            categoryKey.startsWith("FOCUS_") -> {
+                categoryArticles[categoryKey]?.firstOrNull()?.sectionLabel?.takeIf { it.isNotBlank() }
+                    ?: localizationService.text("카테고리", "Category")
+            }
+            else -> categoryKey
+        }
     }
 
     private fun renderDetail(article: NewsArticle?) {
@@ -322,12 +318,12 @@ class NewsView : JPanel(BorderLayout()), Disposable {
             detailBadgeLabel.text = ""
             detailTitleLabel.text = localizationService.text("뉴스를 선택하세요", "Select a news item")
             detailMetaLabel.text = localizationService.text(
-                "헤드라인과 많이 본 뉴스에서 중요한 정보를 빠르게 확인할 수 있습니다.",
-                "Use headlines and most viewed news to scan the market quickly."
+                "카테고리를 고른 뒤 기사를 선택하면 상세 내용을 빠르게 확인할 수 있습니다.",
+                "Choose a category and select an article to inspect the details quickly."
             )
             detailSummaryArea.text = localizationService.text(
-                "상단은 맥락을 읽는 공간이 아니라, 선택한 항목의 핵심만 빠르게 확인하는 공간으로 유지했습니다.",
-                "This area is optimized for scanning only the key context of the selected item."
+                "긴 스크롤 대신 selector 기반으로 섹션을 바꿔가며 읽도록 정리했습니다.",
+                "The tab now uses a selector instead of long stacked scrolling sections."
             )
             detailLinkLabel.text = ""
             openButton.isEnabled = false
@@ -336,7 +332,11 @@ class NewsView : JPanel(BorderLayout()), Disposable {
 
         detailBadgeLabel.text = buildBadgeText(article.badgeLabel, article.badgeColor)
         detailTitleLabel.text = article.title
-        detailMetaLabel.text = listOfNotNull(article.source.takeIf { it.isNotBlank() }, article.publishedAt.takeIf { it.isNotBlank() }).joinToString("  |  ")
+        detailMetaLabel.text = listOfNotNull(
+            article.sectionLabel.takeIf { it.isNotBlank() },
+            article.source.takeIf { it.isNotBlank() },
+            article.publishedAt.takeIf { it.isNotBlank() }
+        ).joinToString("  |  ")
         detailSummaryArea.text = article.summary.takeIf { it.isNotBlank() }
             ?: localizationService.text("요약 정보가 없습니다.", "No summary available.")
         detailSummaryArea.caretPosition = 0
@@ -354,7 +354,7 @@ class NewsView : JPanel(BorderLayout()), Disposable {
             cellRenderer = renderer
             selectionMode = ListSelectionModel.SINGLE_SELECTION
             fixedCellHeight = -1
-            visibleRowCount = 6
+            visibleRowCount = 8
         }
     }
 
@@ -390,20 +390,6 @@ class NewsView : JPanel(BorderLayout()), Disposable {
         JBUI.Borders.empty(8)
     )
 
-    private fun spacer(): JPanel {
-        return JPanel().apply {
-            isOpaque = false
-            preferredSize = Dimension(0, 8)
-            maximumSize = Dimension(Int.MAX_VALUE, 8)
-        }
-    }
-
-    private fun buildBadge(label: String?, color: String?): JLabel {
-        return JLabel(buildBadgeText(label, color)).apply {
-            border = JBUI.Borders.emptyBottom(6)
-        }
-    }
-
     private fun buildBadgeText(label: String?, color: String?): String {
         if (label.isNullOrBlank()) return ""
         return "<html><span style='font-weight:700; color:${badgeColor(color)};'>${escapeHtml(label)}</span></html>"
@@ -421,36 +407,10 @@ class NewsView : JPanel(BorderLayout()), Disposable {
         return text.replace("&", "&amp;").replace("<", "&lt;").replace(">", "&gt;")
     }
 
-    private fun mapCategoryTitle(raw: String): String {
-        return when (raw.trim().uppercase()) {
-            "FLASHNEWS", "FLASH" -> localizationService.text("속보", "Flash")
-            "MAINNEWS", "MAIN" -> localizationService.text("주요", "Main")
-            "WORLDNEWS", "WORLD" -> localizationService.text("해외", "World")
-            "RANKNEWS", "RANK" -> localizationService.text("많이 본 뉴스", "Most Viewed")
-            "MONEYSTORY", "MONEY" -> localizationService.text("머니스토리", "Money Story")
-            else -> raw
-        }
-    }
-
-    private fun trimSummary(text: String, maxLength: Int = 90): String {
-        val normalized = text.replace("\n", " ").trim()
-        if (normalized.length <= maxLength) return normalized
-        return normalized.take(maxLength - 1).trimEnd() + "…"
-    }
-
-    private fun JBScrollPane.fixedHeight(height: Int): JBScrollPane {
-        preferredSize = Dimension(0, height)
-        minimumSize = Dimension(0, height)
-        return this
-    }
-
     private fun DefaultListModel<NewsArticle>.firstOrNull(): NewsArticle? {
         return if (isEmpty) null else getElementAt(0)
     }
 
-    /**
-     * 일반 기사 목록 렌더러입니다.
-     */
     private inner class CompactNewsRenderer : DefaultListCellRenderer() {
         override fun getListCellRendererComponent(
             list: JList<*>?,
@@ -472,7 +432,7 @@ class NewsView : JPanel(BorderLayout()), Disposable {
             label.border = JBUI.Borders.empty(10, 8)
             label.text = """
                 <html>
-                  <div style='width:320px;'>
+                  <div style='width:420px;'>
                     <div style='line-height:1.38; font-weight:700; font-size:12px;'>$badgeHtml${escapeHtml(article.title)}</div>
                     <div style='margin-top:5px; color:$metaColor;'>${escapeHtml(article.source.ifBlank { "-" })} · ${escapeHtml(article.publishedAt.ifBlank { "-" })}</div>
                     $summaryHtml
@@ -483,9 +443,6 @@ class NewsView : JPanel(BorderLayout()), Disposable {
         }
     }
 
-    /**
-     * 랭킹 뉴스 렌더러입니다.
-     */
     private inner class RankingNewsRenderer : DefaultListCellRenderer() {
         override fun getListCellRendererComponent(
             list: JList<*>?,
@@ -503,14 +460,14 @@ class NewsView : JPanel(BorderLayout()), Disposable {
             label.border = JBUI.Borders.empty(12, 8)
             label.text = """
                 <html>
-                  <div style='width:320px;'>
+                  <div style='width:420px;'>
                     <table cellspacing='0' cellpadding='0'>
                       <tr>
                         <td style='width:28px; color:#5B8CFF; font-weight:700; vertical-align:top;'>$rank</td>
                         <td>
                             <div style='line-height:1.38; font-weight:700;'>${escapeHtml(article.title)}</div>
                             <div style='margin-top:5px; color:$metaColor;'>${escapeHtml(article.source.ifBlank { "-" })} · ${escapeHtml(article.publishedAt.ifBlank { "-" })}</div>
-                            <div style='margin-top:6px; color:$metaColor; line-height:1.35;'>${escapeHtml(trimSummary(article.summary.ifBlank { localizationService.text("요약 정보 없음", "No summary") }, 110))}</div>
+                            <div style='margin-top:6px; color:$metaColor; line-height:1.35;'>${escapeHtml(trimSummary(article.summary.ifBlank { localizationService.text("요약 정보 없음", "No summary") }, 120))}</div>
                         </td>
                       </tr>
                     </table>
@@ -519,5 +476,11 @@ class NewsView : JPanel(BorderLayout()), Disposable {
             """.trimIndent()
             return label
         }
+    }
+
+    private fun trimSummary(text: String, maxLength: Int = 100): String {
+        val normalized = text.replace("\n", " ").trim()
+        if (normalized.length <= maxLength) return normalized
+        return normalized.take(maxLength - 1).trimEnd() + "…"
     }
 }

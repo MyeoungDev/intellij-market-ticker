@@ -55,7 +55,6 @@ class ResearchView : JPanel(BorderLayout()) {
 
     private val refreshButton = JButton(localizationService.text("새로고침", "Refresh"))
     private val openButton = JButton(localizationService.text("원문 열기", "Open"))
-    private val relatedStockButton = JButton(localizationService.text("종목 리서치", "Stock Research"))
     private val statusLabel = JLabel(localizationService.text("리서치를 불러오는 중...", "Loading research..."))
 
     private val coreCategoryCombo = JComboBox(DefaultComboBoxModel(ResearchCategory.values()))
@@ -130,7 +129,6 @@ class ResearchView : JPanel(BorderLayout()) {
             add(
                 JPanel(FlowLayout(FlowLayout.RIGHT, 8, 0)).apply {
                     isOpaque = false
-                    add(relatedStockButton)
                     add(openButton)
                     add(refreshButton)
                 },
@@ -178,7 +176,7 @@ class ResearchView : JPanel(BorderLayout()) {
 
         tabs.addTab(localizationService.text("핵심 리서치", "Core"), corePanel)
         tabs.addTab(localizationService.text("랭킹 리서치", "Ranking"), rankingPanel)
-        tabs.addTab(localizationService.text("종목 리서치", "Stock"), stockPanel)
+        tabs.addTab(localizationService.text("국내 종목 리서치", "Domestic Stock"), stockPanel)
 
         val detailPanel = JPanel(BorderLayout()).apply {
             border = BorderFactory.createCompoundBorder(
@@ -225,6 +223,9 @@ class ResearchView : JPanel(BorderLayout()) {
         tabs.addChangeListener {
             ensureSelection(currentList())
             updateDetail(currentList().selectedValue)
+            if (currentSource() == SourceTab.RANKING) {
+                refreshRankingResearch(forceRefresh = false)
+            }
         }
 
         coreCategoryCombo.addActionListener { updateCoreList() }
@@ -234,12 +235,6 @@ class ResearchView : JPanel(BorderLayout()) {
         openButton.addActionListener {
             selectedArticle?.endUrl?.takeIf { it.isNotBlank() }?.let(BrowserUtil::browse)
         }
-        relatedStockButton.addActionListener {
-            selectedArticle?.let { article ->
-                showStockResearch(article.itemName ?: article.itemCode.orEmpty(), article.itemCode, article.itemName)
-            }
-        }
-
         stockCodeField.addActionListener {
             val selected = stockSearchResultList.selectedValue
                 ?: stockSearchResultList.model.takeIf { it.size > 0 }?.getElementAt(0)
@@ -312,9 +307,13 @@ class ResearchView : JPanel(BorderLayout()) {
         updateStockList()
 
         statusLabel.text = localizationService.text(
-            "핵심 ${coreModel.size}건 · 랭킹 ${rankingModel.size}건 · 종목 ${stockModel.size}건",
-            "Core ${coreModel.size} · Ranking ${rankingModel.size} · Stock ${stockModel.size}"
+            "핵심 ${coreModel.size}건 · 랭킹 ${rankingModel.size}건 · 국내 종목 ${stockModel.size}건",
+            "Core ${coreModel.size} · Ranking ${rankingModel.size} · Domestic stock ${stockModel.size}"
         )
+
+        if (currentSource() == SourceTab.RANKING) {
+            refreshRankingResearch(forceRefresh = false)
+        }
     }
 
     private fun setLoadingState() {
@@ -326,7 +325,10 @@ class ResearchView : JPanel(BorderLayout()) {
         stockModel.replaceAll(
             listOf(
                 ResearchArticle(
-                    title = localizationService.text("종목을 검색하고 선택하면 리서치를 불러옵니다.", "Search and select a ticker to load research")
+                    title = localizationService.text(
+                        "국내 종목을 검색하고 선택하면 리서치를 불러옵니다.",
+                        "Search and select a domestic ticker to load research"
+                    )
                 )
             )
         )
@@ -358,7 +360,26 @@ class ResearchView : JPanel(BorderLayout()) {
         )
 
         scope.launch {
-            val articles = researchFacadeService.loadRankingResearch(rankingType, selectedRank, forceRefresh)
+            val articles = runCatching {
+                researchFacadeService.loadRankingResearch(rankingType, selectedRank, forceRefresh)
+            }.getOrElse {
+                withContext(Dispatchers.Main) {
+                    rankingData = listOf(
+                        ResearchArticle(
+                            title = localizationService.text(
+                                "랭킹 리서치를 불러오지 못했습니다. 잠시 후 다시 시도하세요.",
+                                "Failed to load ranking research. Try again shortly."
+                            )
+                        )
+                    )
+                    updateRankingList()
+                    statusLabel.text = localizationService.text(
+                        "랭킹 리서치 로딩 실패",
+                        "Ranking research load failed"
+                    )
+                }
+                return@launch
+            }
             withContext(Dispatchers.Main) {
                 rankingData = articles
                 updateRankingList()
@@ -377,7 +398,7 @@ class ResearchView : JPanel(BorderLayout()) {
         forceRefresh: Boolean
     ) {
         stockModel.replaceAll(
-            listOf(ResearchArticle(title = localizationService.text("종목 리서치 로딩 중...", "Loading stock research...")))
+            listOf(ResearchArticle(title = localizationService.text("국내 종목 리서치 로딩 중...", "Loading domestic stock research...")))
         )
 
         scope.launch {
@@ -412,8 +433,8 @@ class ResearchView : JPanel(BorderLayout()) {
                 stockCodeField.text = resolved.name
                 stockSearchResultModel.replaceAll(emptyList())
                 statusLabel.text = localizationService.text(
-                    "${resolved.name}(${resolved.symbol}) 종목 리서치 ${stockResearch.size}건",
-                    "${resolved.name} (${resolved.symbol}) stock research ${stockResearch.size} items"
+                    "${resolved.name}(${resolved.symbol}) 국내 종목 리서치 ${stockResearch.size}건",
+                    "${resolved.name} (${resolved.symbol}) domestic stock research ${stockResearch.size} items"
                 )
             }
         }
@@ -450,7 +471,6 @@ class ResearchView : JPanel(BorderLayout()) {
             detailMetaLabel.text = " "
             detailBodyPane.text = emptyHtmlBody(localizationService.text("표시할 리서치가 없습니다.", "Nothing to show"))
             openButton.isEnabled = false
-            relatedStockButton.isEnabled = false
             return
         }
 
@@ -459,7 +479,6 @@ class ResearchView : JPanel(BorderLayout()) {
         detailBodyPane.text = buildHtmlBody(article)
         detailBodyPane.caretPosition = 0
         openButton.isEnabled = article.endUrl.isNotBlank()
-        relatedStockButton.isEnabled = !article.itemCode.isNullOrBlank() || !article.itemName.isNullOrBlank()
     }
 
     private fun buildMetaText(article: ResearchArticle): String {

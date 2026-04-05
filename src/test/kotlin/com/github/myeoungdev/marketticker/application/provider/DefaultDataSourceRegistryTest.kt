@@ -1,9 +1,11 @@
 package com.github.myeoungdev.marketticker.application.provider
 
+import com.github.myeoungdev.marketticker.infrastructure.finviz.FinvizCalendarProvider
 import com.github.myeoungdev.marketticker.infrastructure.naver.NaverNewsProvider
 import com.github.myeoungdev.marketticker.infrastructure.naver.NaverPriceProvider
 import com.github.myeoungdev.marketticker.infrastructure.naver.NaverResearchProvider
 import com.github.myeoungdev.marketticker.infrastructure.naver.NaverSearchProvider
+import com.github.myeoungdev.marketticker.infrastructure.naver.NaverScreenerProvider
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
@@ -15,6 +17,8 @@ class DefaultDataSourceRegistryTest {
         assertThat(DefaultDataSourceRegistry.searchProvider()).isInstanceOf(NaverSearchProvider::class.java)
         assertThat(DefaultDataSourceRegistry.newsProvider()).isInstanceOf(NaverNewsProvider::class.java)
         assertThat(DefaultDataSourceRegistry.researchProvider()).isInstanceOf(NaverResearchProvider::class.java)
+        assertThat(DefaultDataSourceRegistry.screenerProvider()).isInstanceOf(NaverScreenerProvider::class.java)
+        assertThat(DefaultDataSourceRegistry.calendarProvider()).isInstanceOf(FinvizCalendarProvider::class.java)
     }
 
     @Test
@@ -23,5 +27,7 @@ class DefaultDataSourceRegistryTest {
         assertThat(DefaultDataSourceRegistry.searchProvider()).isSameAs(DefaultDataSourceRegistry.searchProvider())
         assertThat(DefaultDataSourceRegistry.newsProvider()).isSameAs(DefaultDataSourceRegistry.newsProvider())
         assertThat(DefaultDataSourceRegistry.researchProvider()).isSameAs(DefaultDataSourceRegistry.researchProvider())
+        assertThat(DefaultDataSourceRegistry.screenerProvider()).isSameAs(DefaultDataSourceRegistry.screenerProvider())
+        assertThat(DefaultDataSourceRegistry.calendarProvider()).isSameAs(DefaultDataSourceRegistry.calendarProvider())
     }
 }

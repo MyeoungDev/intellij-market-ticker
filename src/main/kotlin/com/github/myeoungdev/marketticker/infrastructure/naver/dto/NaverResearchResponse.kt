@@ -1,6 +1,7 @@
 package com.github.myeoungdev.marketticker.infrastructure.naver.dto
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonAlias
 import com.fasterxml.jackson.annotation.JsonProperty
 
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -213,15 +214,15 @@ data class NaverResearchRankingResponse(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class NaverResearchRankingItem(
-    @JsonProperty("itemname")
+    @JsonAlias("itemname", "itemName")
     val itemName: String = "",
-    @JsonProperty("itemcode")
+    @JsonAlias("itemcode", "itemCode")
     val itemCode: String = "",
     @JsonProperty("marketStatus")
     val marketStatus: String = "",
-    @JsonProperty("nowVal")
+    @JsonAlias("nowVal", "nowPrice")
     val nowVal: String = "",
-    @JsonProperty("changeRate")
+    @JsonAlias("changeRate", "prevChangeRate")
     val changeRate: String = "",
     @JsonProperty("per")
     val per: String = "",
@@ -230,7 +231,41 @@ data class NaverResearchRankingItem(
     @JsonProperty("dividendRate")
     val dividendRate: String = "",
     @JsonProperty("marketSum")
-    val marketSum: String = ""
+    val marketSum: String = "",
+    @JsonProperty("tradeVolume")
+    val tradeVolume: String = "",
+    @JsonProperty("tradeAmount")
+    val tradeAmount: String = "",
+    @JsonProperty("sosok")
+    val sosok: String = "",
+    @JsonProperty("eps")
+    val eps: String = "",
+    @JsonProperty("roe")
+    val roe: String = "",
+    @JsonProperty("roa")
+    val roa: String = "",
+    @JsonProperty("listedDate")
+    val listedDate: String = "",
+    @JsonProperty("week52HighPrice")
+    val week52HighPrice: String = "",
+    @JsonProperty("week52LowPrice")
+    val week52LowPrice: String = "",
+    @JsonProperty("prevChangePrice")
+    val prevChangePrice: String = "",
+    @JsonProperty("listedStockCnt")
+    val listedStockCnt: String = "",
+    @JsonProperty("frgnHoldRate")
+    val frgnHoldRate: String = "",
+    @JsonProperty("salesIncreasingRate")
+    val salesIncreasingRate: String = "",
+    @JsonProperty("operatingProfitIncreasingRate")
+    val operatingProfitIncreasingRate: String = "",
+    @JsonProperty("netIncome")
+    val netIncome: String = "",
+    @JsonProperty("sales")
+    val sales: String = "",
+    @JsonProperty("dividend")
+    val dividend: String = ""
 )
 
 enum class ResearchRankingType(val code: String, val label: String) {

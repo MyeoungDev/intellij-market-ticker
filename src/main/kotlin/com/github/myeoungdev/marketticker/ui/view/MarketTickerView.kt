@@ -54,8 +54,11 @@ class MarketTickerView(
     private val portfolioView = PortfolioView()
     private val heatmapView = HeatmapView()
     private val chartView = ChartView()
+    private val stockOverviewView = StockOverviewPanel()
     private val newsView = NewsView()
     private val researchView = ResearchView()
+    private val screenerView = ScreenerView()
+    private val calendarView = CalendarView()
     private val stockNewsView = StockNewsSummaryPanel()
     private val stockResearchView = StockResearchSummaryPanel()
 
@@ -72,6 +75,9 @@ class MarketTickerView(
         scope.cancel()
         newsView.dispose()
         researchView.dispose()
+        screenerView.dispose()
+        calendarView.dispose()
+        stockOverviewView.dispose()
         stockNewsView.dispose()
         stockResearchView.dispose()
     }
@@ -135,12 +141,15 @@ class MarketTickerView(
             add(marketPulseContainer, BorderLayout.SOUTH)
         }
         mainTabbedPane.addTab(localizationService.text("주식", "Stocks"), stockPanel)
+        mainTabbedPane.addTab(localizationService.text("스크리너", "Screener"), screenerView)
+        mainTabbedPane.addTab(localizationService.text("캘린더", "Calendar"), calendarView)
         mainTabbedPane.addTab(localizationService.text("뉴스", "News"), newsView)
         mainTabbedPane.addTab(localizationService.text("리서치", "Research"), researchView)
         mainPanel.add(mainTabbedPane, BorderLayout.CENTER)
 
         watchlistView.onTickerSelected = { ticker, _ ->
             chartView.updateSelection(ticker)
+            stockOverviewView.showTicker(ticker)
             researchView.showStockResearch(ticker)
             stockNewsView.showTicker(ticker)
             stockResearchView.showTicker(ticker)
@@ -162,6 +171,7 @@ class MarketTickerView(
                 if (e.clickCount == 2) {
                     val ticker = searchResultList.selectedValue ?: return
                     marketDataService.addTicker(ticker)
+                    stockOverviewView.showTicker(ticker)
                     researchView.showStockResearch(ticker)
 
                     searchField.text = ""
@@ -205,6 +215,7 @@ class MarketTickerView(
     private fun rebuildBottomTabs() {
         bottomTabbedPane.removeAll()
 
+        bottomTabbedPane.addTab(localizationService.text("개요", "Overview"), stockOverviewView)
         bottomTabbedPane.addTab(localizationService.text("뉴스", "News"), stockNewsView)
         bottomTabbedPane.addTab(localizationService.text("리서치", "Research"), stockResearchView)
 
