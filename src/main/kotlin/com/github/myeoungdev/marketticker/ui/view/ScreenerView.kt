@@ -19,6 +19,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.awt.BorderLayout
 import java.awt.Component
+import javax.swing.BorderFactory
 import javax.swing.DefaultComboBoxModel
 import javax.swing.JButton
 import javax.swing.JComboBox
@@ -68,6 +69,7 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
 
     private fun buildToolbar(): JPanel {
         return JPanel(BorderLayout(8, 0)).apply {
+            border = BorderFactory.createEmptyBorder(0, 0, 8, 0)
             add(presetCombo, BorderLayout.CENTER)
             add(refreshButton, BorderLayout.EAST)
         }.also {
@@ -135,29 +137,57 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
     private fun loadPreset(forceRefresh: Boolean) {
         val preset = presetCombo.selectedItem as? ScreenerPreset ?: ScreenerPreset.SEARCH_TOP
         statusLabel.text = localizationService.text("스크리너를 불러오는 중...", "Loading screener...")
+        refreshButton.isEnabled = false
+        screenTable.emptyText.text = localizationService.text("스크리너 결과를 불러오는 중입니다.", "Loading screener results.")
 
         scope.launch {
-            val rows = screenerService.loadScreen(preset, limit = 25, forceRefresh = forceRefresh)
-            withContext(Dispatchers.Main) {
-                currentRows = rows
-                screenTableModel.rowCount = 0
-                rows.forEach { row ->
-                    screenTableModel.addRow(
-                        arrayOf(
-                            row.ticker.symbol,
-                            row.ticker.name,
-                            row.price,
-                            row.change,
-                            row.volume,
-                            row.marketCap,
-                            row.pe
+            runCatching {
+                screenerService.loadScreen(preset, limit = 25, forceRefresh = forceRefresh)
+            }.onSuccess { rows ->
+                withContext(Dispatchers.Main) {
+                    currentRows = rows
+                    screenTableModel.rowCount = 0
+                    rows.forEach { row ->
+                        screenTableModel.addRow(
+                            arrayOf(
+                                row.ticker.symbol,
+                                row.ticker.name,
+                                row.price,
+                                row.change,
+                                row.volume,
+                                row.marketCap,
+                                row.pe
+                            )
                         )
-                    )
+                    }
+                    screenTable.emptyText.text = localizationService.text("스크리너 결과가 없습니다.", "No screener result.")
+                    statusLabel.text = if (rows.isEmpty()) {
+                        localizationService.text(
+                            "${displayPreset(preset)} 결과가 없습니다.",
+                            "No ${displayPreset(preset)} results."
+                        )
+                    } else {
+                        localizationService.text(
+                            "${displayPreset(preset)} ${rows.size}건",
+                            "${displayPreset(preset)} ${rows.size} items"
+                        )
+                    }
+                    refreshButton.isEnabled = true
                 }
-                statusLabel.text = localizationService.text(
-                    "${displayPreset(preset)} ${rows.size}건",
-                    "${displayPreset(preset)} ${rows.size} items"
-                )
+            }.onFailure {
+                withContext(Dispatchers.Main) {
+                    currentRows = emptyList()
+                    screenTableModel.rowCount = 0
+                    screenTable.emptyText.text = localizationService.text(
+                        "스크리너를 불러오지 못했습니다. 새로고침으로 다시 시도하세요.",
+                        "Failed to load screener. Try refresh."
+                    )
+                    statusLabel.text = localizationService.text(
+                        "스크리너 로드에 실패했습니다.",
+                        "Failed to load screener."
+                    )
+                    refreshButton.isEnabled = true
+                }
             }
         }
     }
