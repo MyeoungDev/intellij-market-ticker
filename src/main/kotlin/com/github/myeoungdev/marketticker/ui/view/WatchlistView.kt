@@ -90,26 +90,20 @@ class WatchlistView(private val project: Project) {
         }
 
         val popupMenu = JPopupMenu()
-        val editPortfolioItem = JMenuItem(localizationService.text("포트폴리오 정보 편집", "Edit portfolio"))
+        val editPortfolioItem = JMenuItem(localizationService.text("포트폴리오 등록/편집", "Add/Edit portfolio"))
         val editTagItem = JMenuItem(localizationService.text("그룹/태그 편집", "Edit group/tag"))
         val deleteTickerItem = JMenuItem(localizationService.text("관심 종목 삭제", "Remove from watchlist"))
 
         editPortfolioItem.addActionListener {
-            val selectedViewRow = tickerTable.selectedRow
-            if (selectedViewRow != -1) {
-                val modelRow = tickerTable.convertRowIndexToModel(selectedViewRow)
-                val entry = getWatchlistEntryAtRow(modelRow)
-                if (entry != null) {
-                    val dialog = PortfolioEditDialog(entry)
-                    if (dialog.showAndGet()) {
-                        val updatedEntry = entry.copy(
-                            purchasePrice = dialog.purchasePrice,
-                            quantity = dialog.quantity,
-                            groupTag = dialog.groupTag
-                        )
-                        marketDataService.updateWatchlistEntryPortfolio(updatedEntry)
-                    }
-                }
+            val entry = getSelectedWatchlistEntry() ?: return@addActionListener
+            val dialog = PortfolioEditDialog(entry)
+            if (dialog.showAndGet()) {
+                val updatedEntry = entry.copy(
+                    purchasePrice = dialog.purchasePrice,
+                    quantity = dialog.quantity,
+                    groupTag = dialog.groupTag
+                )
+                marketDataService.updateWatchlistEntryPortfolio(updatedEntry)
             }
         }
 
@@ -145,8 +139,6 @@ class WatchlistView(private val project: Project) {
         popupMenu.add(editPortfolioItem)
         popupMenu.add(editTagItem)
         popupMenu.add(deleteTickerItem)
-
-        tickerTable.componentPopupMenu = popupMenu
 
         tickerTable.addMouseListener(object : MouseAdapter() {
             override fun mouseClicked(e: MouseEvent) {
@@ -199,8 +191,9 @@ class WatchlistView(private val project: Project) {
                     val row = tickerTable.rowAtPoint(e.point)
                     if (row != -1) {
                         tickerTable.setRowSelectionInterval(row, row)
+                        tickerTable.requestFocusInWindow()
+                        popupMenu.show(e.component, e.x, e.y)
                     }
-                    popupMenu.show(e.component, e.x, e.y)
                 }
             }
         })
@@ -302,6 +295,13 @@ class WatchlistView(private val project: Project) {
 
     private fun getWatchlistEntryAtRow(row: Int): WatchlistRepository.WatchlistEntry? {
         return filteredEntries.getOrNull(row)
+    }
+
+    private fun getSelectedWatchlistEntry(): WatchlistRepository.WatchlistEntry? {
+        val selectedViewRow = tickerTable.selectedRow
+        if (selectedViewRow < 0) return null
+        val modelRow = tickerTable.convertRowIndexToModel(selectedViewRow)
+        return getWatchlistEntryAtRow(modelRow)
     }
 
     private fun defaultGroup(entry: WatchlistRepository.WatchlistEntry): String {
