@@ -28,12 +28,12 @@ class NaverResearchProvider(
                     itemName = it.itemName,
                     itemCode = it.itemCode,
                     marketStatus = it.marketStatus,
-                    nowVal = it.nowVal,
-                    changeRate = it.changeRate,
-                    per = it.per,
-                    pbr = it.pbr,
-                    dividendRate = it.dividendRate,
-                    marketSum = it.marketSum
+                    nowVal = it.nowVal.orEmpty(),
+                    changeRate = it.changeRate.orEmpty(),
+                    per = it.per.orEmpty(),
+                    pbr = it.pbr.orEmpty(),
+                    dividendRate = it.dividendRate.orEmpty(),
+                    marketSum = it.marketSum.orEmpty()
                 )
             },
             latestResearch = response.latestResearch.map { it.toDomain() }

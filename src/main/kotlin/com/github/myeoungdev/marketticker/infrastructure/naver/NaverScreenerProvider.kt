@@ -19,35 +19,59 @@ class NaverScreenerProvider(
             ScreenerPreset.DOWN -> ResearchRankingType.DOWN
         }
 
-        return client.fetchResearchRanking(
-            rankingType = rankingType.toNaverRankingType(),
-            selectedRank = 1
-        ).ranking.take(limit).map { item ->
-            val marketType = when (item.sosok) {
-                "0" -> MarketType.KOSPI
-                "1" -> MarketType.KOSDAQ
-                else -> MarketType.UNKNOWN
+        val rows = mutableListOf<ScreenedTicker>()
+        val seenSymbols = linkedSetOf<String>()
+
+        for (selectedRank in 1..10) {
+            val batch = client.fetchResearchRanking(
+                rankingType = rankingType.toNaverRankingType(),
+                selectedRank = selectedRank
+            ).ranking
+            if (batch.isEmpty()) {
+                break
             }
-            ScreenedTicker(
-                ticker = Ticker(
-                    symbol = item.itemCode,
-                    tradingSymbol = item.itemCode,
-                    name = item.itemName,
-                    marketType = marketType,
-                    nationCode = "KOR",
-                    nationName = "대한민국"
-                ),
-                sector = marketType.displayName,
-                industry = preset.labelKo,
-                exchange = item.marketStatus,
-                marketCap = item.marketSum,
-                pe = item.per,
-                price = item.nowVal,
-                change = item.changeRate,
-                volume = item.tradeVolume,
-                signalLabel = preset.labelEn
-            )
+            batch.forEach { item ->
+                if (!seenSymbols.add(item.itemCode)) return@forEach
+                rows += item.toScreenedTicker(preset)
+                if (rows.size >= limit) {
+                    return rows
+                }
+            }
+            if (batch.size < 5) {
+                break
+            }
         }
+
+        return rows
+    }
+
+    private fun com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverResearchRankingItem.toScreenedTicker(
+        preset: ScreenerPreset
+    ): ScreenedTicker {
+        val marketType = when (sosok) {
+            "0" -> MarketType.KOSPI
+            "1" -> MarketType.KOSDAQ
+            else -> MarketType.UNKNOWN
+        }
+        return ScreenedTicker(
+            ticker = Ticker(
+                symbol = itemCode,
+                tradingSymbol = itemCode,
+                name = itemName,
+                marketType = marketType,
+                nationCode = "KOR",
+                nationName = "대한민국"
+            ),
+            sector = marketType.displayName,
+            industry = preset.labelKo,
+            exchange = marketStatus,
+            marketCap = marketSum.orEmpty(),
+            pe = per.orEmpty(),
+            price = nowVal.orEmpty(),
+            change = changeRate.orEmpty(),
+            volume = tradeVolume.orEmpty(),
+            signalLabel = preset.labelEn
+        )
     }
 
     private fun ResearchRankingType.toNaverRankingType(): com.github.myeoungdev.marketticker.infrastructure.naver.dto.ResearchRankingType {

@@ -64,6 +64,7 @@ class MarketTickerView(
 
     private val marketPulseTicker = MarketPulseTicker()
     private val marketPulseContainer = JPanel(BorderLayout())
+    private val watchlistPortfolioTabbedPane = JTabbedPane()
     private val bottomTabbedPane = JTabbedPane()
     private val topLevelTabbedPane = JTabbedPane()
     private val mainTabbedPane = JTabbedPane()
@@ -101,10 +102,7 @@ class MarketTickerView(
             border = javax.swing.BorderFactory.createTitledBorder(localizationService.text("검색 결과", "Search Results"))
         }
 
-        val watchlistPortfolioTabbedPane = JTabbedPane().apply {
-            addTab(localizationService.text("관심종목", "Watchlist"), watchlistView.panel)
-            addTab(localizationService.text("포트폴리오", "Portfolio"), portfolioView.panel)
-        }
+        rebuildWatchlistTabs()
 
         val topSplitter = com.intellij.ui.JBSplitter(true, 0.4f).apply {
             firstComponent = searchResultPanel
@@ -132,9 +130,10 @@ class MarketTickerView(
 
         rebuildBottomTabs()
 
-        val mainSplitter = com.intellij.ui.JBSplitter(true, 0.6f).apply {
+        val mainSplitter = com.intellij.ui.JBSplitter(true, 0.72f).apply {
             firstComponent = searchPanel
             secondComponent = bottomTabbedPane
+            dividerWidth = 10
         }
         val stockPanel = JPanel(BorderLayout()).apply {
             add(mainSplitter, BorderLayout.CENTER)
@@ -222,8 +221,14 @@ class MarketTickerView(
         if (appSettingsService.isChartTabVisible()) {
             bottomTabbedPane.addTab(localizationService.text("차트", "Chart"), chartView)
         }
+    }
+
+    private fun rebuildWatchlistTabs() {
+        watchlistPortfolioTabbedPane.removeAll()
+        watchlistPortfolioTabbedPane.addTab(localizationService.text("관심종목", "Watchlist"), watchlistView.panel)
+        watchlistPortfolioTabbedPane.addTab(localizationService.text("포트폴리오", "Portfolio"), portfolioView.panel)
         if (appSettingsService.isHeatmapTabVisible()) {
-            bottomTabbedPane.addTab(localizationService.text("히트맵", "Heatmap"), heatmapView)
+            watchlistPortfolioTabbedPane.addTab(localizationService.text("관심종목 히트맵", "Watchlist Heatmap"), heatmapView)
         }
     }
 
@@ -232,6 +237,7 @@ class MarketTickerView(
         connection.subscribe(SettingsUpdateListener.TOPIC, object : SettingsUpdateListener {
             override fun onSettingsUpdated() {
                 applyDisplaySettings()
+                rebuildWatchlistTabs()
                 rebuildBottomTabs()
                 renderMarketPulse()
             }

@@ -5,8 +5,12 @@ import com.github.myeoungdev.marketticker.application.service.LocalizationServic
 import com.intellij.openapi.components.service
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.components.JBLabel
+import com.intellij.ui.components.JBPanel
 import com.intellij.ui.components.JBTextField
 import com.intellij.util.ui.FormBuilder
+import com.intellij.util.ui.JBUI
+import java.awt.BorderLayout
+import java.awt.Dimension
 import javax.swing.JComponent
 
 class PortfolioEditDialog(private val entry: WatchlistRepository.WatchlistEntry) : DialogWrapper(true) {
@@ -30,14 +34,25 @@ class PortfolioEditDialog(private val entry: WatchlistRepository.WatchlistEntry)
         quantityField.text = entry.quantity?.toString() ?: ""
         groupTagField.text = entry.groupTag
         init()
+        setSize(420, 220)
+        isResizable = false
     }
 
     override fun createCenterPanel(): JComponent {
-        return FormBuilder.createFormBuilder()
-            .addLabeledComponent(JBLabel(localizationService.text("매수 단가", "Avg buy price")), purchasePriceField, 1, false)
-            .addLabeledComponent(JBLabel(localizationService.text("수량", "Quantity")), quantityField, 1, false)
-            .addLabeledComponent(JBLabel(localizationService.text("그룹/태그", "Group/Tag")), groupTagField, 1, false)
-            .panel
+        return JBPanel<JBPanel<*>>(BorderLayout()).apply {
+            preferredSize = Dimension(420, 170)
+            border = JBUI.Borders.empty(8, 0)
+            add(
+                FormBuilder.createFormBuilder()
+                    .addLabeledComponent(JBLabel(localizationService.text("매수 단가", "Avg buy price")), purchasePriceField, 1, false)
+                    .addVerticalGap(8)
+                    .addLabeledComponent(JBLabel(localizationService.text("수량", "Quantity")), quantityField, 1, false)
+                    .addVerticalGap(8)
+                    .addLabeledComponent(JBLabel(localizationService.text("그룹/태그", "Group/Tag")), groupTagField, 1, false)
+                    .panel,
+                BorderLayout.CENTER
+            )
+        }
     }
 
     override fun doOKAction() {
