@@ -2,6 +2,7 @@ package com.github.myeoungdev.marketticker.application.service
 
 import com.github.myeoungdev.marketticker.application.provider.DefaultDataSourceRegistry
 import com.github.myeoungdev.marketticker.application.provider.ScreenerProvider
+import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.screener.ScreenedTicker
 import com.github.myeoungdev.marketticker.domain.model.screener.ScreenerPreset
 import com.intellij.openapi.components.Service
@@ -26,12 +27,13 @@ class ScreenerService(
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     suspend fun loadScreen(
+        market: MarketType,
         preset: ScreenerPreset,
         limit: Int = 25,
         forceRefresh: Boolean = false
     ): List<ScreenedTicker> {
-        return cached("screen:${preset.name}:$limit", 60_000L, forceRefresh) {
-            screenerProvider.getScreen(preset, limit)
+        return cached("screen:${market.name}:${preset.name}:$limit", 60_000L, forceRefresh) {
+            screenerProvider.getScreen(market, preset, limit)
         }
     }
 

@@ -1,10 +1,11 @@
 package com.github.myeoungdev.marketticker.infrastructure.naver
 
-import com.github.myeoungdev.marketticker.domain.model.MarketType
-import com.github.myeoungdev.marketticker.domain.model.screener.ScreenerPreset
 import com.github.myeoungdev.marketticker.fixtures.naver.NaverFixtures
 import com.github.tomakehurst.wiremock.WireMockServer
-import com.github.tomakehurst.wiremock.client.WireMock.*
+import com.github.tomakehurst.wiremock.client.WireMock.equalTo
+import com.github.tomakehurst.wiremock.client.WireMock.get
+import com.github.tomakehurst.wiremock.client.WireMock.okJson
+import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
@@ -13,16 +14,16 @@ import org.junit.jupiter.api.Test
 import java.net.http.HttpClient
 import java.time.Duration
 
-class NaverScreenerProviderTest {
+class NaverClientMarketStockDefaultTest {
 
     private lateinit var wireMockServer: WireMockServer
-    private lateinit var provider: NaverScreenerProvider
+    private lateinit var naverClient: NaverClient
 
     @BeforeEach
     fun setUp() {
         wireMockServer = WireMockServer(WireMockConfiguration.wireMockConfig().dynamicPort())
         wireMockServer.start()
-        provider = NaverScreenerProvider(createClient(wireMockServer.baseUrl()))
+        naverClient = createClient(wireMockServer.baseUrl())
     }
 
     @AfterEach
@@ -31,24 +32,30 @@ class NaverScreenerProviderTest {
     }
 
     @Test
-    fun `네이버 마켓 스크리너 응답을 스크리너 행으로 변환한다`() {
+    fun `국내 마켓 스크리너 기본 API 응답을 파싱한다`() {
         wireMockServer.stubFor(
             get(urlPathEqualTo("/domestic/market/stock/default"))
                 .withQueryParam("tradeType", equalTo("KRX"))
                 .withQueryParam("marketType", equalTo("ALL"))
                 .withQueryParam("orderType", equalTo("searchTop"))
                 .withQueryParam("startIdx", equalTo("0"))
-                .withQueryParam("pageSize", equalTo("10"))
+                .withQueryParam("pageSize", equalTo("3"))
                 .willReturn(okJson(NaverFixtures.JSON_DOMESTIC_MARKET_STOCK_DEFAULT_SUCCESS))
         )
 
-        val result = provider.getScreen(MarketType.KOREA, ScreenerPreset.SEARCH_TOP, limit = 10)
+        val result = naverClient.fetchDomesticMarketStockDefault(
+            tradeType = "KRX",
+            marketType = "ALL",
+            orderType = "searchTop",
+            startIdx = 0,
+            pageSize = 3
+        )
 
-        assertThat(result).isNotEmpty
-        assertThat(result.first().ticker.symbol).isEqualTo("005930")
-        assertThat(result.first().ticker.marketType).isIn(MarketType.KOSPI, MarketType.UNKNOWN)
-        assertThat(result.first().marketCap).isNotBlank()
-        assertThat(result.first().price).isNotBlank()
+        assertThat(result).hasSize(3)
+        assertThat(result.first().itemcode).isEqualTo("005930")
+        assertThat(result.first().itemname).isEqualTo("삼성전자")
+        assertThat(result.first().nowPrice).isEqualTo("213750")
+        assertThat(result.first().marketSum).isEqualTo("1249642052000000")
     }
 
     private fun createClient(baseUrl: String): NaverClient {

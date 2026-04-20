@@ -3,11 +3,19 @@ package com.github.myeoungdev.marketticker.ui.view
 import com.github.myeoungdev.marketticker.application.service.LocalizationService
 import com.github.myeoungdev.marketticker.application.service.MarketDataService
 import com.github.myeoungdev.marketticker.application.service.ScreenerService
+import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.domain.model.screener.ScreenedTicker
 import com.github.myeoungdev.marketticker.domain.model.screener.ScreenerPreset
+import com.github.myeoungdev.marketticker.domain.model.screener.availableScreenerPresets
+import com.github.myeoungdev.marketticker.domain.model.screener.screenerLabelEn
+import com.github.myeoungdev.marketticker.domain.model.screener.screenerLabelKo
+import com.github.myeoungdev.marketticker.domain.model.screener.screenerMarkets
+import com.github.myeoungdev.marketticker.domain.model.screener.screenerPresetLabelEn
+import com.github.myeoungdev.marketticker.domain.model.screener.screenerPresetLabelKo
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
+import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.JBUI
@@ -27,6 +35,8 @@ import javax.swing.JLabel
 import javax.swing.JMenuItem
 import javax.swing.JPanel
 import javax.swing.JPopupMenu
+import javax.swing.JTable
+import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.DefaultTableModel
 
 class ScreenerView : JPanel(BorderLayout()), Disposable {
@@ -36,11 +46,12 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
     private val screenerService = service<ScreenerService>()
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
+    private val marketCombo = JComboBox(DefaultComboBoxModel(MarketType.screenerMarkets().toTypedArray()))
     private val presetCombo = JComboBox(DefaultComboBoxModel(ScreenerPreset.values()))
     private val refreshButton = JButton()
     private val statusLabel = JLabel()
     private val screenTableModel = object : DefaultTableModel(
-        arrayOf("Ticker", "Company", "Price", "Change", "Volume", "Market Cap", "PER"),
+        arrayOf("Ticker", "Company", "Price", "Change", "Volume"),
         0
     ) {
         override fun isCellEditable(row: Int, column: Int) = false
@@ -48,6 +59,7 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
     private val screenTable = JBTable(screenTableModel).apply {
         rowHeight = 28
         emptyText.text = localizationService.text("스크리너 결과가 없습니다.", "No screener result.")
+        setDefaultRenderer(Object::class.java, ScreenerCellRenderer())
     }
 
     private var currentRows: List<ScreenedTicker> = emptyList()
@@ -68,9 +80,19 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
 
     private fun buildToolbar(): JPanel {
         return JPanel(BorderLayout(8, 0)).apply {
-            add(presetCombo, BorderLayout.CENTER)
+            add(
+                JPanel(java.awt.GridLayout(1, 2, 8, 0)).apply {
+                    add(marketCombo)
+                    add(presetCombo)
+                },
+                BorderLayout.CENTER
+            )
             add(refreshButton, BorderLayout.EAST)
         }.also {
+            marketCombo.addActionListener {
+                rebuildPresetModel()
+                loadPreset(forceRefresh = false)
+            }
             presetCombo.addActionListener { loadPreset(forceRefresh = false) }
             refreshButton.addActionListener { loadPreset(forceRefresh = true) }
         }
@@ -79,6 +101,20 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
     private fun setupUiText() {
         refreshButton.text = localizationService.text("새로고침", "Refresh")
         statusLabel.text = localizationService.text("스크리너를 불러오는 중...", "Loading screener...")
+        marketCombo.renderer = object : javax.swing.DefaultListCellRenderer() {
+            override fun getListCellRendererComponent(
+                list: JList<*>?,
+                value: Any?,
+                index: Int,
+                isSelected: Boolean,
+                cellHasFocus: Boolean
+            ): Component {
+                val label = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus) as JLabel
+                val market = value as? MarketType
+                label.text = market?.let { localizationService.text(it.screenerLabelKo(), it.screenerLabelEn()) } ?: ""
+                return label
+            }
+        }
         presetCombo.renderer = object : javax.swing.DefaultListCellRenderer() {
             override fun getListCellRendererComponent(
                 list: JList<*>?,
@@ -89,10 +125,12 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
             ): Component {
                 val label = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus) as JLabel
                 val preset = value as? ScreenerPreset
-                label.text = preset?.let { displayPreset(it) } ?: ""
+                label.text = preset?.let { displayPreset(currentMarket(), it) } ?: ""
                 return label
             }
         }
+        marketCombo.selectedItem = MarketType.KOREA
+        rebuildPresetModel()
     }
 
     private fun bindTable() {
@@ -133,11 +171,12 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
     }
 
     private fun loadPreset(forceRefresh: Boolean) {
-        val preset = presetCombo.selectedItem as? ScreenerPreset ?: ScreenerPreset.SEARCH_TOP
+        val market = currentMarket()
+        val preset = presetCombo.selectedItem as? ScreenerPreset ?: availablePresetsFor(market).first()
         statusLabel.text = localizationService.text("스크리너를 불러오는 중...", "Loading screener...")
 
         scope.launch {
-            val rows = screenerService.loadScreen(preset, limit = 25, forceRefresh = forceRefresh)
+            val rows = screenerService.loadScreen(market, preset, limit = 25, forceRefresh = forceRefresh)
             withContext(Dispatchers.Main) {
                 currentRows = rows
                 screenTableModel.rowCount = 0
@@ -147,22 +186,81 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
                             row.ticker.symbol,
                             row.ticker.name,
                             row.price,
-                            row.change,
-                            row.volume,
-                            row.marketCap,
-                            row.pe
+                            formatChangeText(row.change),
+                            row.volume
                         )
                     )
                 }
                 statusLabel.text = localizationService.text(
-                    "${displayPreset(preset)} ${rows.size}건",
-                    "${displayPreset(preset)} ${rows.size} items"
+                    "${displayMarket(market)} · ${displayPreset(market, preset)} ${rows.size}건",
+                    "${displayMarket(market)} · ${displayPreset(market, preset)} ${rows.size} items"
                 )
             }
         }
     }
 
-    private fun displayPreset(preset: ScreenerPreset): String {
-        return localizationService.text(preset.labelKo, preset.labelEn)
+    private fun rebuildPresetModel() {
+        val market = currentMarket()
+        val presets = availablePresetsFor(market)
+        val currentSelection = presetCombo.selectedItem as? ScreenerPreset
+        val model = DefaultComboBoxModel(presets.toTypedArray())
+        presetCombo.model = model
+        presetCombo.selectedItem = currentSelection?.takeIf { presets.contains(it) } ?: presets.first()
+    }
+
+    private fun currentMarket(): MarketType {
+        return marketCombo.selectedItem as? MarketType ?: MarketType.KOREA
+    }
+
+    private fun availablePresetsFor(market: MarketType): List<ScreenerPreset> {
+        return market.availableScreenerPresets()
+    }
+
+    private fun displayMarket(market: MarketType): String {
+        return localizationService.text(market.screenerLabelKo(), market.screenerLabelEn())
+    }
+
+    private fun displayPreset(market: MarketType, preset: ScreenerPreset): String {
+        return localizationService.text(
+            market.screenerPresetLabelKo(preset),
+            market.screenerPresetLabelEn(preset)
+        )
+    }
+
+    private fun formatChangeText(raw: String): String {
+        val value = raw.replace("%", "").replace(",", "").trim().toDoubleOrNull() ?: return raw
+        val sign = if (value > 0) "+" else ""
+        return "$sign${localizationService.formatDecimal(value, 2)}%"
+    }
+
+    private class ScreenerCellRenderer : DefaultTableCellRenderer() {
+        override fun getTableCellRendererComponent(
+            table: JTable?,
+            value: Any?,
+            isSelected: Boolean,
+            hasFocus: Boolean,
+            row: Int,
+            column: Int
+        ): Component {
+            val component = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column)
+            if (table == null) {
+                return component
+            }
+
+            component.foreground = if (isSelected) table.selectionForeground else table.foreground
+
+            if (column == 3 && value is String) {
+                val numeric = value.replace("%", "").replace(",", "").toDoubleOrNull()
+                if (numeric != null) {
+                    component.foreground = when {
+                        numeric > 0 -> JBColor.RED
+                        numeric < 0 -> JBColor.BLUE
+                        else -> if (isSelected) table.selectionForeground else table.foreground
+                    }
+                }
+            }
+
+            return component
+        }
     }
 }

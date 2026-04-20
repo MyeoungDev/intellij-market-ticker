@@ -4,7 +4,10 @@ import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.screener.ScreenerPreset
 import com.github.myeoungdev.marketticker.fixtures.naver.NaverFixtures
 import com.github.tomakehurst.wiremock.WireMockServer
-import com.github.tomakehurst.wiremock.client.WireMock.*
+import com.github.tomakehurst.wiremock.client.WireMock.equalTo
+import com.github.tomakehurst.wiremock.client.WireMock.get
+import com.github.tomakehurst.wiremock.client.WireMock.okJson
+import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
@@ -13,7 +16,7 @@ import org.junit.jupiter.api.Test
 import java.net.http.HttpClient
 import java.time.Duration
 
-class NaverScreenerProviderTest {
+class NaverScreenerProviderMarketTest {
 
     private lateinit var wireMockServer: WireMockServer
     private lateinit var provider: NaverScreenerProvider
@@ -31,24 +34,42 @@ class NaverScreenerProviderTest {
     }
 
     @Test
-    fun `네이버 마켓 스크리너 응답을 스크리너 행으로 변환한다`() {
+    fun `미국 주식 스크리너 응답을 행으로 변환한다`() {
         wireMockServer.stubFor(
-            get(urlPathEqualTo("/domestic/market/stock/default"))
-                .withQueryParam("tradeType", equalTo("KRX"))
-                .withQueryParam("marketType", equalTo("ALL"))
-                .withQueryParam("orderType", equalTo("searchTop"))
+            get(urlPathEqualTo("/foreign/market/stock/global"))
+                .withQueryParam("nation", equalTo("USA"))
+                .withQueryParam("tradeType", equalTo("ALL"))
+                .withQueryParam("orderType", equalTo("marketValue"))
                 .withQueryParam("startIdx", equalTo("0"))
                 .withQueryParam("pageSize", equalTo("10"))
-                .willReturn(okJson(NaverFixtures.JSON_DOMESTIC_MARKET_STOCK_DEFAULT_SUCCESS))
+                .willReturn(okJson(NaverFixtures.JSON_FOREIGN_MARKET_STOCK_GLOBAL_SUCCESS))
         )
 
-        val result = provider.getScreen(MarketType.KOREA, ScreenerPreset.SEARCH_TOP, limit = 10)
+        val result = provider.getScreen(MarketType.USA, ScreenerPreset.MARKET_CAP, 10)
 
         assertThat(result).isNotEmpty
-        assertThat(result.first().ticker.symbol).isEqualTo("005930")
-        assertThat(result.first().ticker.marketType).isIn(MarketType.KOSPI, MarketType.UNKNOWN)
-        assertThat(result.first().marketCap).isNotBlank()
-        assertThat(result.first().price).isNotBlank()
+        assertThat(result.first().ticker.symbol).isEqualTo("NVDA.O")
+        assertThat(result.first().ticker.tradingSymbol).isEqualTo("NVDA")
+        assertThat(result.first().ticker.marketType).isEqualTo(MarketType.NASDAQ)
+        assertThat(result.first().marketCap).isEqualTo("4775193000000.0000")
+    }
+
+    @Test
+    fun `코인 스크리너 응답을 행으로 변환한다`() {
+        wireMockServer.stubFor(
+            get(urlPathEqualTo("/coin/rank/UPBIT"))
+                .withQueryParam("sortType", equalTo("marketValue"))
+                .withQueryParam("page", equalTo("1"))
+                .withQueryParam("pageSize", equalTo("10"))
+                .willReturn(okJson(NaverFixtures.JSON_COIN_RANK_SUCCESS))
+        )
+
+        val result = provider.getScreen(MarketType.UPBIT, ScreenerPreset.MARKET_CAP, 10)
+
+        assertThat(result).isNotEmpty
+        assertThat(result.first().ticker.symbol).isEqualTo("BTC")
+        assertThat(result.first().ticker.marketType).isEqualTo(MarketType.UPBIT)
+        assertThat(result.first().volume).isEqualTo("1777.711648")
     }
 
     private fun createClient(baseUrl: String): NaverClient {
@@ -83,7 +104,9 @@ class NaverScreenerProviderTest {
             newsAggregateUrl = "$baseUrl/news/aggregate/home",
             noticeListUrl = "$baseUrl/home/noticeList",
             newsSearchUrl = "$baseUrl/news/search",
-            domesticMarketStockDefaultUrl = "$baseUrl/domestic/market/stock/default"
+            domesticMarketStockDefaultUrl = "$baseUrl/domestic/market/stock/default",
+            foreignMarketStockGlobalUrl = "$baseUrl/foreign/market/stock/global",
+            coinRankUrlBase = "$baseUrl/coin/rank"
         )
     }
 }

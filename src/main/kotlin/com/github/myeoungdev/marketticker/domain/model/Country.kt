@@ -9,6 +9,9 @@ enum class Country(
 ) {
     KOREA("KR", "대한민국"),
     USA("US", "미국"),
+    CHINA("CN", "중국"),
+    HONG_KONG("HK", "홍콩"),
     JAPAN("JP", "일본"),
+    VIETNAM("VN", "베트남"),
     UNKNOWN("XX", "기타")
 }

@@ -128,9 +128,9 @@ class WatchlistRepository : PersistentStateComponent<WatchlistRepository.State> 
     }
 
     private fun defaultGroupTagFor(marketType: String): String {
-        return when (marketType) {
-            "KOSPI", "KOSDAQ" -> "국내"
-            "NASDAQ", "NYSE" -> "해외"
+        return when {
+            MarketType.of(marketType).isKoreanMarket() -> "국내"
+            MarketType.of(marketType).isGlobalStockMarket() -> "해외"
             else -> "기타"
         }
     }

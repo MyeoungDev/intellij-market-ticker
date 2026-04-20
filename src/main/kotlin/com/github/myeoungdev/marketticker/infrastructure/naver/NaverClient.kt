@@ -8,6 +8,9 @@ import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCoinPrice
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCryptoCandle
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCryptoChartResponse
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCoinRankResponse
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverDomesticMarketStockItem
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverForeignMarketStockItem
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverRealtimeCoinPriceResponse
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverRealTimeStockPriceResponse
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverMarketIndicatorResponse
@@ -79,6 +82,9 @@ class NaverClient(
     private val newsAggregateUrl: String = "https://stock.naver.com/api/domestic/news/aggregate/home",
     private val noticeListUrl: String = "https://stock.naver.com/api/domestic/home/noticeList",
     private val newsSearchUrl: String = "https://stock.naver.com/api/domestic/news/search",
+    private val domesticMarketStockDefaultUrl: String = "https://stock.naver.com/api/domestic/market/stock/default",
+    private val foreignMarketStockGlobalUrl: String = "https://stock.naver.com/api/foreign/market/stock/global",
+    private val coinRankUrlBase: String = "https://stock.naver.com/api/coin/rank",
 ) {
 
     companion object {
@@ -935,6 +941,163 @@ class NaverClient(
         } catch (e: Exception) {
             logger.error(e) { "Failed to fetch research ranking: ${rankingType.code}/$selectedRank" }
             NaverResearchRankingResponse()
+        }
+    }
+
+    /**
+     * 네이버 국내 주식 마켓 기본 스크리너 목록을 조회합니다.
+     *
+     * 실제 국내 stocklist 화면에서 사용하는 엔드포인트입니다.
+     */
+    fun fetchDomesticMarketStockDefault(
+        tradeType: String,
+        marketType: String,
+        orderType: String,
+        startIdx: Int = 0,
+        pageSize: Int = 20,
+        alertType: String? = null
+    ): List<NaverDomesticMarketStockItem> {
+        checkBackgroundThread()
+
+        if (orderType.isBlank()) {
+            return emptyList()
+        }
+
+        return try {
+            val query = buildString {
+                append("tradeType=")
+                append(URLEncoder.encode(tradeType, Charsets.UTF_8))
+                append("&marketType=")
+                append(URLEncoder.encode(marketType, Charsets.UTF_8))
+                append("&orderType=")
+                append(URLEncoder.encode(orderType, Charsets.UTF_8))
+                append("&startIdx=")
+                append(startIdx.coerceAtLeast(0))
+                append("&pageSize=")
+                append(pageSize.coerceIn(1, 100))
+
+                if (!alertType.isNullOrBlank()) {
+                    append("&alertType=")
+                    append(URLEncoder.encode(alertType, Charsets.UTF_8))
+                }
+            }
+
+            val fullUrl = "$domesticMarketStockDefaultUrl?$query"
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(fullUrl))
+                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+                .header(ACCEPT_KEY, ACCEPT_VALUE)
+                .header(ORIGIN_KEY, ORIGIN_VALUE)
+                .GET()
+                .build()
+
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            if (response.statusCode() != 200) {
+                logger.error { "Naver domestic market stock default API Error [${response.statusCode()}]: $fullUrl" }
+                return emptyList()
+            }
+
+            objectMapper.readValue(response.body())
+        } catch (e: Exception) {
+            logger.error(e) {
+                "Failed to fetch domestic market stock default: tradeType=$tradeType, marketType=$marketType, orderType=$orderType"
+            }
+            emptyList()
+        }
+    }
+
+    fun fetchForeignMarketStockGlobal(
+        nation: String,
+        tradeType: String,
+        orderType: String,
+        startIdx: Int = 0,
+        pageSize: Int = 20
+    ): List<NaverForeignMarketStockItem> {
+        checkBackgroundThread()
+
+        if (nation.isBlank() || orderType.isBlank()) {
+            return emptyList()
+        }
+
+        return try {
+            val query = buildString {
+                append("nation=")
+                append(URLEncoder.encode(nation, Charsets.UTF_8))
+                append("&tradeType=")
+                append(URLEncoder.encode(tradeType, Charsets.UTF_8))
+                append("&orderType=")
+                append(URLEncoder.encode(orderType, Charsets.UTF_8))
+                append("&startIdx=")
+                append(startIdx.coerceAtLeast(0))
+                append("&pageSize=")
+                append(pageSize.coerceIn(1, 100))
+            }
+
+            val fullUrl = "$foreignMarketStockGlobalUrl?$query"
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(fullUrl))
+                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+                .header(ACCEPT_KEY, ACCEPT_VALUE)
+                .header(ORIGIN_KEY, ORIGIN_VALUE)
+                .GET()
+                .build()
+
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            if (response.statusCode() != 200) {
+                logger.error { "Naver foreign market stock global API Error [${response.statusCode()}]: $fullUrl" }
+                return emptyList()
+            }
+
+            objectMapper.readValue(response.body())
+        } catch (e: Exception) {
+            logger.error(e) {
+                "Failed to fetch foreign market stock global: nation=$nation, tradeType=$tradeType, orderType=$orderType"
+            }
+            emptyList()
+        }
+    }
+
+    fun fetchCoinRank(
+        exchange: String,
+        sortType: String,
+        page: Int = 1,
+        pageSize: Int = 20
+    ): NaverCoinRankResponse {
+        checkBackgroundThread()
+
+        if (exchange.isBlank() || sortType.isBlank()) {
+            return NaverCoinRankResponse()
+        }
+
+        return try {
+            val query = buildString {
+                append("sortType=")
+                append(URLEncoder.encode(sortType, Charsets.UTF_8))
+                append("&page=")
+                append(page.coerceAtLeast(1))
+                append("&pageSize=")
+                append(pageSize.coerceIn(1, 100))
+            }
+
+            val fullUrl = "$coinRankUrlBase/${URLEncoder.encode(exchange, Charsets.UTF_8)}?$query"
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(fullUrl))
+                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+                .header(ACCEPT_KEY, ACCEPT_VALUE)
+                .header(ORIGIN_KEY, ORIGIN_VALUE)
+                .GET()
+                .build()
+
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            if (response.statusCode() != 200) {
+                logger.error { "Naver coin rank API Error [${response.statusCode()}]: $fullUrl" }
+                return NaverCoinRankResponse()
+            }
+
+            objectMapper.readValue(response.body())
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to fetch coin rank: exchange=$exchange, sortType=$sortType" }
+            NaverCoinRankResponse()
         }
     }
 

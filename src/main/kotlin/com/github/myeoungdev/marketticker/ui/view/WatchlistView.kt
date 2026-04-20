@@ -305,9 +305,9 @@ class WatchlistView(private val project: Project) {
     }
 
     private fun defaultGroup(entry: WatchlistRepository.WatchlistEntry): String {
-        return when (MarketType.of(entry.marketType)) {
-            MarketType.KOSPI, MarketType.KOSDAQ -> localizationService.text("국내", "Domestic")
-            MarketType.NASDAQ, MarketType.NYSE -> localizationService.text("해외", "Global")
+        return when {
+            MarketType.of(entry.marketType).isKoreanMarket() -> localizationService.text("국내", "Domestic")
+            MarketType.of(entry.marketType).isGlobalStockMarket() -> localizationService.text("해외", "Global")
             else -> localizationService.text("기타", "Other")
         }
     }
