@@ -61,4 +61,16 @@ enum class MarketType(
     fun isCryptoMarket(): Boolean {
         return this == UPBIT || this == BITHUMB
     }
+
+    fun nativeCurrency(): CurrencyType {
+        return when (this) {
+            KOREA, KOSPI, KOSDAQ, UPBIT, BITHUMB -> CurrencyType.KRW
+            USA, NASDAQ, NYSE -> CurrencyType.USD
+            TOKYO -> CurrencyType.JPY
+            SHANGHAI -> CurrencyType.CNY
+            HONG_KONG -> CurrencyType.HKD
+            VIETNAM -> CurrencyType.UNKNOWN
+            UNKNOWN -> CurrencyType.UNKNOWN
+        }
+    }
 }

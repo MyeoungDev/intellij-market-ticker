@@ -1,5 +1,6 @@
 package com.github.myeoungdev.marketticker.common.extenion
 
+import com.github.myeoungdev.marketticker.domain.model.CurrencyType
 import java.text.DecimalFormat
 
 /**
@@ -56,4 +57,17 @@ fun Double?.toCommaString(): String {
     }
 
     return DecimalFormat("#,###.##").format(this)
+}
+
+/**
+ * "1,234.56" -> "1,234.56 USD"
+ * 현재가 문자열 뒤에 통화 코드를 붙인다. UNKNOWN 통화는 그대로 둔다.
+ */
+fun String.withCurrencyCode(currency: CurrencyType?): String {
+    val code = currency?.code?.trim()
+    if (code.isNullOrBlank() || code.equals(CurrencyType.UNKNOWN.code, ignoreCase = true)) {
+        return this
+    }
+
+    return "$this $code"
 }

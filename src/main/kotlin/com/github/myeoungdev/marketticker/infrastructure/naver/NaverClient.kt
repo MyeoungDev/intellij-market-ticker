@@ -63,6 +63,7 @@ class NaverClient(
     private val worldIndexUrl: String = "https://stock.naver.com/api/polling/worldstock/index",
     private val marketMetalUrl: String = "https://stock.naver.com/api/polling/marketindex/metals",
     private val marketEnergyUrl: String = "https://stock.naver.com/api/polling/marketindex/energy",
+    private val exchangeRateUrl: String = "https://stock.naver.com/api/domestic/exchange/List",
     private val domesticChartUrl: String = "https://api.stock.naver.com/chart/domestic/item",
     private val foreignChartUrl: String = "https://api.stock.naver.com/chart/foreign/item",
     private val researchAggregateUrl: String = "https://stock.naver.com/api/domestic/home/researchaggregate/static",
@@ -785,6 +786,33 @@ class NaverClient(
         } catch (e: Exception) {
             logger.error(e) { "Failed to fetch commodity: $group/$reutersCode" }
             NaverMarketIndicatorResponse()
+        }
+    }
+
+    /**
+     * 환전고시 환율 목록을 조회합니다.
+     */
+    fun fetchExchangeRates(): List<NaverExchangeRateItem> {
+        checkBackgroundThread()
+
+        return try {
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(exchangeRateUrl))
+                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+                .header(ACCEPT_KEY, ACCEPT_VALUE)
+                .GET()
+                .build()
+
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            if (response.statusCode() != 200) {
+                logger.error { "Naver exchange rate API Error [${response.statusCode()}]: $exchangeRateUrl" }
+                return emptyList()
+            }
+
+            objectMapper.readValue(response.body())
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to fetch exchange rates" }
+            emptyList()
         }
     }
 

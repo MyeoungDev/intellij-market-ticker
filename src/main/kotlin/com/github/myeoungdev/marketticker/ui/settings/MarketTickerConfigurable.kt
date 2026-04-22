@@ -3,6 +3,7 @@ package com.github.myeoungdev.marketticker.ui.settings
 import com.github.myeoungdev.marketticker.application.listener.SettingsUpdateListener
 import com.github.myeoungdev.marketticker.application.service.AppSettingsService
 import com.github.myeoungdev.marketticker.application.service.LocalizationService
+import com.github.myeoungdev.marketticker.domain.model.CurrencyType
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.options.Configurable
@@ -26,6 +27,15 @@ class MarketTickerConfigurable : Configurable {
     private val openIntervalCombo = JComboBox(arrayOf(3L, 6L, 10L))
     private val closedIntervalCombo = JComboBox(arrayOf(3L, 6L, 10L))
     private val languageCombo = JComboBox(AppSettingsService.UiLanguage.values())
+    private val priceDisplayModeCombo = JComboBox(AppSettingsService.PriceDisplayMode.values())
+    private val baseCurrencyCombo = JComboBox(arrayOf(
+        CurrencyType.KRW,
+        CurrencyType.USD,
+        CurrencyType.HKD,
+        CurrencyType.JPY,
+        CurrencyType.CNY,
+        CurrencyType.EUR
+    ))
     private val marketPulseCheckBox = JCheckBox()
     private val chartTabCheckBox = JCheckBox()
     private val heatmapTabCheckBox = JCheckBox()
@@ -60,6 +70,14 @@ class MarketTickerConfigurable : Configurable {
                     cell(languageCombo).align(AlignX.FILL)
                 }
 
+                row(localizationService.text("현재가 표기", "Price display")) {
+                    cell(priceDisplayModeCombo).align(AlignX.FILL)
+                }
+
+                row(localizationService.text("기준 통화", "Base currency")) {
+                    cell(baseCurrencyCombo).align(AlignX.FILL)
+                }
+
                 row {
                     marketPulseCheckBox.text = localizationService.text("한 줄 지표 표시", "Show market pulse ticker")
                     cell(marketPulseCheckBox)
@@ -87,12 +105,17 @@ class MarketTickerConfigurable : Configurable {
         val open = openIntervalCombo.selectedItem as? Long ?: 3L
         val closed = closedIntervalCombo.selectedItem as? Long ?: 10L
         val language = languageCombo.selectedItem as? AppSettingsService.UiLanguage ?: AppSettingsService.UiLanguage.AUTO
+        val priceDisplayMode = priceDisplayModeCombo.selectedItem as? AppSettingsService.PriceDisplayMode
+            ?: AppSettingsService.PriceDisplayMode.MIXED
+        val baseCurrency = baseCurrencyCombo.selectedItem as? CurrencyType ?: CurrencyType.KRW
 
         return mode != settingsService.getRefreshMode() ||
                 fixed != settingsService.getFixedIntervalSec() ||
                 open != settingsService.getOpenIntervalSec() ||
                 closed != settingsService.getClosedIntervalSec() ||
                 language != settingsService.getUiLanguage() ||
+                priceDisplayMode != settingsService.getPriceDisplayMode() ||
+                baseCurrency != settingsService.getBaseCurrency() ||
                 marketPulseCheckBox.isSelected != settingsService.isMarketPulseVisible() ||
                 chartTabCheckBox.isSelected != settingsService.isChartTabVisible() ||
                 heatmapTabCheckBox.isSelected != settingsService.isHeatmapTabVisible()
@@ -104,12 +127,17 @@ class MarketTickerConfigurable : Configurable {
         val open = openIntervalCombo.selectedItem as? Long ?: 3L
         val closed = closedIntervalCombo.selectedItem as? Long ?: 10L
         val language = languageCombo.selectedItem as? AppSettingsService.UiLanguage ?: AppSettingsService.UiLanguage.AUTO
+        val priceDisplayMode = priceDisplayModeCombo.selectedItem as? AppSettingsService.PriceDisplayMode
+            ?: AppSettingsService.PriceDisplayMode.MIXED
+        val baseCurrency = baseCurrencyCombo.selectedItem as? CurrencyType ?: CurrencyType.KRW
 
         settingsService.setRefreshMode(mode)
         settingsService.setFixedIntervalSec(fixed)
         settingsService.setOpenIntervalSec(open)
         settingsService.setClosedIntervalSec(closed)
         settingsService.setUiLanguage(language)
+        settingsService.setPriceDisplayMode(priceDisplayMode)
+        settingsService.setBaseCurrency(baseCurrency)
         settingsService.setMarketPulseVisible(marketPulseCheckBox.isSelected)
         settingsService.setChartTabVisible(chartTabCheckBox.isSelected)
         settingsService.setHeatmapTabVisible(heatmapTabCheckBox.isSelected)
@@ -127,6 +155,8 @@ class MarketTickerConfigurable : Configurable {
         openIntervalCombo.selectedItem = settingsService.getOpenIntervalSec()
         closedIntervalCombo.selectedItem = settingsService.getClosedIntervalSec()
         languageCombo.selectedItem = settingsService.getUiLanguage()
+        priceDisplayModeCombo.selectedItem = settingsService.getPriceDisplayMode()
+        baseCurrencyCombo.selectedItem = settingsService.getBaseCurrency()
         marketPulseCheckBox.isSelected = settingsService.isMarketPulseVisible()
         chartTabCheckBox.isSelected = settingsService.isChartTabVisible()
         heatmapTabCheckBox.isSelected = settingsService.isHeatmapTabVisible()

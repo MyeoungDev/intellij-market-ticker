@@ -4,6 +4,8 @@ import com.github.myeoungdev.marketticker.application.listener.WatchlistEntryUpd
 import com.github.myeoungdev.marketticker.application.repository.WatchlistRepository
 import com.github.myeoungdev.marketticker.application.service.LocalizationService
 import com.github.myeoungdev.marketticker.application.service.MarketDataService
+import com.github.myeoungdev.marketticker.application.service.MoneyDisplayFormatter
+import com.github.myeoungdev.marketticker.domain.model.CurrencyType
 import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.TickerPrice
 import com.intellij.openapi.application.ApplicationManager
@@ -25,6 +27,7 @@ class PortfolioView {
 
     private val marketDataService = service<MarketDataService>()
     private val localizationService = service<LocalizationService>()
+    private val moneyDisplayFormatter = MoneyDisplayFormatter()
 
     val panel = JPanel(BorderLayout())
     private val tableModel =
@@ -141,14 +144,14 @@ class PortfolioView {
                     0.0
                 }
 
-                tableModel.addRow(
+                    tableModel.addRow(
                     arrayOf(
                         entry.name,
                         localizationService.formatDecimal(entry.quantity ?: 0.0, 2),
-                        localizationService.formatDecimal(entry.purchasePrice ?: 0.0, 2),
-                        localizationService.formatDecimal(price?.currentPrice ?: 0.0, 2),
-                        localizationService.formatDecimal(metrics.marketValue, 2),
-                        localizationService.formatDecimal(metrics.unrealized, 2),
+                        moneyDisplayFormatter.formatAmount(entry.purchasePrice, price?.currency),
+                        moneyDisplayFormatter.formatAmount(price?.currentPrice, price?.currency),
+                        moneyDisplayFormatter.formatAmount(metrics.marketValue, price?.currency ?: CurrencyType.UNKNOWN),
+                        moneyDisplayFormatter.formatAmount(metrics.unrealized, price?.currency ?: CurrencyType.UNKNOWN),
                         localizationService.formatPercent(returnRate)
                     )
                 )

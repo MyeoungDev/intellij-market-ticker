@@ -12,6 +12,7 @@ import com.intellij.openapi.project.ProjectManager
 import io.github.oshai.kotlinlogging.KotlinLogging
 import java.awt.Toolkit
 import java.util.concurrent.ConcurrentHashMap
+import com.github.myeoungdev.marketticker.common.extenion.toCommaString
 
 private val logger = KotlinLogging.logger {}
 
@@ -25,6 +26,7 @@ private val logger = KotlinLogging.logger {}
 class NotificationService {
 
     private val priceAlertService = service<PriceAlertService>()
+    private val moneyDisplayFormatter = MoneyDisplayFormatter()
 
     private val lastAlertTimeMap = ConcurrentHashMap<String, Long>()
 
@@ -74,15 +76,14 @@ class NotificationService {
         val colorHex = if (isRising) "#FF5252" else "#448AFF"
         val arrow = if (isRising) "▲" else "▼"
 
-        val title = "${tickerPrice.name} $arrow ${tickerPrice.changeRate}%"
-        val sign = if (tickerPrice.changeAmount > 0) "+" else ""
-        val changeText = "$sign${tickerPrice.changeAmount} ${tickerPrice.currency.symbol}"
+        val title = "${tickerPrice.name} $arrow ${tickerPrice.changeRate.toCommaString()}%"
+        val changeText = moneyDisplayFormatter.formatSignedAmount(tickerPrice.changeAmount, tickerPrice.currency)
 
         val content = """
         <html>
         <body>
             <div style="margin-top: 4px;">
-                <b>${tickerPrice.currentPrice}</b>
+                <b>${moneyDisplayFormatter.formatAmount(tickerPrice.currentPrice, tickerPrice.currency)}</b>
                 <span style="color:$colorHex;">($changeText)</span>
             </div>
         </body>

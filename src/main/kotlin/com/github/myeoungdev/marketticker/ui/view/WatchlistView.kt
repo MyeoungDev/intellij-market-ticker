@@ -5,6 +5,7 @@ import com.github.myeoungdev.marketticker.application.listener.WatchlistEntryUpd
 import com.github.myeoungdev.marketticker.application.repository.WatchlistRepository
 import com.github.myeoungdev.marketticker.application.service.LocalizationService
 import com.github.myeoungdev.marketticker.application.service.MarketDataService
+import com.github.myeoungdev.marketticker.application.service.MoneyDisplayFormatter
 import com.github.myeoungdev.marketticker.application.service.PriceAlertService
 import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
@@ -37,6 +38,7 @@ class WatchlistView(private val project: Project) {
     private val marketDataService = service<MarketDataService>()
     private val alertService = service<PriceAlertService>()
     private val localizationService = service<LocalizationService>()
+    private val moneyDisplayFormatter = MoneyDisplayFormatter()
 
     private var currentWatchlistEntries: List<WatchlistRepository.WatchlistEntry> = emptyList()
     private var filteredEntries: List<WatchlistRepository.WatchlistEntry> = emptyList()
@@ -275,7 +277,7 @@ class WatchlistView(private val project: Project) {
                 tableModel.addRow(
                     arrayOf(
                         entry.name,
-                        currentPrice?.let { localizationService.formatDecimal(it, 2) } ?: "-",
+                        moneyDisplayFormatter.formatAmount(currentPrice, price?.currency),
                         rateText,
                         entry.groupTag.ifBlank { defaultGroup(entry) },
                         ""

@@ -1,5 +1,6 @@
 package com.github.myeoungdev.marketticker.application.service
 
+import com.github.myeoungdev.marketticker.domain.model.CurrencyType
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
@@ -34,6 +35,38 @@ class AppSettingsServiceTest {
 
         assertThat(service.getRefreshMode()).isEqualTo(AppSettingsService.RefreshMode.MANUAL)
         assertThat(service.getUiLanguage()).isEqualTo(AppSettingsService.UiLanguage.EN)
+    }
+
+    @Test
+    fun `가격 표시 모드를 저장하고 조회한다`() {
+        val service = AppSettingsService()
+
+        service.setPriceDisplayMode(AppSettingsService.PriceDisplayMode.KRW_CONVERTED)
+
+        assertThat(service.getPriceDisplayMode()).isEqualTo(AppSettingsService.PriceDisplayMode.KRW_CONVERTED)
+    }
+
+    @Test
+    fun `가격 표시 모드 기본값은 혼용이다`() {
+        val service = AppSettingsService()
+
+        assertThat(service.getPriceDisplayMode()).isEqualTo(AppSettingsService.PriceDisplayMode.MIXED)
+    }
+
+    @Test
+    fun `기준 통화 기본값은 원화다`() {
+        val service = AppSettingsService()
+
+        assertThat(service.getBaseCurrency()).isEqualTo(CurrencyType.KRW)
+    }
+
+    @Test
+    fun `기준 통화를 저장하고 조회한다`() {
+        val service = AppSettingsService()
+
+        service.setBaseCurrency(CurrencyType.USD)
+
+        assertThat(service.getBaseCurrency()).isEqualTo(CurrencyType.USD)
     }
 
     @Test

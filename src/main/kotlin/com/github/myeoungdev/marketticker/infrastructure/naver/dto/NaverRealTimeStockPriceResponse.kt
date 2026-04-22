@@ -89,12 +89,16 @@ data class NaverStockPrice(
     }
 
     private fun StockExchangeType.toMarketType(): MarketType {
-        return when (this.code) {
+        return when (this.code.uppercase()) {
             "KS" -> MarketType.KOSPI
             "KQ" -> MarketType.KOSDAQ
             "NS", "NSQ" -> MarketType.NASDAQ
             "NYS" -> MarketType.NYSE
-            else -> MarketType.UNKNOWN
+            "TYO", "TSE" -> MarketType.TOKYO
+            "HKG", "HKEX" -> MarketType.HONG_KONG
+            "SSE", "SHH", "SHA" -> MarketType.SHANGHAI
+            "VNM", "HSX", "HOSE", "HNX" -> MarketType.VIETNAM
+            else -> MarketType.of(this.code)
         }
     }
 }

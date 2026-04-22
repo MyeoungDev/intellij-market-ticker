@@ -3,6 +3,8 @@ package com.github.myeoungdev.marketticker.extentions
 import com.github.myeoungdev.marketticker.common.extenion.parseCommaToDouble
 import com.github.myeoungdev.marketticker.common.extenion.parseCommaToLong
 import com.github.myeoungdev.marketticker.common.extenion.toCommaString
+import com.github.myeoungdev.marketticker.common.extenion.withCurrencyCode
+import com.github.myeoungdev.marketticker.domain.model.CurrencyType
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
 
@@ -47,5 +49,13 @@ class FormatExtensionsTest {
         // 반올림 (DecimalFormat 기본 동작)
         assertThat(1234.556.toCommaString()).isEqualTo("1,234.56")
         assertThat(1234.554.toCommaString()).isEqualTo("1,234.55")
+    }
+
+    @Test
+    fun `현재가 문자열 뒤에 통화 코드를 덧붙인다`() {
+        assertThat("1,234.56".withCurrencyCode(CurrencyType.USD)).isEqualTo("1,234.56 USD")
+        assertThat("72,000".withCurrencyCode(CurrencyType.KRW)).isEqualTo("72,000 KRW")
+        assertThat("1,234.56".withCurrencyCode(CurrencyType.UNKNOWN)).isEqualTo("1,234.56")
+        assertThat("1,234.56".withCurrencyCode(null)).isEqualTo("1,234.56")
     }
 }

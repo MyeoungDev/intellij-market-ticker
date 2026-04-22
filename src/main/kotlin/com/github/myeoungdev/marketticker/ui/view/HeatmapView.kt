@@ -1,5 +1,6 @@
 package com.github.myeoungdev.marketticker.ui.view
 
+import com.github.myeoungdev.marketticker.application.service.MoneyDisplayFormatter
 import com.github.myeoungdev.marketticker.domain.model.TickerPrice
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.ui.components.JBLabel
@@ -19,6 +20,7 @@ class HeatmapView : JPanel(BorderLayout()) {
 
     private val gridPanel = JPanel()
     private val emptyLabel = JBLabel("관심 종목이 없습니다.", SwingConstants.CENTER)
+    private val moneyDisplayFormatter = MoneyDisplayFormatter()
 
     init {
         background = Color(30, 30, 30)
@@ -163,15 +165,16 @@ class HeatmapView : JPanel(BorderLayout()) {
      * 현재가 포맷팅
      */
     private fun formatPrice(price: TickerPrice): String {
-        return if (price.currentPrice > 0.0) {
-            when {
-                price.currentPrice >= 1000 -> String.format("%,.0f", price.currentPrice)
-                price.currentPrice >= 10 -> String.format("%.2f", price.currentPrice)
-                else -> String.format("%.4f", price.currentPrice)
-            }
-        } else {
-            "-"
+        if (price.currentPrice <= 0.0) {
+            return "-"
         }
+
+        val digits = when {
+            price.currentPrice >= 1000 -> 0
+            price.currentPrice >= 10 -> 2
+            else -> 4
+        }
+        return moneyDisplayFormatter.formatAmount(price.currentPrice, price.currency, digits)
     }
 
     /**

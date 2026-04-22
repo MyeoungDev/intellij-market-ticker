@@ -1,6 +1,8 @@
 package com.github.myeoungdev.marketticker.ui.rendener
 
+import com.github.myeoungdev.marketticker.application.service.MoneyDisplayFormatter
 import com.github.myeoungdev.marketticker.domain.model.Ticker
+import com.github.myeoungdev.marketticker.domain.model.TickerPrice
 import com.intellij.ui.ColoredListCellRenderer
 import com.intellij.ui.SimpleTextAttributes
 import javax.swing.JList
@@ -8,7 +10,10 @@ import javax.swing.JList
 /**
  * 검색 결과 목록에서 종목명을 읽기 쉽게 렌더링합니다.
  */
-class SearchResultRenderer : ColoredListCellRenderer<Ticker>() {
+class SearchResultRenderer(
+    private val moneyDisplayFormatter: MoneyDisplayFormatter,
+    private val priceLookup: (Ticker) -> TickerPrice?
+) : ColoredListCellRenderer<Ticker>() {
 
     override fun customizeCellRenderer(
         list: JList<out Ticker>,
@@ -30,5 +35,16 @@ class SearchResultRenderer : ColoredListCellRenderer<Ticker>() {
 
         // 4. 시장 정보 (작게, 괄호)
         append(" (${value.marketType.displayName})", SimpleTextAttributes.GRAY_SMALL_ATTRIBUTES)
+
+        val price = priceLookup(value)
+        if (price != null && price.currentPrice > 0.0) {
+            append("  ")
+            append("·", SimpleTextAttributes.GRAY_SMALL_ATTRIBUTES)
+            append("  ")
+            append(
+                moneyDisplayFormatter.formatAmount(price.currentPrice, price.currency),
+                SimpleTextAttributes.GRAY_SMALL_ATTRIBUTES
+            )
+        }
     }
 }
