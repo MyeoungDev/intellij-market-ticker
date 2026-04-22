@@ -1,15 +1,13 @@
 package com.github.myeoungdev.marketticker.ui.view
 
 import com.github.myeoungdev.marketticker.application.service.LocalizationService
+import com.github.myeoungdev.marketticker.application.service.ChartDataService
 import com.github.myeoungdev.marketticker.application.service.PriceHistoryService
-import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
-import com.github.myeoungdev.marketticker.infrastructure.naver.NaverClient
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import kotlinx.coroutines.*
 import java.awt.*
-import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
 import javax.swing.JComboBox
@@ -22,8 +20,8 @@ import javax.swing.JPanel
 class ChartView : JPanel(BorderLayout()) {
 
     private val historyService = service<PriceHistoryService>()
+    private val chartDataService = service<ChartDataService>()
     private val localizationService = service<LocalizationService>()
-    private val naverClient = NaverClient()
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private var selectedTicker: Ticker? = null
@@ -65,20 +63,9 @@ class ChartView : JPanel(BorderLayout()) {
      */
     fun refreshChart() {
         val ticker = selectedTicker ?: return
-        val marketType = MarketType.of(ticker.marketType.name)
 
         scope.launch {
-            val data = if (marketType.isCryptoMarket()) {
-                loadCryptoCandles(ticker, marketType)
-            } else {
-                val zoneId: ZoneId = marketType.zoneId
-                val stockChartCandles = naverClient.fetchStockChartCandles(ticker, period)
-                if (stockChartCandles.isNotEmpty()) {
-                    stockChartCandles.map { it.toPriceHistoryCandle(zoneId) }
-                } else {
-                    historyService.buildCandles(ticker.symbol, ticker.marketType.name, period, zoneId)
-                }
-            }
+            val data = chartDataService.loadCandles(ticker, period)
 
             ApplicationManager.getApplication().invokeLater {
                 candles = data.takeLast(visibleCandleLimit())
@@ -92,42 +79,6 @@ class ChartView : JPanel(BorderLayout()) {
     override fun removeNotify() {
         super.removeNotify()
         scope.cancel()
-    }
-
-    /**
-     * 코인 차트는 Naver 일봉 API를 기본으로 사용하고, 오늘 상세 시세로 마지막 캔들을 보정합니다.
-     */
-    private fun loadCryptoCandles(ticker: Ticker, marketType: MarketType): List<PriceHistoryService.Candle> {
-        val now = LocalDateTime.now(marketType.zoneId)
-        val from = when (period) {
-            PriceHistoryService.Period.DAY -> now.minusDays(30)
-            PriceHistoryService.Period.WEEK -> now.minusDays(90)
-            PriceHistoryService.Period.MONTH -> now.minusDays(180)
-            PriceHistoryService.Period.YEAR -> now.minusDays(365 * 3L)
-        }
-
-        val chartCandles = naverClient.fetchCryptoChartCandles(
-            exchangeType = marketType.name,
-            nfTicker = ticker.symbol,
-            marketType = "KRW",
-            from = from,
-            to = now
-        ).map { it.toPriceHistoryCandle() }
-
-        val mergedCandles = naverClient.fetchCoinOverview(marketType.name, ticker.symbol)
-            ?.mergeDailyCandles(chartCandles, marketType.zoneId)
-            ?: chartCandles
-
-        if (period != PriceHistoryService.Period.DAY || mergedCandles.isNotEmpty()) {
-            return mergedCandles
-        }
-
-        return historyService.buildCandles(
-            symbol = ticker.symbol,
-            marketType = ticker.marketType.name,
-            period = period,
-            zoneId = marketType.zoneId
-        )
     }
 
     /**

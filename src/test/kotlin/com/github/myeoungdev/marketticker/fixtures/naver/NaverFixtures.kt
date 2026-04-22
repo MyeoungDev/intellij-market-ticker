@@ -67,6 +67,127 @@ object NaverFixtures {
     }
     """
 
+    const val JSON_DOMESTIC_MARKET_STOCK_DEFAULT_SUCCESS = """
+    [
+      {
+        "itemname": "삼성전자",
+        "itemcode": "005930",
+        "sosok": "0",
+        "marketStatus": "OPEN",
+        "nowPrice": "213750",
+        "prevChangeRate": "3.51",
+        "tradeVolume": "16047701",
+        "tradeAmount": "3439504000000",
+        "marketSum": "1249642052000000",
+        "per": "32.56",
+        "listedDate": "19750611"
+      },
+      {
+        "itemname": "SK하이닉스",
+        "itemcode": "000660",
+        "sosok": "0",
+        "marketStatus": "OPEN",
+        "nowPrice": "1159000",
+        "prevChangeRate": "5.08",
+        "tradeVolume": "2693159",
+        "tradeAmount": "3130155000000",
+        "marketSum": "826022041000000",
+        "per": "19.66",
+        "listedDate": "19961226"
+      },
+      {
+        "itemname": "대우건설",
+        "itemcode": "047040",
+        "sosok": "0",
+        "marketStatus": "OPEN",
+        "nowPrice": "28800",
+        "prevChangeRate": "22.55",
+        "tradeVolume": "80141176",
+        "tradeAmount": "2222871000000",
+        "marketSum": "11834139000000",
+        "per": "-13.12",
+        "listedDate": "20010323"
+      }
+    ]
+    """
+
+    const val JSON_FOREIGN_MARKET_STOCK_GLOBAL_SUCCESS = """
+    [
+      {
+        "reutersCode": "NVDA.O",
+        "symbolCode": "NVDA",
+        "stockExchangeType": {"code": "NSQ", "nameKor": "나스닥 증권거래소"},
+        "koreanCodeName": "엔비디아",
+        "englishCodeName": "NVIDIA Corp",
+        "reutersIndustryName": "반도체",
+        "marketValue": "4775193000000.0000",
+        "currentPrice": "196.5100",
+        "compareToPreviousClosePrice": "7.2000",
+        "fluctuationsRatio": "3.8033",
+        "accumulatedTradingVolume": "161307010",
+        "accumulatedTradingValue": "31376309000",
+        "risefall": "2"
+      },
+      {
+        "reutersCode": "AAPL.O",
+        "symbolCode": "AAPL",
+        "stockExchangeType": {"code": "NSQ", "nameKor": "나스닥 증권거래소"},
+        "koreanCodeName": "애플",
+        "englishCodeName": "Apple Inc",
+        "reutersIndustryName": "전화 및 소형 장치",
+        "marketValue": "3799919466200.0000",
+        "currentPrice": "258.8300",
+        "compareToPreviousClosePrice": "-0.3700",
+        "fluctuationsRatio": "-0.1427",
+        "accumulatedTradingVolume": "48370710",
+        "accumulatedTradingValue": "12519003000",
+        "risefall": "5"
+      }
+    ]
+    """
+
+    const val JSON_COIN_RANK_SUCCESS = """
+    {
+      "contents": [
+        {
+          "fqnfTicker": "BTC_KRW_UPBIT",
+          "nfTicker": "BTC",
+          "exchangeTicker": "BTC",
+          "krName": "비트코인",
+          "enName": "Bitcoin",
+          "exchangeType": "UPBIT",
+          "exchangeName": "업비트",
+          "tradePrice": 109965000,
+          "change": "RISING",
+          "changeRate": 0.08,
+          "changeValue": 90000,
+          "marketCap": 2188905035054926,
+          "accumulatedTradingVolume": 1777.71164772,
+          "accumulatedTradingValue": 196241565893.15295
+        },
+        {
+          "fqnfTicker": "ETH_KRW_UPBIT",
+          "nfTicker": "ETH",
+          "exchangeTicker": "ETH",
+          "krName": "이더리움",
+          "enName": "Ethereum",
+          "exchangeType": "UPBIT",
+          "exchangeName": "업비트",
+          "tradePrice": 3450000,
+          "change": "RISING",
+          "changeRate": 0.35,
+          "changeValue": 12000,
+          "marketCap": 414351840234360.44,
+          "accumulatedTradingVolume": 54793.29450092,
+          "accumulatedTradingValue": 191024246409.8536
+        }
+      ],
+      "totalCount": 243,
+      "page": 1,
+      "pageSize": 2
+    }
+    """
+
     /**
      * NaverSearchResponse (최상위 검색 응답 래퍼) 생성
      */

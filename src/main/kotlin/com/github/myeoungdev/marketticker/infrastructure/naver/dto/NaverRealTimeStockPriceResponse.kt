@@ -125,7 +125,7 @@ data class StockExchangeType(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class CurrencyResponse(
-    val code: String,
-    val text: String,
-    val name: String
+    val code: String = "",
+    val text: String = "",
+    val name: String = ""
 )

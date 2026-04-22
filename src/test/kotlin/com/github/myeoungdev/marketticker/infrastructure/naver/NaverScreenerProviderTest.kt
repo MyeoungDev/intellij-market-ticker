@@ -31,15 +31,18 @@ class NaverScreenerProviderTest {
     }
 
     @Test
-    fun `네이버 랭킹 응답을 스크리너 행으로 변환한다`() {
+    fun `네이버 마켓 스크리너 응답을 스크리너 행으로 변환한다`() {
         wireMockServer.stubFor(
-            get(urlPathEqualTo("/research/ranking"))
-                .withQueryParam("rankingType", equalTo("SEARCH_TOP"))
-                .withQueryParam("selectedRank", equalTo("1"))
-                .willReturn(okJson(NaverFixtures.JSON_RESEARCH_RANKING_SEARCH_TOP_SUCCESS))
+            get(urlPathEqualTo("/domestic/market/stock/default"))
+                .withQueryParam("tradeType", equalTo("KRX"))
+                .withQueryParam("marketType", equalTo("ALL"))
+                .withQueryParam("orderType", equalTo("searchTop"))
+                .withQueryParam("startIdx", equalTo("0"))
+                .withQueryParam("pageSize", equalTo("10"))
+                .willReturn(okJson(NaverFixtures.JSON_DOMESTIC_MARKET_STOCK_DEFAULT_SUCCESS))
         )
 
-        val result = provider.getScreen(ScreenerPreset.SEARCH_TOP, limit = 10)
+        val result = provider.getScreen(MarketType.KOREA, ScreenerPreset.SEARCH_TOP, limit = 10)
 
         assertThat(result).isNotEmpty
         assertThat(result.first().ticker.symbol).isEqualTo("005930")
@@ -185,7 +188,8 @@ class NaverScreenerProviderTest {
             foreignStockBasicUrl = "$baseUrl/securityService/stock",
             newsAggregateUrl = "$baseUrl/news/aggregate/home",
             noticeListUrl = "$baseUrl/home/noticeList",
-            newsSearchUrl = "$baseUrl/news/search"
+            newsSearchUrl = "$baseUrl/news/search",
+            domesticMarketStockDefaultUrl = "$baseUrl/domestic/market/stock/default"
         )
     }
 }
