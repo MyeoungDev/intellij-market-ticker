@@ -5,6 +5,7 @@ import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.util.xmlb.XmlSerializerUtil
+import com.github.myeoungdev.marketticker.domain.model.CurrencyType
 
 /**
  * Market Ticker 전역 설정을 저장/조회하는 애플리케이션 서비스입니다.
@@ -55,6 +56,23 @@ class AppSettingsService : PersistentStateComponent<AppSettingsService.State> {
     }
 
     /**
+     * 금액성 값의 기본 표시 방식입니다.
+     */
+    enum class PriceDisplayMode {
+        MIXED,
+        KRW_CONVERTED;
+
+        companion object {
+            /**
+             * 문자열 값을 [PriceDisplayMode]로 변환합니다.
+             */
+            fun of(value: String): PriceDisplayMode {
+                return values().find { it.name == value } ?: MIXED
+            }
+        }
+    }
+
+    /**
      * 영속화 대상 설정 상태입니다.
      */
     data class State(
@@ -63,6 +81,8 @@ class AppSettingsService : PersistentStateComponent<AppSettingsService.State> {
         var openIntervalSec: Long = 3L,
         var closedIntervalSec: Long = 10L,
         var uiLanguage: String = UiLanguage.AUTO.name,
+        var priceDisplayMode: String = PriceDisplayMode.MIXED.name,
+        var baseCurrency: String = CurrencyType.KRW.code,
         var showMarketPulse: Boolean = true,
         var showChartTab: Boolean = true,
         var showHeatmapTab: Boolean = true
@@ -99,6 +119,32 @@ class AppSettingsService : PersistentStateComponent<AppSettingsService.State> {
     fun getUiLanguage(): UiLanguage = UiLanguage.of(settingsState.uiLanguage)
     fun setUiLanguage(language: UiLanguage) {
         settingsState.uiLanguage = language.name
+    }
+
+    /**
+     * 현재가/금액 표시 모드를 반환합니다.
+     */
+    fun getPriceDisplayMode(): PriceDisplayMode = PriceDisplayMode.of(settingsState.priceDisplayMode)
+
+    /**
+     * 현재가/금액 표시 모드를 저장합니다.
+     */
+    fun setPriceDisplayMode(mode: PriceDisplayMode) {
+        settingsState.priceDisplayMode = mode.name
+    }
+
+    /**
+     * 환산 표시의 기준 통화를 반환합니다.
+     */
+    fun getBaseCurrency(): CurrencyType = CurrencyType.of(settingsState.baseCurrency).takeIf {
+        it != CurrencyType.UNKNOWN
+    } ?: CurrencyType.KRW
+
+    /**
+     * 환산 표시의 기준 통화를 저장합니다.
+     */
+    fun setBaseCurrency(currency: CurrencyType) {
+        settingsState.baseCurrency = if (currency == CurrencyType.UNKNOWN) CurrencyType.KRW.code else currency.code
     }
 
     /**

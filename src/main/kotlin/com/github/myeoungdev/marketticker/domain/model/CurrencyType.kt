@@ -36,6 +36,12 @@ enum class CurrencyType(
         symbol = "¥",
         unicode = "U+00A5"
     ),
+    HKD(
+        code = "HKD",
+        text = "Hong Kong Dollar",
+        symbol = "$",
+        unicode = "U+0024"
+    ),
     EUR(
         code = "EUR",
         text = "Euro",

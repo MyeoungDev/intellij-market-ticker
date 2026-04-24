@@ -1,8 +1,11 @@
 package com.github.myeoungdev.marketticker.ui.view
 
+import com.github.myeoungdev.marketticker.application.listener.SettingsUpdateListener
 import com.github.myeoungdev.marketticker.application.service.AppSettingsService
 import com.github.myeoungdev.marketticker.application.service.LocalizationService
 import com.github.myeoungdev.marketticker.application.service.MarketDataService
+import com.github.myeoungdev.marketticker.domain.model.CurrencyType
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.dsl.builder.AlignX
@@ -30,6 +33,15 @@ class SettingsDialog(
     private val openIntervalCombo = JComboBox(arrayOf(3L, 6L, 10L))
     private val closedIntervalCombo = JComboBox(arrayOf(3L, 6L, 10L))
     private val languageCombo = JComboBox(AppSettingsService.UiLanguage.values())
+    private val priceDisplayModeCombo = JComboBox(AppSettingsService.PriceDisplayMode.values())
+    private val baseCurrencyCombo = JComboBox(arrayOf(
+        CurrencyType.KRW,
+        CurrencyType.USD,
+        CurrencyType.HKD,
+        CurrencyType.JPY,
+        CurrencyType.CNY,
+        CurrencyType.EUR
+    ))
     private val marketPulseCheckBox = JCheckBox()
 
     init {
@@ -40,6 +52,8 @@ class SettingsDialog(
         openIntervalCombo.selectedItem = settingsService.getOpenIntervalSec()
         closedIntervalCombo.selectedItem = settingsService.getClosedIntervalSec()
         languageCombo.selectedItem = settingsService.getUiLanguage()
+        priceDisplayModeCombo.selectedItem = settingsService.getPriceDisplayMode()
+        baseCurrencyCombo.selectedItem = settingsService.getBaseCurrency()
         marketPulseCheckBox.isSelected = settingsService.isMarketPulseVisible()
 
         refreshModeCombo.addActionListener {
@@ -50,6 +64,8 @@ class SettingsDialog(
         openIntervalCombo.addActionListener { persistSettings() }
         closedIntervalCombo.addActionListener { persistSettings() }
         languageCombo.addActionListener { persistSettings() }
+        priceDisplayModeCombo.addActionListener { persistSettings() }
+        baseCurrencyCombo.addActionListener { persistSettings() }
         marketPulseCheckBox.addActionListener { persistSettings() }
 
         updateIntervalControlAvailability()
@@ -79,6 +95,14 @@ class SettingsDialog(
                 cell(languageCombo).align(AlignX.FILL)
             }
 
+            row(localizationService.text("현재가 표기", "Price display")) {
+                cell(priceDisplayModeCombo).align(AlignX.FILL)
+            }
+
+            row(localizationService.text("기준 통화", "Base currency")) {
+                cell(baseCurrencyCombo).align(AlignX.FILL)
+            }
+
             row {
                 marketPulseCheckBox.text = localizationService.text("한 줄 지표 표시", "Show market pulse ticker")
                 cell(marketPulseCheckBox)
@@ -106,15 +130,23 @@ class SettingsDialog(
         val open = openIntervalCombo.selectedItem as? Long ?: 3L
         val closed = closedIntervalCombo.selectedItem as? Long ?: 10L
         val language = languageCombo.selectedItem as? AppSettingsService.UiLanguage ?: AppSettingsService.UiLanguage.AUTO
+        val priceDisplayMode = priceDisplayModeCombo.selectedItem as? AppSettingsService.PriceDisplayMode
+            ?: AppSettingsService.PriceDisplayMode.MIXED
+        val baseCurrency = baseCurrencyCombo.selectedItem as? CurrencyType ?: CurrencyType.KRW
 
         settingsService.setRefreshMode(mode)
         settingsService.setFixedIntervalSec(fixed)
         settingsService.setOpenIntervalSec(open)
         settingsService.setClosedIntervalSec(closed)
         settingsService.setUiLanguage(language)
+        settingsService.setPriceDisplayMode(priceDisplayMode)
+        settingsService.setBaseCurrency(baseCurrency)
         settingsService.setMarketPulseVisible(marketPulseCheckBox.isSelected)
 
         Locale.setDefault(localizationService.currentLocale())
+        ApplicationManager.getApplication().messageBus
+            .syncPublisher(SettingsUpdateListener.TOPIC)
+            .onSettingsUpdated()
     }
 
     private fun updateIntervalControlAvailability() {

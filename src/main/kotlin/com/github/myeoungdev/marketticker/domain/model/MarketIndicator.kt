@@ -20,5 +20,6 @@ enum class IndicatorCategory {
     DOMESTIC_INDEX,
     WORLD_INDEX,
     METAL,
-    ENERGY
+    ENERGY,
+    EXCHANGE_RATE
 }

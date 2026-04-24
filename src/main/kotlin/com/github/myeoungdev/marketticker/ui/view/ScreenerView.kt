@@ -1,8 +1,13 @@
 package com.github.myeoungdev.marketticker.ui.view
 
+import com.github.myeoungdev.marketticker.application.listener.SettingsUpdateListener
 import com.github.myeoungdev.marketticker.application.service.LocalizationService
 import com.github.myeoungdev.marketticker.application.service.MarketDataService
+import com.github.myeoungdev.marketticker.application.service.MarketIndicatorService
+import com.github.myeoungdev.marketticker.application.service.MoneyDisplayFormatter
 import com.github.myeoungdev.marketticker.application.service.ScreenerService
+import com.github.myeoungdev.marketticker.common.extenion.parseCommaToDouble
+import com.github.myeoungdev.marketticker.domain.model.CurrencyType
 import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.domain.model.screener.ScreenedTicker
@@ -19,6 +24,7 @@ import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.JBUI
+import com.intellij.openapi.application.ApplicationManager
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
@@ -43,7 +49,9 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
 
     private val localizationService = service<LocalizationService>()
     private val marketDataService = service<MarketDataService>()
+    private val marketIndicatorService = service<MarketIndicatorService>()
     private val screenerService = service<ScreenerService>()
+    private val moneyDisplayFormatter = MoneyDisplayFormatter()
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private val marketCombo = JComboBox(DefaultComboBoxModel(MarketType.screenerMarkets().toTypedArray()))
@@ -51,7 +59,7 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
     private val refreshButton = JButton()
     private val statusLabel = JLabel()
     private val screenTableModel = object : DefaultTableModel(
-        arrayOf("Ticker", "Company", "Price", "Change", "Volume"),
+        arrayOf("Ticker", "Company", "Market Cap", "Price", "Change", "Volume"),
         0
     ) {
         override fun isCellEditable(row: Int, column: Int) = false
@@ -71,6 +79,8 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
         add(statusLabel, BorderLayout.SOUTH)
         setupUiText()
         bindTable()
+        subscribeSettingsUpdates()
+        subscribeMarketIndicatorUpdates()
         loadPreset(forceRefresh = false)
     }
 
@@ -179,24 +189,30 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
             val rows = screenerService.loadScreen(market, preset, limit = 25, forceRefresh = forceRefresh)
             withContext(Dispatchers.Main) {
                 currentRows = rows
-                screenTableModel.rowCount = 0
-                rows.forEach { row ->
-                    screenTableModel.addRow(
-                        arrayOf(
-                            row.ticker.symbol,
-                            row.ticker.name,
-                            row.price,
-                            formatChangeText(row.change),
-                            row.volume
-                        )
-                    )
-                }
+                renderRows(rows)
                 statusLabel.text = localizationService.text(
                     "${displayMarket(market)} · ${displayPreset(market, preset)} ${rows.size}건",
                     "${displayMarket(market)} · ${displayPreset(market, preset)} ${rows.size} items"
                 )
             }
         }
+    }
+
+    private fun renderRows(rows: List<ScreenedTicker>) {
+        screenTableModel.rowCount = 0
+        rows.forEach { row ->
+            screenTableModel.addRow(
+                arrayOf(
+                    row.ticker.symbol,
+                    row.ticker.name,
+                    formatMarketCapText(row),
+                    formatPriceText(row),
+                    formatChangeText(row.change),
+                    row.volume
+                )
+            )
+        }
+        screenTable.repaint()
     }
 
     private fun rebuildPresetModel() {
@@ -210,6 +226,27 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
 
     private fun currentMarket(): MarketType {
         return marketCombo.selectedItem as? MarketType ?: MarketType.KOREA
+    }
+
+    private fun subscribeSettingsUpdates() {
+        ApplicationManager.getApplication().messageBus.connect(this)
+            .subscribe(SettingsUpdateListener.TOPIC, object : SettingsUpdateListener {
+                override fun onSettingsUpdated() {
+                    ApplicationManager.getApplication().invokeLater {
+                        renderRows(currentRows)
+                    }
+                }
+            })
+    }
+
+    private fun subscribeMarketIndicatorUpdates() {
+        scope.launch {
+            marketIndicatorService.indicators.collect {
+                withContext(Dispatchers.Main) {
+                    renderRows(currentRows)
+                }
+            }
+        }
     }
 
     private fun availablePresetsFor(market: MarketType): List<ScreenerPreset> {
@@ -233,6 +270,38 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
         return "$sign${localizationService.formatDecimal(value, 2)}%"
     }
 
+    private fun formatPriceText(row: ScreenedTicker): String {
+        val rawPrice = row.price.parseCommaToDouble()
+        if (rawPrice <= 0.0) {
+            return row.price
+        }
+
+        val currency = row.ticker.marketType.nativeCurrency().takeIf { it != CurrencyType.UNKNOWN }
+            ?: currentMarket().nativeCurrency()
+        val fractionDigits = when (currency) {
+            CurrencyType.KRW -> 0
+            else -> 2
+        }
+
+        return moneyDisplayFormatter.formatAmount(rawPrice, currency, fractionDigits)
+    }
+
+    private fun formatMarketCapText(row: ScreenedTicker): String {
+        val rawMarketCap = row.marketCap.parseCommaToDouble()
+        if (rawMarketCap <= 0.0) {
+            return row.marketCap
+        }
+
+        val currency = row.ticker.marketType.nativeCurrency().takeIf { it != CurrencyType.UNKNOWN }
+            ?: currentMarket().nativeCurrency()
+        val fractionDigits = when (currency) {
+            CurrencyType.KRW -> 0
+            else -> 2
+        }
+
+        return moneyDisplayFormatter.formatAmount(rawMarketCap, currency, fractionDigits)
+    }
+
     private class ScreenerCellRenderer : DefaultTableCellRenderer() {
         override fun getTableCellRendererComponent(
             table: JTable?,
@@ -249,7 +318,7 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
 
             component.foreground = if (isSelected) table.selectionForeground else table.foreground
 
-            if (column == 3 && value is String) {
+            if (column == 4 && value is String) {
                 val numeric = value.replace("%", "").replace(",", "").toDoubleOrNull()
                 if (numeric != null) {
                     component.foreground = when {

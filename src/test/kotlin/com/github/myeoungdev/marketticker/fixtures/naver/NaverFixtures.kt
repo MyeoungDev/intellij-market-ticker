@@ -489,6 +489,111 @@ object NaverFixtures {
     }
     """
 
+    const val JSON_EXCHANGE_RATE_SUCCESS = """
+    [
+      {
+        "bankCode": "HNB",
+        "bankName": "하나은행",
+        "degreeCount": "85",
+        "localTradeAt": "2026-04-22T10:12:51+09:00",
+        "marketIndexCd": "FX_USDKRW",
+        "name": "미국 USD",
+        "fullName": null,
+        "symbol": "USD",
+        "nationType": "USA",
+        "saleBaseRate": "1,477.60",
+        "cashBuyingVal": "1503.45",
+        "cashSellingVal": "1451.75",
+        "sendMoneyVal": "1492.0",
+        "receiveMoneyVal": "1463.2",
+        "changeVal": "-4.40",
+        "changeRate": "-0.30",
+        "marketStatus": "OPEN",
+        "delayTime": "0"
+      },
+      {
+        "bankCode": "HNB",
+        "bankName": "하나은행",
+        "degreeCount": "85",
+        "localTradeAt": "2026-04-22T10:12:51+09:00",
+        "marketIndexCd": "FX_JPYKRW",
+        "name": "일본 JPY",
+        "fullName": "일본 JPY 100",
+        "symbol": "JPY",
+        "nationType": "JPN",
+        "saleBaseRate": "927.59",
+        "cashBuyingVal": "943.82",
+        "cashSellingVal": "911.36",
+        "sendMoneyVal": "936.68",
+        "receiveMoneyVal": "918.5",
+        "changeVal": "-2.23",
+        "changeRate": "-0.24",
+        "marketStatus": "OPEN",
+        "delayTime": "0"
+      },
+      {
+        "bankCode": "HNB",
+        "bankName": "하나은행",
+        "degreeCount": "85",
+        "localTradeAt": "2026-04-22T10:12:51+09:00",
+        "marketIndexCd": "FX_EURKRW",
+        "name": "유럽 EUR",
+        "fullName": "유럽연합 EUR",
+        "symbol": "EUR",
+        "nationType": "EUR",
+        "saleBaseRate": "1,734.85",
+        "cashBuyingVal": "1769.37",
+        "cashSellingVal": "1700.33",
+        "sendMoneyVal": "1752.19",
+        "receiveMoneyVal": "1717.51",
+        "changeVal": "-5.02",
+        "changeRate": "-0.29",
+        "marketStatus": "OPEN",
+        "delayTime": "0"
+      },
+      {
+        "bankCode": "HNB",
+        "bankName": "하나은행",
+        "degreeCount": "85",
+        "localTradeAt": "2026-04-22T10:12:51+09:00",
+        "marketIndexCd": "FX_CNYKRW",
+        "name": "중국 CNY",
+        "fullName": null,
+        "symbol": "CNY",
+        "nationType": "CHN",
+        "saleBaseRate": "216.49",
+        "cashBuyingVal": "227.31",
+        "cashSellingVal": "205.67",
+        "sendMoneyVal": "218.65",
+        "receiveMoneyVal": "214.33",
+        "changeVal": "-0.57",
+        "changeRate": "-0.26",
+        "marketStatus": "OPEN",
+        "delayTime": "0"
+      },
+      {
+        "bankCode": "HNB",
+        "bankName": "하나은행",
+        "degreeCount": "85",
+        "localTradeAt": "2026-04-22T10:12:51+09:00",
+        "marketIndexCd": "FX_HKDKRW",
+        "name": "홍콩 HKD",
+        "fullName": "홍콩 달러",
+        "symbol": "HKD",
+        "nationType": "HKG",
+        "saleBaseRate": "189.14",
+        "cashBuyingVal": "192.48",
+        "cashSellingVal": "185.80",
+        "sendMoneyVal": "190.42",
+        "receiveMoneyVal": "187.86",
+        "changeVal": "-0.18",
+        "changeRate": "-0.10",
+        "marketStatus": "OPEN",
+        "delayTime": "0"
+      }
+    ]
+    """
+
     const val JSON_CHART_DOMESTIC_DAY_SUCCESS = """
     [
       {

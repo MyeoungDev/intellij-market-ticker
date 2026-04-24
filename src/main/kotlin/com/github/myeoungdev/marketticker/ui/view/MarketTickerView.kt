@@ -2,13 +2,16 @@ package com.github.myeoungdev.marketticker.ui.view
 
 import com.github.myeoungdev.marketticker.application.listener.SettingsUpdateListener
 import com.github.myeoungdev.marketticker.application.service.AppSettingsService
+import com.github.myeoungdev.marketticker.application.service.MoneyDisplayFormatter
 import com.github.myeoungdev.marketticker.application.service.LocalizationService
 import com.github.myeoungdev.marketticker.application.service.MarketDataService
 import com.github.myeoungdev.marketticker.application.service.MarketIndicatorService
 import com.github.myeoungdev.marketticker.domain.model.IndicatorCategory
 import com.github.myeoungdev.marketticker.domain.model.MarketIndicator
 import com.github.myeoungdev.marketticker.domain.model.Ticker
+import com.github.myeoungdev.marketticker.domain.model.TickerPrice
 import com.github.myeoungdev.marketticker.ui.rendener.SearchResultRenderer
+import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
@@ -21,10 +24,13 @@ import kotlinx.coroutines.*
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Dimension
+import java.awt.FlowLayout
 import javax.swing.DefaultListModel
+import javax.swing.ButtonGroup
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTabbedPane
+import javax.swing.JToggleButton
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
@@ -41,11 +47,18 @@ class MarketTickerView(
     private val marketIndicatorService = service<MarketIndicatorService>()
     private val localizationService = service<LocalizationService>()
     private val appSettingsService = service<AppSettingsService>()
+    private val moneyDisplayFormatter = MoneyDisplayFormatter()
 
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var searchJob: Job = Job()
 
     val searchPanel = JPanel(BorderLayout())
+    private val searchHeaderPanel = JPanel(BorderLayout())
+    private val displayModePanel = JPanel(FlowLayout(FlowLayout.LEFT, 6, 0))
+    private val displayModeLabel = JLabel()
+    private val mixedDisplayButton = JToggleButton()
+    private val krwDisplayButton = JToggleButton()
+    private val quickToggleButton = JToggleButton(AllIcons.Actions.ToggleVisibility)
     private val searchField = JBTextField()
     private val searchListModel = DefaultListModel<Ticker>()
     private val searchResultList = JBList(searchListModel)
@@ -69,6 +82,7 @@ class MarketTickerView(
     private val topLevelTabbedPane = JTabbedPane()
     private val mainTabbedPane = JTabbedPane()
     private var latestIndicators: List<MarketIndicator> = emptyList()
+    private var latestPrices: List<TickerPrice> = emptyList()
 
     val mainPanel = JPanel(BorderLayout())
 
@@ -96,7 +110,14 @@ class MarketTickerView(
         )
         searchField.margin = JBUI.insets(5)
 
-        searchResultList.cellRenderer = SearchResultRenderer()
+        searchResultList.cellRenderer = SearchResultRenderer(
+            moneyDisplayFormatter = moneyDisplayFormatter,
+            priceLookup = { ticker ->
+                latestPrices.firstOrNull {
+                    it.symbol == ticker.symbol && it.marketType == ticker.marketType
+                }
+            }
+        )
 
         val searchResultPanel = JBScrollPane(searchResultList).apply {
             border = javax.swing.BorderFactory.createTitledBorder(localizationService.text("검색 결과", "Search Results"))
@@ -125,7 +146,10 @@ class MarketTickerView(
             )
         )
 
-        searchPanel.add(searchField, BorderLayout.NORTH)
+        setupDisplayModePanel()
+        searchHeaderPanel.add(displayModePanel, BorderLayout.NORTH)
+        searchHeaderPanel.add(searchField, BorderLayout.CENTER)
+        searchPanel.add(searchHeaderPanel, BorderLayout.NORTH)
         searchPanel.add(topSplitter, BorderLayout.CENTER)
 
         rebuildBottomTabs()
@@ -181,8 +205,51 @@ class MarketTickerView(
 
     }
 
+    private fun setupDisplayModePanel() {
+        val group = ButtonGroup()
+
+        group.add(mixedDisplayButton)
+        group.add(krwDisplayButton)
+
+        refreshDisplayModePanelLabels()
+        displayModePanel.add(displayModeLabel)
+        displayModePanel.add(mixedDisplayButton)
+        displayModePanel.add(krwDisplayButton)
+        quickToggleButton.toolTipText = localizationService.text(
+            "표시 모드 빠른 전환",
+            "Quick toggle between mixed and converted display"
+        )
+        quickToggleButton.isFocusable = false
+        displayModePanel.add(quickToggleButton)
+
+        mixedDisplayButton.addActionListener {
+            if (mixedDisplayButton.isSelected) {
+                updatePriceDisplayMode(AppSettingsService.PriceDisplayMode.MIXED)
+            }
+        }
+
+        krwDisplayButton.addActionListener {
+            if (krwDisplayButton.isSelected) {
+                updatePriceDisplayMode(AppSettingsService.PriceDisplayMode.KRW_CONVERTED)
+            }
+        }
+
+        quickToggleButton.addActionListener {
+            val next = if (appSettingsService.getPriceDisplayMode() == AppSettingsService.PriceDisplayMode.MIXED) {
+                AppSettingsService.PriceDisplayMode.KRW_CONVERTED
+            } else {
+                AppSettingsService.PriceDisplayMode.MIXED
+            }
+            updatePriceDisplayMode(next)
+        }
+
+        syncDisplayModeButtons()
+    }
+
     private fun applyDisplaySettings() {
         marketPulseTicker.isVisible = true
+        refreshDisplayModePanelLabels()
+        syncDisplayModeButtons()
         if (!appSettingsService.isMarketPulseVisible()) {
             marketPulseTicker.setChunks(
                 listOf(
@@ -209,6 +276,8 @@ class MarketTickerView(
         } else {
             renderMarketPulse()
         }
+        refreshPriceViews()
+        searchResultList.repaint()
     }
 
     private fun rebuildBottomTabs() {
@@ -265,10 +334,12 @@ class MarketTickerView(
         scope.launch {
             marketDataService.currentPrices.collect { prices ->
                 withContext(Dispatchers.Main) {
+                    latestPrices = prices
                     watchlistView.updateWith(prices)
                     portfolioView.updateWith(prices)
                     heatmapView.updateHeatmap(prices)
                     chartView.refreshChart()
+                    searchResultList.repaint()
                 }
             }
         }
@@ -278,6 +349,8 @@ class MarketTickerView(
                 withContext(Dispatchers.Main) {
                     latestIndicators = indicators
                     renderMarketPulse()
+                    refreshPriceViews()
+                    searchResultList.repaint()
                 }
             }
         }
@@ -315,15 +388,20 @@ class MarketTickerView(
         val categoryOrder = listOf(
             IndicatorCategory.DOMESTIC_INDEX,
             IndicatorCategory.WORLD_INDEX,
+            IndicatorCategory.EXCHANGE_RATE,
             IndicatorCategory.METAL,
             IndicatorCategory.ENERGY
         )
 
         val chunks = mutableListOf<MarketPulseTicker.Chunk>()
-        categoryOrder.forEachIndexed { index, category ->
+        val visibleCategories = categoryOrder.filter { category ->
+            latestIndicators.any { it.category == category }
+        }
+        visibleCategories.forEachIndexed { index, category ->
             val title = when (category) {
                 IndicatorCategory.DOMESTIC_INDEX -> localizationService.text("국내", "KR")
                 IndicatorCategory.WORLD_INDEX -> localizationService.text("해외", "US")
+                IndicatorCategory.EXCHANGE_RATE -> localizationService.text("환율", "FX")
                 IndicatorCategory.METAL -> localizationService.text("금속", "Metal")
                 IndicatorCategory.ENERGY -> localizationService.text("에너지", "Energy")
             }
@@ -350,7 +428,7 @@ class MarketTickerView(
                 }
             }
 
-            if (index < categoryOrder.lastIndex) {
+            if (index < visibleCategories.lastIndex) {
                 chunks += MarketPulseTicker.Chunk(" | ", Color(100, 100, 100), true)
             }
         }
@@ -378,5 +456,38 @@ class MarketTickerView(
             ".DJI", "DJI", "DJIA", "DOW JONES" -> "DOW"
             else -> indicator.name
         }
+    }
+
+    private fun refreshPriceViews() {
+        watchlistView.updateWith(latestPrices)
+        portfolioView.updateWith(latestPrices)
+        heatmapView.updateHeatmap(latestPrices)
+        chartView.refreshChart()
+    }
+
+    private fun refreshDisplayModePanelLabels() {
+        displayModeLabel.text = localizationService.text("표시", "Display")
+        mixedDisplayButton.text = localizationService.text("혼용", "Mixed")
+        krwDisplayButton.text = localizationService.text("기준 통화", "Converted")
+        mixedDisplayButton.toolTipText = localizationService.text("원문 통화로 표시", "Show native currency")
+        krwDisplayButton.toolTipText = localizationService.text("기준 통화로 환산해 표시", "Convert values to the selected base currency")
+    }
+
+    private fun syncDisplayModeButtons() {
+        val mode = appSettingsService.getPriceDisplayMode()
+        mixedDisplayButton.isSelected = mode == AppSettingsService.PriceDisplayMode.MIXED
+        krwDisplayButton.isSelected = mode == AppSettingsService.PriceDisplayMode.KRW_CONVERTED
+        quickToggleButton.isSelected = mode == AppSettingsService.PriceDisplayMode.KRW_CONVERTED
+    }
+
+    private fun updatePriceDisplayMode(mode: AppSettingsService.PriceDisplayMode) {
+        if (appSettingsService.getPriceDisplayMode() == mode) {
+            return
+        }
+
+        appSettingsService.setPriceDisplayMode(mode)
+        ApplicationManager.getApplication().messageBus
+            .syncPublisher(SettingsUpdateListener.TOPIC)
+            .onSettingsUpdated()
     }
 }

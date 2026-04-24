@@ -1,6 +1,8 @@
 package com.github.myeoungdev.marketticker.ui.statusbar
 
+import com.github.myeoungdev.marketticker.application.listener.SettingsUpdateListener
 import com.github.myeoungdev.marketticker.application.service.MarketDataService
+import com.github.myeoungdev.marketticker.application.service.MoneyDisplayFormatter
 import com.github.myeoungdev.marketticker.common.extenion.toCommaString
 import com.github.myeoungdev.marketticker.domain.model.PriceStatus
 import com.github.myeoungdev.marketticker.domain.model.TickerPrice
@@ -28,6 +30,7 @@ class MarketTickerStatusBarWidget(
     private var statusBar: StatusBar? = null
 
     private val marketDataService = service<MarketDataService>()
+    private val moneyDisplayFormatter = MoneyDisplayFormatter()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -58,6 +61,13 @@ class MarketTickerStatusBarWidget(
                 updateWidget()
             }
         }
+
+        ApplicationManager.getApplication().messageBus.connect(this)
+            .subscribe(SettingsUpdateListener.TOPIC, object : SettingsUpdateListener {
+                override fun onSettingsUpdated() {
+                    updateWidget()
+                }
+            })
 
         // 2) 로테이션 루프 (표시만 바꿈)
         rotateJob = scope.launch {
@@ -91,12 +101,10 @@ class MarketTickerStatusBarWidget(
         }
 
         val sign = if (tickerPrice.changeRate > 0) "+" else ""
-        val currency = tickerPrice.currency.name
 
         // 예: "AAPL 195.12 USD ▲ (+1.23%)"
         return "${tickerPrice.name} " +
-                "${tickerPrice.currentPrice.toCommaString()} " +
-                "$currency " +
+                "${moneyDisplayFormatter.formatAmount(tickerPrice.currentPrice, tickerPrice.currency)} " +
                 "$arrow " +
                 "($sign${tickerPrice.changeRate.toCommaString()}%)"
     }

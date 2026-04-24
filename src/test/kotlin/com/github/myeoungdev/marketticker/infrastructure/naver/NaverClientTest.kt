@@ -4,11 +4,13 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.github.myeoungdev.marketticker.application.service.PriceHistoryService
 import com.github.myeoungdev.marketticker.common.config.objectMapper
 import com.github.myeoungdev.marketticker.domain.model.IndicatorCategory
+import com.github.myeoungdev.marketticker.domain.model.CurrencyType
 import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.fixtures.domain.TickerFixtures
 import com.github.myeoungdev.marketticker.fixtures.naver.NaverFixtures
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverDiscussionRankingResponse
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverExchangeRateItem
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverResearchLatestResponse
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverResearchRankingResponse
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCoinOverview
@@ -59,6 +61,7 @@ class NaverClientTest {
             worldIndexUrl = "$baseUrl/worldstock/index",
             marketMetalUrl = "$baseUrl/marketindex/metals",
             marketEnergyUrl = "$baseUrl/marketindex/energy",
+            exchangeRateUrl = "$baseUrl/domestic/exchange/List",
             domesticChartUrl = "$baseUrl/chart/domestic/item",
             foreignChartUrl = "$baseUrl/chart/foreign/item",
             researchAggregateUrl = "$baseUrl/research/aggregate",
@@ -144,6 +147,56 @@ class NaverClientTest {
         }
 
         @Test
+        fun `NaverStockPrice 결과에서 아시아 해외시장도 정확히 변환한다`() {
+            val naverStock = NaverFixtures.createStockPrice(
+                itemCode = "9988",
+                stockName = "알리바바",
+                reutersCode = "9988.HK",
+                closePrice = "110.20",
+                fluctuationsRatio = "3.50",
+                stockExchangeType = NaverFixtures.createStockExchangeType(
+                    code = "HKG",
+                    nameEng = "HONG KONG",
+                    nameKor = "홍콩거래소",
+                    nationCode = "HKG",
+                    nationName = "홍콩"
+                ),
+                currencyType = NaverFixtures.createCurrencyResponse("HKD")
+            )
+
+            val tickerPrice = naverStock.toTickerPrice()
+
+            assertThat(tickerPrice.marketType).isEqualTo(MarketType.HONG_KONG)
+            assertThat(tickerPrice.currency).isEqualTo(CurrencyType.HKD)
+            assertThat(tickerPrice.currentPrice).isEqualTo(110.20)
+        }
+
+        @Test
+        fun `NaverStockPrice 결과에서 도쿄 거래소도 정확히 변환한다`() {
+            val naverStock = NaverFixtures.createStockPrice(
+                itemCode = "9984",
+                stockName = "소프트뱅크",
+                reutersCode = "9984.T",
+                closePrice = "9,200.00",
+                fluctuationsRatio = "-1.20",
+                stockExchangeType = NaverFixtures.createStockExchangeType(
+                    code = "TYO",
+                    nameEng = "TOKYO",
+                    nameKor = "도쿄증권거래소",
+                    nationCode = "JPN",
+                    nationName = "일본"
+                ),
+                currencyType = NaverFixtures.createCurrencyResponse("JPY")
+            )
+
+            val tickerPrice = naverStock.toTickerPrice()
+
+            assertThat(tickerPrice.marketType).isEqualTo(MarketType.TOKYO)
+            assertThat(tickerPrice.currency).isEqualTo(CurrencyType.JPY)
+            assertThat(tickerPrice.currentPrice).isEqualTo(9200.00)
+        }
+
+        @Test
         fun `JSON 문자열이 DTO로 정상적으로 역직렬화 된다`() {
             // Given
             val json = NaverFixtures.JSON_SEARCH_SUCCESS_SAMSUNG
@@ -171,6 +224,29 @@ class NaverClientTest {
 
             val indicator = item.toMarketIndicator(IndicatorCategory.ENERGY)
             assertThat(indicator.changeRate).isEqualTo(-10.0)
+        }
+
+        @Test
+        fun `환율 항목은 시장 지표 도메인으로 변환한다`() {
+            val item = NaverExchangeRateItem(
+                marketIndexCd = "FX_USDKRW",
+                name = "미국 USD",
+                fullName = null,
+                symbol = "USD",
+                saleBaseRate = "1,477.60",
+                changeRate = "-0.30",
+                changeVal = "-4.40",
+                marketStatus = "OPEN"
+            )
+
+            val indicator = item.toMarketIndicator()
+
+            assertThat(indicator.code).isEqualTo("FX_USDKRW")
+            assertThat(indicator.name).isEqualTo("USD")
+            assertThat(indicator.currentPrice).isEqualTo(1477.60)
+            assertThat(indicator.changeRate).isEqualTo(-0.30)
+            assertThat(indicator.category).isEqualTo(IndicatorCategory.EXCHANGE_RATE)
+            assertThat(indicator.unit).isEqualTo("KRW")
         }
 
         @Test
@@ -589,6 +665,40 @@ class NaverClientTest {
             assertThat(result.datas).hasSize(1)
             assertThat(result.datas.first().reutersCode).isEqualTo("GCcv1")
             assertThat(result.datas.first().name).isEqualTo("국제 금")
+        }
+
+        @Test
+        fun `환율 API 성공 시 환율 목록을 파싱한다`() {
+            wireMockServer.stubFor(
+                get(urlEqualTo("/domestic/exchange/List"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", "application/json")
+                            .withBody(NaverFixtures.JSON_EXCHANGE_RATE_SUCCESS)
+                    )
+            )
+
+            val result = naverClient.fetchExchangeRates()
+
+            assertThat(result).hasSize(5)
+            assertThat(result.first().marketIndexCd).isEqualTo("FX_USDKRW")
+            assertThat(result.first().saleBaseRate).isEqualTo("1,477.60")
+        }
+
+        @Test
+        fun `환율 API 실패 시 빈 목록을 반환한다`() {
+            wireMockServer.stubFor(
+                get(urlEqualTo("/domestic/exchange/List"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(503)
+                    )
+            )
+
+            val result = naverClient.fetchExchangeRates()
+
+            assertThat(result).isEmpty()
         }
 
         @Test

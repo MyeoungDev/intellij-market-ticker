@@ -8,6 +8,8 @@ class NaverMarketIndicatorProvider(
     private val client: NaverClient = NaverClient()
 ) : MarketIndicatorProvider {
 
+    private val exchangeRateCodes = listOf("FX_USDKRW", "FX_JPYKRW", "FX_EURKRW", "FX_CNYKRW", "FX_HKDKRW")
+
     override fun getIndicators(): List<MarketIndicator> {
         val domestic = client.fetchDomesticIndices(listOf("KOSPI", "KOSDAQ", "KPI200"))
             .datas.map { it.toMarketIndicator(IndicatorCategory.DOMESTIC_INDEX) }
@@ -15,12 +17,18 @@ class NaverMarketIndicatorProvider(
         val world = client.fetchWorldIndices(listOf(".DJI", ".INX", ".IXIC"))
             .datas.map { it.toMarketIndicator(IndicatorCategory.WORLD_INDEX) }
 
+        val exchangeRatesByCode = client.fetchExchangeRates()
+            .associateBy { it.marketIndexCd }
+        val exchangeRates = exchangeRateCodes.mapNotNull { code ->
+            exchangeRatesByCode[code]?.toMarketIndicator()
+        }
+
         val metals = client.fetchMarketCommodity("metals", "GCcv1")
             .datas.map { it.toMarketIndicator(IndicatorCategory.METAL) }
 
         val energy = client.fetchMarketCommodity("energy", "CLcv1")
             .datas.map { it.toMarketIndicator(IndicatorCategory.ENERGY) }
 
-        return domestic + world + metals + energy
+        return domestic + world + exchangeRates + metals + energy
     }
 }

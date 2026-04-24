@@ -72,3 +72,34 @@ data class NaverMarketIndicatorItem(
         return if (ratio.isFinite()) ratio else 0.0
     }
 }
+
+/**
+ * Naver 환전고시 환율 단일 항목입니다.
+ */
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class NaverExchangeRateItem(
+    val marketIndexCd: String? = null,
+    val name: String? = null,
+    val fullName: String? = null,
+    val symbol: String? = null,
+    val saleBaseRate: String,
+    val changeRate: String,
+    val changeVal: String? = null,
+    val marketStatus: String,
+) {
+
+    fun toMarketIndicator(): MarketIndicator {
+        val code = marketIndexCd ?: symbol ?: "UNKNOWN"
+        val title = symbol ?: name ?: code
+
+        return MarketIndicator(
+            code = code,
+            name = title,
+            currentPrice = saleBaseRate.parseCommaToDouble(),
+            changeRate = changeRate.parseCommaToDouble(),
+            marketStatus = MarketStatus.of(marketStatus),
+            category = IndicatorCategory.EXCHANGE_RATE,
+            unit = "KRW"
+        )
+    }
+}
