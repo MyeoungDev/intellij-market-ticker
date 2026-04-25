@@ -5,7 +5,7 @@ internal fun calculateIndicatorCardColumns(availableWidth: Int, itemCount: Int):
     if (availableWidth <= 0) return 1
 
     val minCardWidth = 160
-    val gap = 10
+    val gap = 6
     val maxByWidth = ((availableWidth + gap) / (minCardWidth + gap)).coerceAtLeast(1)
-    return minOf(itemCount, maxByWidth.coerceAtMost(4))
+    return minOf(itemCount, maxByWidth.coerceAtMost(5))
 }

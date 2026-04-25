@@ -9,6 +9,19 @@ class NaverMarketIndicatorProvider(
 ) : MarketIndicatorProvider {
 
     private val exchangeRateCodes = listOf("FX_USDKRW", "FX_JPYKRW", "FX_EURKRW", "FX_CNYKRW", "FX_HKDKRW")
+    private val metalCodes = listOf(
+        "GCcv1", // 국제 금
+        "SIcv1", // 은
+        "HGcv1", // 구리
+        "PLcv1", // 백금
+        "PAcv1"  // 팔라듐
+    )
+    private val energyCodes = listOf(
+        "CLcv1", // WTI
+        "NGcv1", // 천연가스
+        "HOcv1", // 난방유
+        "RBcv1"  // RBOB 가솔린
+    )
 
     override fun getIndicators(): List<MarketIndicator> {
         val domestic = client.fetchDomesticIndices(listOf("KOSPI", "KOSDAQ", "KPI200"))
@@ -23,11 +36,15 @@ class NaverMarketIndicatorProvider(
             exchangeRatesByCode[code]?.toMarketIndicator()
         }
 
-        val metals = client.fetchMarketCommodity("metals", "GCcv1")
-            .datas.map { it.toMarketIndicator(IndicatorCategory.METAL) }
+        val metals = metalCodes.flatMap { code ->
+            client.fetchMarketCommodity("metals", code)
+                .datas.map { it.toMarketIndicator(IndicatorCategory.METAL) }
+        }
 
-        val energy = client.fetchMarketCommodity("energy", "CLcv1")
-            .datas.map { it.toMarketIndicator(IndicatorCategory.ENERGY) }
+        val energy = energyCodes.flatMap { code ->
+            client.fetchMarketCommodity("energy", code)
+                .datas.map { it.toMarketIndicator(IndicatorCategory.ENERGY) }
+        }
 
         return domestic + world + exchangeRates + metals + energy
     }

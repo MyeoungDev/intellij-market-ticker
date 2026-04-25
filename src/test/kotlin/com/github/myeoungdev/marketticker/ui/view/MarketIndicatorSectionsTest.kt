@@ -45,7 +45,7 @@ class MarketIndicatorSectionsTest {
         assertThat(calculateIndicatorCardColumns(0, 3)).isEqualTo(1)
         assertThat(calculateIndicatorCardColumns(320, 3)).isEqualTo(1)
         assertThat(calculateIndicatorCardColumns(520, 3)).isEqualTo(3)
-        assertThat(calculateIndicatorCardColumns(920, 5)).isEqualTo(4)
+        assertThat(calculateIndicatorCardColumns(920, 5)).isEqualTo(5)
     }
 
     private fun indicator(code: String, category: IndicatorCategory): MarketIndicator {

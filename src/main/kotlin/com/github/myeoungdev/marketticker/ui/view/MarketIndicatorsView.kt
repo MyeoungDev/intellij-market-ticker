@@ -8,6 +8,7 @@ import com.github.myeoungdev.marketticker.domain.model.MarketIndicator
 import com.github.myeoungdev.marketticker.domain.model.MarketStatus
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
+import com.intellij.ui.JBColor
 import com.intellij.util.ui.JBUI
 import java.awt.BorderLayout
 import java.awt.Color
@@ -33,14 +34,6 @@ class MarketIndicatorsView : JPanel(BorderLayout()), Disposable {
     private val moneyDisplayFormatter = MoneyDisplayFormatter()
     private var latestIndicators: List<MarketIndicator> = emptyList()
 
-    private val titleLabel = JLabel(localizationService.text("환율 및 주요 지표", "FX & Major Indicators"))
-    private val subtitleLabel = JLabel(
-        localizationService.text(
-            "환율, 지수, 원자재를 한 화면에서 확인합니다.",
-            "View exchange rates, indices, and commodities in one place."
-        )
-    )
-
     private val contentPanel = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
         isOpaque = false
@@ -52,22 +45,13 @@ class MarketIndicatorsView : JPanel(BorderLayout()), Disposable {
     )
 
     init {
-        border = JBUI.Borders.empty(10)
-        titleLabel.font = titleLabel.font.deriveFont(Font.BOLD, titleLabel.font.size2D + 3f)
-        subtitleLabel.foreground = Color(140, 140, 140)
-
-        val header = JPanel(BorderLayout(0, 4)).apply {
-            isOpaque = false
-            add(titleLabel, BorderLayout.NORTH)
-            add(subtitleLabel, BorderLayout.SOUTH)
-        }
+        border = JBUI.Borders.empty(8)
 
         val scrollPane = com.intellij.ui.components.JBScrollPane(contentPanel).apply {
             border = BorderFactory.createEmptyBorder()
             horizontalScrollBarPolicy = ScrollPaneConstants.HORIZONTAL_SCROLLBAR_NEVER
         }
 
-        add(header, BorderLayout.NORTH)
         add(scrollPane, BorderLayout.CENTER)
 
         addComponentListener(object : ComponentAdapter() {
@@ -98,7 +82,7 @@ class MarketIndicatorsView : JPanel(BorderLayout()), Disposable {
             sections.forEachIndexed { index, section ->
                 contentPanel.add(createSectionPanel(section))
                 if (index < sections.lastIndex) {
-                    contentPanel.add(Box.createVerticalStrut(10))
+                    contentPanel.add(Box.createVerticalStrut(8))
                 }
             }
         }
@@ -110,7 +94,7 @@ class MarketIndicatorsView : JPanel(BorderLayout()), Disposable {
     private fun emptyStatePanel(): JPanel {
         return JPanel(BorderLayout()).apply {
             isOpaque = false
-            border = JBUI.Borders.emptyTop(24)
+            border = JBUI.Borders.emptyTop(18)
             emptyLabel.foreground = Color(150, 150, 150)
             add(emptyLabel, BorderLayout.CENTER)
         }
@@ -120,8 +104,8 @@ class MarketIndicatorsView : JPanel(BorderLayout()), Disposable {
         return JPanel(BorderLayout(0, 8)).apply {
             isOpaque = false
             border = BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(Color(58, 58, 58)),
-                JBUI.Borders.empty(10, 12)
+                JBUI.Borders.customLine(JBColor.border(), 1),
+                JBUI.Borders.empty(8, 10)
             )
             add(createSectionHeader(section), BorderLayout.NORTH)
             add(createCardGridPanel(section.indicators), BorderLayout.CENTER)
@@ -130,16 +114,12 @@ class MarketIndicatorsView : JPanel(BorderLayout()), Disposable {
 
     private fun createSectionHeader(section: MarketIndicatorSection): JPanel {
         val title = JLabel(sectionTitle(section.category)).apply {
-            font = font.deriveFont(Font.BOLD, font.size2D + 1f)
-        }
-        val count = JLabel("${section.indicators.size}").apply {
-            foreground = Color(150, 150, 150)
+            font = font.deriveFont(Font.BOLD, font.size2D)
         }
 
         return JPanel(BorderLayout()).apply {
             isOpaque = false
             add(title, BorderLayout.WEST)
-            add(count, BorderLayout.EAST)
         }
     }
 
@@ -148,7 +128,7 @@ class MarketIndicatorsView : JPanel(BorderLayout()), Disposable {
         val columns = calculateIndicatorCardColumns(availableWidth, indicators.size)
         val rows = ((indicators.size + columns - 1) / columns).coerceAtLeast(1)
 
-        return JPanel(GridLayout(rows, columns, 8, 8)).apply {
+        return JPanel(GridLayout(rows, columns, 6, 6)).apply {
             isOpaque = false
             indicators.forEach { add(createIndicatorCard(it)) }
             repeat(rows * columns - indicators.size) {
@@ -163,41 +143,37 @@ class MarketIndicatorsView : JPanel(BorderLayout()), Disposable {
             background = rowBackground(indicator.changeRate)
             border = BorderFactory.createCompoundBorder(
                 BorderFactory.createLineBorder(borderColor(indicator.changeRate)),
-                JBUI.Borders.empty(10, 10)
+                JBUI.Borders.empty(7, 10)
             )
-            preferredSize = Dimension(166, 76)
-        }
-
-        val accent = JPanel().apply {
-            preferredSize = Dimension(3, 0)
-            minimumSize = Dimension(3, 0)
-            maximumSize = Dimension(3, Int.MAX_VALUE)
-            background = accentColor(indicator.changeRate)
-            isOpaque = true
+            preferredSize = Dimension(144, 58)
         }
 
         val titleLabel = JLabel(displayIndicatorName(indicator)).apply {
-            font = font.deriveFont(Font.BOLD, font.size2D + 0.5f)
+            font = font.deriveFont(Font.BOLD, font.size2D)
         }
         val priceLabel = JLabel(formatPrice(indicator)).apply {
-            font = font.deriveFont(Font.BOLD, font.size2D + 1.5f)
+            font = font.deriveFont(Font.BOLD, font.size2D + 0.5f)
             foreground = priceColor(indicator.changeRate)
         }
         val changeLabel = JLabel(formatChange(indicator.changeRate)).apply {
             foreground = priceColor(indicator.changeRate)
+            font = font.deriveFont(font.size2D - 1f)
         }
 
-        val textPanel = JPanel().apply {
-            layout = BoxLayout(this, BoxLayout.Y_AXIS)
+        val contentPanel = JPanel(BorderLayout(0, 2)).apply {
             isOpaque = false
-            add(titleLabel)
-            add(priceLabel)
-            add(changeLabel)
+            add(titleLabel, BorderLayout.NORTH)
+            add(
+                JPanel(BorderLayout()).apply {
+                    isOpaque = false
+                    add(priceLabel, BorderLayout.WEST)
+                    add(changeLabel, BorderLayout.EAST)
+                },
+                BorderLayout.CENTER
+            )
         }
 
-        accent.border = JBUI.Borders.emptyRight(8)
-        card.add(accent, BorderLayout.WEST)
-        card.add(textPanel, BorderLayout.CENTER)
+        card.add(contentPanel, BorderLayout.CENTER)
         return card
     }
 
@@ -221,7 +197,12 @@ class MarketIndicatorsView : JPanel(BorderLayout()), Disposable {
     }
 
     private fun formatPrice(indicator: MarketIndicator): String {
-        return moneyDisplayFormatter.formatAmount(indicator.currentPrice, CurrencyType.of(indicator.unit.orEmpty()), 2)
+        return formatIndicatorPrice(
+            value = indicator.currentPrice,
+            unit = indicator.unit,
+            formatDecimal = localizationService::formatDecimal,
+            formatAmount = moneyDisplayFormatter::formatAmount
+        )
     }
 
     private fun formatChange(changeRate: Double): String {
@@ -235,33 +216,24 @@ class MarketIndicatorsView : JPanel(BorderLayout()), Disposable {
 
     private fun rowBackground(changeRate: Double): Color {
         return when {
-            changeRate > 0 -> Color(38, 48, 40)
-            changeRate < 0 -> Color(48, 38, 38)
-            else -> Color(40, 40, 40)
+            changeRate != 0.0 -> Color(40, 40, 40)
+            else -> Color(39, 39, 39)
         }
     }
 
     private fun borderColor(changeRate: Double): Color {
         return when {
-            changeRate > 0 -> Color(69, 112, 79)
-            changeRate < 0 -> Color(112, 69, 69)
-            else -> Color(62, 62, 62)
-        }
-    }
-
-    private fun accentColor(changeRate: Double): Color {
-        return when {
-            changeRate > 0 -> Color(96, 154, 110)
-            changeRate < 0 -> Color(154, 96, 96)
-            else -> Color(96, 96, 96)
+            changeRate > 0 -> Color(78, 102, 82)
+            changeRate < 0 -> Color(102, 78, 78)
+            else -> Color(72, 72, 72)
         }
     }
 
     private fun priceColor(changeRate: Double): Color {
         return when {
-            changeRate > 0 -> Color(155, 228, 165)
-            changeRate < 0 -> Color(240, 166, 166)
-            else -> Color(220, 220, 220)
+            changeRate > 0 -> Color(167, 233, 176)
+            changeRate < 0 -> Color(242, 173, 173)
+            else -> Color(224, 224, 224)
         }
     }
 }

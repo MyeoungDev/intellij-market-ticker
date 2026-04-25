@@ -108,7 +108,7 @@ class NewsView : JPanel(BorderLayout()), Disposable {
         return JPanel(BorderLayout()).apply {
             add(
                 JLabel(localizationService.text("뉴스", "News")).apply {
-                    font = font.deriveFont(Font.BOLD, font.size2D + 2f)
+                    font = font.deriveFont(Font.BOLD, font.size2D + 1f)
                 },
                 BorderLayout.WEST
             )
@@ -133,12 +133,12 @@ class NewsView : JPanel(BorderLayout()), Disposable {
         detailSummaryArea.wrapStyleWord = true
         detailSummaryArea.background = JBColor.PanelBackground
         detailSummaryArea.foreground = JBColor.foreground()
-        detailSummaryArea.font = detailSummaryArea.font.deriveFont(13f)
-        detailSummaryArea.margin = Insets(6, 4, 6, 4)
+        detailSummaryArea.font = detailSummaryArea.font.deriveFont(12f)
+        detailSummaryArea.margin = Insets(5, 4, 5, 4)
 
         detailMetaLabel.foreground = JBColor.GRAY
         detailLinkLabel.foreground = JBColor.GRAY
-        detailTitleLabel.font = detailTitleLabel.font.deriveFont(Font.BOLD, detailTitleLabel.font.size2D + 2f)
+        detailTitleLabel.font = detailTitleLabel.font.deriveFont(Font.BOLD, detailTitleLabel.font.size2D + 1f)
         detailBadgeLabel.border = JBUI.Borders.emptyBottom(4)
 
         val detailHeader = JPanel().apply {
@@ -168,7 +168,7 @@ class NewsView : JPanel(BorderLayout()), Disposable {
 
     private fun buildCategoryTab(): JPanel {
         categorySelector.maximumRowCount = 12
-        categorySelector.font = categorySelector.font.deriveFont(Font.BOLD, categorySelector.font.size2D)
+        categorySelector.font = categorySelector.font.deriveFont(categorySelector.font.size2D - 1f)
         categorySelector.renderer = object : DefaultListCellRenderer() {
             override fun getListCellRendererComponent(
                 list: JList<*>?,
@@ -178,7 +178,7 @@ class NewsView : JPanel(BorderLayout()), Disposable {
                 cellHasFocus: Boolean
             ): Component {
                 val label = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus) as JLabel
-                label.border = JBUI.Borders.empty(2, 4)
+                label.border = JBUI.Borders.empty(1, 4)
                 return label
             }
         }
@@ -426,15 +426,15 @@ class NewsView : JPanel(BorderLayout()), Disposable {
                 "<span style='color:${badgeColor(article.badgeColor)}; font-weight:700;'>${escapeHtml(it)}</span> "
             } ?: ""
             val summaryHtml = article.summary.takeIf { it.isNotBlank() }?.let {
-                "<div style='margin-top:6px; color:$metaColor; line-height:1.35;'>${escapeHtml(trimSummary(it))}</div>"
+                "<div style='margin-top:5px; color:$metaColor; line-height:1.3; font-size:11px;'>${escapeHtml(trimSummary(it))}</div>"
             }.orEmpty()
             label.verticalAlignment = SwingConstants.TOP
-            label.border = JBUI.Borders.empty(10, 8)
+            label.border = JBUI.Borders.empty(8, 8)
             label.text = """
                 <html>
                   <div style='width:420px;'>
-                    <div style='line-height:1.38; font-weight:700; font-size:12px;'>$badgeHtml${escapeHtml(article.title)}</div>
-                    <div style='margin-top:5px; color:$metaColor;'>${escapeHtml(article.source.ifBlank { "-" })} · ${escapeHtml(article.publishedAt.ifBlank { "-" })}</div>
+                    <div style='line-height:1.34; font-weight:700; font-size:11px;'>$badgeHtml${escapeHtml(article.title)}</div>
+                    <div style='margin-top:4px; color:$metaColor; font-size:11px;'>${escapeHtml(article.source.ifBlank { "-" })} · ${escapeHtml(article.publishedAt.ifBlank { "-" })}</div>
                     $summaryHtml
                   </div>
                 </html>
@@ -457,7 +457,7 @@ class NewsView : JPanel(BorderLayout()), Disposable {
             val metaColor = if (isSelected) "#DCE8FF" else "#89909A"
 
             label.verticalAlignment = SwingConstants.TOP
-            label.border = JBUI.Borders.empty(12, 8)
+            label.border = JBUI.Borders.empty(9, 8)
             label.text = """
                 <html>
                   <div style='width:420px;'>
@@ -465,9 +465,9 @@ class NewsView : JPanel(BorderLayout()), Disposable {
                       <tr>
                         <td style='width:28px; color:#5B8CFF; font-weight:700; vertical-align:top;'>$rank</td>
                         <td>
-                            <div style='line-height:1.38; font-weight:700;'>${escapeHtml(article.title)}</div>
-                            <div style='margin-top:5px; color:$metaColor;'>${escapeHtml(article.source.ifBlank { "-" })} · ${escapeHtml(article.publishedAt.ifBlank { "-" })}</div>
-                            <div style='margin-top:6px; color:$metaColor; line-height:1.35;'>${escapeHtml(trimSummary(article.summary.ifBlank { localizationService.text("요약 정보 없음", "No summary") }, 120))}</div>
+                            <div style='line-height:1.34; font-weight:700; font-size:11px;'>${escapeHtml(article.title)}</div>
+                            <div style='margin-top:4px; color:$metaColor; font-size:11px;'>${escapeHtml(article.source.ifBlank { "-" })} · ${escapeHtml(article.publishedAt.ifBlank { "-" })}</div>
+                            <div style='margin-top:5px; color:$metaColor; line-height:1.3; font-size:11px;'>${escapeHtml(trimSummary(article.summary.ifBlank { localizationService.text("요약 정보 없음", "No summary") }, 120))}</div>
                         </td>
                       </tr>
                     </table>
