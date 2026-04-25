@@ -72,6 +72,7 @@ class MarketTickerView(
     private val researchView = ResearchView()
     private val screenerView = ScreenerView()
     private val calendarView = CalendarView()
+    private val marketIndicatorsView = MarketIndicatorsView()
     private val stockNewsView = StockNewsSummaryPanel()
     private val stockResearchView = StockResearchSummaryPanel()
 
@@ -92,6 +93,7 @@ class MarketTickerView(
         researchView.dispose()
         screenerView.dispose()
         calendarView.dispose()
+        marketIndicatorsView.dispose()
         stockOverviewView.dispose()
         stockNewsView.dispose()
         stockResearchView.dispose()
@@ -166,6 +168,7 @@ class MarketTickerView(
         mainTabbedPane.addTab(localizationService.text("주식", "Stocks"), stockPanel)
         mainTabbedPane.addTab(localizationService.text("스크리너", "Screener"), screenerView)
         mainTabbedPane.addTab(localizationService.text("캘린더", "Calendar"), calendarView)
+        mainTabbedPane.addTab(localizationService.text("환율 및 주요 지표", "FX & Major Indicators"), marketIndicatorsView)
         mainTabbedPane.addTab(localizationService.text("뉴스", "News"), newsView)
         mainTabbedPane.addTab(localizationService.text("리서치", "Research"), researchView)
         mainPanel.add(mainTabbedPane, BorderLayout.CENTER)
@@ -309,6 +312,7 @@ class MarketTickerView(
                 rebuildWatchlistTabs()
                 rebuildBottomTabs()
                 renderMarketPulse()
+                marketIndicatorsView.renderIndicators(latestIndicators)
             }
         })
     }
@@ -349,6 +353,7 @@ class MarketTickerView(
                 withContext(Dispatchers.Main) {
                     latestIndicators = indicators
                     renderMarketPulse()
+                    marketIndicatorsView.renderIndicators(indicators)
                     refreshPriceViews()
                     searchResultList.repaint()
                 }
