@@ -58,6 +58,12 @@ class NaverMarketIndicatorProviderTest {
         assertThat(exchangeRates.first().name).isEqualTo("USD")
         assertThat(exchangeRates.first().currentPrice).isEqualTo(1477.60)
         assertThat(exchangeRates.first().changeRate).isEqualTo(-0.30)
+
+        val metals = result.filter { it.category == IndicatorCategory.METAL }
+        assertThat(metals.map { it.code }).containsExactly("GC", "SI", "HG", "PL", "PA")
+
+        val energy = result.filter { it.category == IndicatorCategory.ENERGY }
+        assertThat(energy.map { it.code }).containsExactly("CL", "NG", "HO", "RB")
     }
 
     @Test
@@ -74,8 +80,15 @@ class NaverMarketIndicatorProviderTest {
     private fun stubBaseIndicators() {
         stubIndicator("/domestic/index.*", NaverFixtures.JSON_DOMESTIC_INDEX_SUCCESS)
         stubIndicator("/worldstock/index.*", NaverFixtures.JSON_DOMESTIC_INDEX_SUCCESS)
-        stubIndicator("/marketindex/metals/GCcv1.*", NaverFixtures.JSON_MARKET_METAL_SUCCESS)
-        stubIndicator("/marketindex/energy/CLcv1.*", NaverFixtures.JSON_MARKET_METAL_SUCCESS)
+        stubIndicator("/marketindex/metals/GCcv1.*", commodityResponse("GCcv1", "GC", "국제 금", "5,081.20", "-230.40", "-4.34", "USD/OZS"))
+        stubIndicator("/marketindex/metals/SIcv1.*", commodityResponse("SIcv1", "SI", "은", "76.41", "0.91", "1.21", "USD/OZS"))
+        stubIndicator("/marketindex/metals/HGcv1.*", commodityResponse("HGcv1", "HG", "구리(선물)", "6.0270", "-0.0545", "-0.90", "USD/LBS"))
+        stubIndicator("/marketindex/metals/PLcv1.*", commodityResponse("PLcv1", "PL", "백금", "2,030.40", "-8.00", "-0.39", "USD/OZS"))
+        stubIndicator("/marketindex/metals/PAcv1.*", commodityResponse("PAcv1", "PA", "팔라듐", "1,509.90", "16.30", "1.09", "USD/OZS"))
+        stubIndicator("/marketindex/energy/CLcv1.*", commodityResponse("CLcv1", "CL", "WTI", "94.40", "-1.45", "-1.51", "USD/BBL"))
+        stubIndicator("/marketindex/energy/NGcv1.*", commodityResponse("NGcv1", "NG", "천연가스", "2.68", "-0.08", "-2.79", "USD/MMBTU"))
+        stubIndicator("/marketindex/energy/HOcv1.*", commodityResponse("HOcv1", "HO", "난방유", "3.7943", "-0.0734", "-1.90", "USD/U GAL"))
+        stubIndicator("/marketindex/energy/RBcv1.*", commodityResponse("RBcv1", "RB", "RBOB 가솔린", "3.3277", "-0.0065", "-0.19", "USD/U GAL"))
     }
 
     private fun stubIndicator(path: String, body: String) {
@@ -100,5 +113,38 @@ class NaverMarketIndicatorProviderTest {
                         .withBody(body)
                 )
         )
+    }
+
+    private fun commodityResponse(
+        reutersCode: String,
+        symbolCode: String,
+        name: String,
+        closePrice: String,
+        fluctuations: String,
+        fluctuationsRatio: String,
+        unit: String
+    ): String {
+        return """
+            {
+              "pollingInterval": 7000,
+              "datas": [
+                {
+                  "reutersCode": "$reutersCode",
+                  "symbolCode": "$symbolCode",
+                  "name": "$name",
+                  "closePrice": "$closePrice",
+                  "fluctuations": "$fluctuations",
+                  "fluctuationsRatio": "$fluctuationsRatio",
+                  "openPrice": "$closePrice",
+                  "highPrice": "$closePrice",
+                  "lowPrice": "$closePrice",
+                  "accumulatedTradingVolume": "1",
+                  "marketStatus": "OPEN",
+                  "unit": "$unit"
+                }
+              ],
+              "time": "20260425185432"
+            }
+        """.trimIndent()
     }
 }

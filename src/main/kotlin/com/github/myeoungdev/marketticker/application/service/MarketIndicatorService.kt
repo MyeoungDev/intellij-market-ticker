@@ -19,6 +19,10 @@ import kotlinx.coroutines.launch
 class MarketIndicatorService(
     private val cs: CoroutineScope
 ) {
+    private companion object {
+        private const val POLLING_INTERVAL_MS = 300_000L
+    }
+
     private val marketIndicatorProvider: MarketIndicatorProvider = DefaultDataSourceRegistry.marketIndicatorProvider()
 
     private val _indicators = MutableStateFlow<List<MarketIndicator>>(emptyList())
@@ -32,7 +36,7 @@ class MarketIndicatorService(
         cs.launch {
             while (isActive) {
                 refresh()
-                delay(70_000L)
+                delay(POLLING_INTERVAL_MS)
             }
         }
     }
