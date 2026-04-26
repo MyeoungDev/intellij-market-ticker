@@ -22,8 +22,9 @@ class NaverScreenerProvider(
             MarketType.NYSE,
             MarketType.SHANGHAI,
             MarketType.HONG_KONG,
-            MarketType.TOKYO,
-            MarketType.VIETNAM -> getForeignScreen(market, preset, limit)
+            MarketType.TOKYO -> getForeignScreen(market, preset, limit)
+
+            MarketType.VIETNAM -> emptyList()
 
             MarketType.UPBIT,
             MarketType.BITHUMB -> getCryptoScreen(market, preset, limit)
@@ -78,7 +79,6 @@ class NaverScreenerProvider(
             MarketType.SHANGHAI -> "CHN"
             MarketType.HONG_KONG -> "HKG"
             MarketType.TOKYO -> "JPN"
-            MarketType.VIETNAM -> "VNM"
             else -> error("Unsupported foreign screener market: $market")
         }
 
@@ -102,7 +102,6 @@ class NaverScreenerProvider(
                 MarketType.SHANGHAI -> MarketType.SHANGHAI
                 MarketType.HONG_KONG -> MarketType.HONG_KONG
                 MarketType.TOKYO -> MarketType.TOKYO
-                MarketType.VIETNAM -> MarketType.VIETNAM
                 else -> MarketType.UNKNOWN
             }
 

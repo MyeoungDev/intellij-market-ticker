@@ -59,7 +59,11 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
     private val refreshButton = JButton()
     private val statusLabel = JLabel()
     private val screenTableModel = object : DefaultTableModel(
-        arrayOf("Ticker", "Company", "Market Cap", "Price", "Change", "Volume"),
+        arrayOf(
+            localizationService.text("종목명", "Name"),
+            localizationService.text("현재가", "Price"),
+            localizationService.text("등락률", "Change")
+        ),
         0
     ) {
         override fun isCellEditable(row: Int, column: Int) = false
@@ -141,6 +145,10 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
         }
         marketCombo.selectedItem = MarketType.KOREA
         rebuildPresetModel()
+
+        screenTable.columnModel.getColumn(0).preferredWidth = 170
+        screenTable.columnModel.getColumn(1).preferredWidth = 90
+        screenTable.columnModel.getColumn(2).preferredWidth = 70
     }
 
     private fun bindTable() {
@@ -203,12 +211,9 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
         rows.forEach { row ->
             screenTableModel.addRow(
                 arrayOf(
-                    row.ticker.symbol,
                     row.ticker.name,
-                    formatMarketCapText(row),
                     formatPriceText(row),
-                    formatChangeText(row.change),
-                    row.volume
+                    formatChangeText(row.change)
                 )
             )
         }
@@ -286,22 +291,6 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
         return moneyDisplayFormatter.formatAmount(rawPrice, currency, fractionDigits)
     }
 
-    private fun formatMarketCapText(row: ScreenedTicker): String {
-        val rawMarketCap = row.marketCap.parseCommaToDouble()
-        if (rawMarketCap <= 0.0) {
-            return row.marketCap
-        }
-
-        val currency = row.ticker.marketType.nativeCurrency().takeIf { it != CurrencyType.UNKNOWN }
-            ?: currentMarket().nativeCurrency()
-        val fractionDigits = when (currency) {
-            CurrencyType.KRW -> 0
-            else -> 2
-        }
-
-        return moneyDisplayFormatter.formatAmount(rawMarketCap, currency, fractionDigits)
-    }
-
     private class ScreenerCellRenderer : DefaultTableCellRenderer() {
         override fun getTableCellRendererComponent(
             table: JTable?,
@@ -318,7 +307,7 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
 
             component.foreground = if (isSelected) table.selectionForeground else table.foreground
 
-            if (column == 4 && value is String) {
+            if (column == 2 && value is String) {
                 val numeric = value.replace("%", "").replace(",", "").toDoubleOrNull()
                 if (numeric != null) {
                     component.foreground = when {

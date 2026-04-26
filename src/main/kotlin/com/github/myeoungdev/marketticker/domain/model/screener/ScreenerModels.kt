@@ -37,7 +37,6 @@ fun MarketType.Companion.screenerMarkets(): List<MarketType> {
         MarketType.SHANGHAI,
         MarketType.HONG_KONG,
         MarketType.TOKYO,
-        MarketType.VIETNAM,
         MarketType.UPBIT,
         MarketType.BITHUMB
     )
@@ -50,11 +49,12 @@ fun MarketType.availableScreenerPresets(): List<ScreenerPreset> {
         MarketType.SHANGHAI,
         MarketType.HONG_KONG,
         MarketType.TOKYO,
-        MarketType.VIETNAM,
         MarketType.KOSPI,
         MarketType.KOSDAQ,
         MarketType.NASDAQ,
         MarketType.NYSE -> STOCK_SCREENER_PRESETS
+
+        MarketType.VIETNAM -> emptyList()
 
         MarketType.UPBIT,
         MarketType.BITHUMB -> CRYPTO_SCREENER_PRESETS
