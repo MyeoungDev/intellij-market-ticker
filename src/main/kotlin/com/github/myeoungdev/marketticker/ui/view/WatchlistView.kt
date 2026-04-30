@@ -7,6 +7,7 @@ import com.github.myeoungdev.marketticker.application.service.LocalizationServic
 import com.github.myeoungdev.marketticker.application.service.MarketDataService
 import com.github.myeoungdev.marketticker.application.service.MoneyDisplayFormatter
 import com.github.myeoungdev.marketticker.application.service.PriceAlertService
+import com.github.myeoungdev.marketticker.common.extenion.parseCommaToDouble
 import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.domain.model.TickerPrice
@@ -51,8 +52,9 @@ class WatchlistView(private val project: Project) {
             arrayOf(
                 localizationService.text("종목명", "Symbol"),
                 localizationService.text("현재가", "Price"),
+                localizationService.text("등락값", "Change Amt"),
                 localizationService.text("등락률", "Change"),
-                localizationService.text("그룹/태그", "Group/Tag"),
+                localizationService.text("그룹", "Group"),
                 localizationService.text("알람", "Alert")
             ),
             0
@@ -85,6 +87,11 @@ class WatchlistView(private val project: Project) {
     private fun setupUI() {
         tickerTable.setDefaultRenderer(Object::class.java, PriceCellRenderer())
 
+        tickerTable.columnModel.getColumn(0).preferredWidth = 115
+        tickerTable.columnModel.getColumn(1).preferredWidth = 95
+        tickerTable.columnModel.getColumn(2).preferredWidth = 95
+        tickerTable.columnModel.getColumn(3).preferredWidth = 70
+        tickerTable.columnModel.getColumn(4).preferredWidth = 80
         tickerTable.columnModel.getColumn(tableModel.columnCount - 1).apply {
             maxWidth = 50
             minWidth = 50
@@ -93,7 +100,7 @@ class WatchlistView(private val project: Project) {
 
         val popupMenu = JPopupMenu()
         val editPortfolioItem = JMenuItem(localizationService.text("포트폴리오 등록/편집", "Add/Edit portfolio"))
-        val editTagItem = JMenuItem(localizationService.text("그룹/태그 편집", "Edit group/tag"))
+        val editTagItem = JMenuItem(localizationService.text("그룹 편집", "Edit group"))
         val deleteTickerItem = JMenuItem(localizationService.text("관심 종목 삭제", "Remove from watchlist"))
 
         editPortfolioItem.addActionListener {
@@ -117,8 +124,8 @@ class WatchlistView(private val project: Project) {
 
             val value = Messages.showInputDialog(
                 project,
-                localizationService.text("그룹/태그를 입력하세요 (예: 국내, 반도체, 테마)", "Enter group/tag (e.g., KR, semiconductor, theme)"),
-                localizationService.text("그룹/태그 편집", "Edit group/tag"),
+                localizationService.text("그룹을 입력하세요 (예: 국내, 반도체, 테마)", "Enter group (e.g., KR, semiconductor, theme)"),
+                localizationService.text("그룹 편집", "Edit group"),
                 null,
                 entry.groupTag,
                 null
@@ -271,6 +278,7 @@ class WatchlistView(private val project: Project) {
 
                 val currentPrice = price?.currentPrice
                 val changeRate = price?.changeRate ?: 0.0
+                val changeAmount = price?.changeAmount
                 val sign = if (changeRate > 0) "+" else ""
                 val rateText = "$sign${localizationService.formatDecimal(changeRate, 2)}%"
 
@@ -278,6 +286,7 @@ class WatchlistView(private val project: Project) {
                     arrayOf(
                         entry.name,
                         moneyDisplayFormatter.formatAmount(currentPrice, price?.currency),
+                        moneyDisplayFormatter.formatSignedAmount(changeAmount, null),
                         rateText,
                         entry.groupTag.ifBlank { defaultGroup(entry) },
                         ""
@@ -340,11 +349,12 @@ class WatchlistView(private val project: Project) {
         ): Component {
             val c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column)
 
-            if (column == 2 && value is String) {
+            if (column in setOf(2, 3) && value is String) {
+                val numeric = value.parseCommaToDouble()
                 foreground = when {
-                    value.startsWith("+") -> JBColor.RED
-                    value.startsWith("-") -> JBColor.BLUE
-                    else -> JBColor.BLACK
+                    numeric > 0 -> JBColor.RED
+                    numeric < 0 -> JBColor.BLUE
+                    else -> if (isSelected) table?.selectionForeground else table?.foreground
                 }
             } else {
                 foreground = if (isSelected) table?.selectionForeground else table?.foreground

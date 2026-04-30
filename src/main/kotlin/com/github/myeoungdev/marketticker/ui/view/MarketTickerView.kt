@@ -2,16 +2,15 @@ package com.github.myeoungdev.marketticker.ui.view
 
 import com.github.myeoungdev.marketticker.application.listener.SettingsUpdateListener
 import com.github.myeoungdev.marketticker.application.service.AppSettingsService
-import com.github.myeoungdev.marketticker.application.service.MoneyDisplayFormatter
 import com.github.myeoungdev.marketticker.application.service.LocalizationService
 import com.github.myeoungdev.marketticker.application.service.MarketDataService
 import com.github.myeoungdev.marketticker.application.service.MarketIndicatorService
+import com.github.myeoungdev.marketticker.application.service.MoneyDisplayFormatter
 import com.github.myeoungdev.marketticker.domain.model.IndicatorCategory
 import com.github.myeoungdev.marketticker.domain.model.MarketIndicator
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.domain.model.TickerPrice
 import com.github.myeoungdev.marketticker.ui.rendener.SearchResultRenderer
-import com.intellij.icons.AllIcons
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
@@ -24,13 +23,10 @@ import kotlinx.coroutines.*
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Dimension
-import java.awt.FlowLayout
 import javax.swing.DefaultListModel
-import javax.swing.ButtonGroup
 import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.JTabbedPane
-import javax.swing.JToggleButton
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
@@ -54,11 +50,6 @@ class MarketTickerView(
 
     val searchPanel = JPanel(BorderLayout())
     private val searchHeaderPanel = JPanel(BorderLayout())
-    private val displayModePanel = JPanel(FlowLayout(FlowLayout.LEFT, 6, 0))
-    private val displayModeLabel = JLabel()
-    private val mixedDisplayButton = JToggleButton()
-    private val krwDisplayButton = JToggleButton()
-    private val quickToggleButton = JToggleButton(AllIcons.Actions.ToggleVisibility)
     private val searchField = JBTextField()
     private val searchListModel = DefaultListModel<Ticker>()
     private val searchResultList = JBList(searchListModel)
@@ -123,13 +114,18 @@ class MarketTickerView(
 
         val searchResultPanel = JBScrollPane(searchResultList).apply {
             border = javax.swing.BorderFactory.createTitledBorder(localizationService.text("검색 결과", "Search Results"))
+            preferredSize = Dimension(360, 110)
         }
 
         rebuildWatchlistTabs()
+        watchlistPortfolioTabbedPane.minimumSize = Dimension(0, 240)
 
-        val topSplitter = com.intellij.ui.JBSplitter(true, 0.4f).apply {
+        val topSplitter = com.intellij.ui.JBSplitter(true, 0.30f).apply {
             firstComponent = searchResultPanel
             secondComponent = watchlistPortfolioTabbedPane
+            dividerWidth = 8
+            firstComponent.minimumSize = Dimension(220, 100)
+            secondComponent.minimumSize = Dimension(0, 140)
         }
 
         marketPulseTicker.border = JBUI.Borders.empty(4, 8)
@@ -148,18 +144,19 @@ class MarketTickerView(
             )
         )
 
-        setupDisplayModePanel()
-        searchHeaderPanel.add(displayModePanel, BorderLayout.NORTH)
         searchHeaderPanel.add(searchField, BorderLayout.CENTER)
         searchPanel.add(searchHeaderPanel, BorderLayout.NORTH)
         searchPanel.add(topSplitter, BorderLayout.CENTER)
+        searchPanel.minimumSize = Dimension(0, 240)
 
         rebuildBottomTabs()
 
-        val mainSplitter = com.intellij.ui.JBSplitter(true, 0.72f).apply {
+        val mainSplitter = com.intellij.ui.JBSplitter(true, 0.62f).apply {
             firstComponent = searchPanel
             secondComponent = bottomTabbedPane
             dividerWidth = 10
+            firstComponent.minimumSize = Dimension(0, 240)
+            secondComponent.minimumSize = Dimension(0, 120)
         }
         val stockPanel = JPanel(BorderLayout()).apply {
             add(mainSplitter, BorderLayout.CENTER)
@@ -167,10 +164,10 @@ class MarketTickerView(
         }
         mainTabbedPane.addTab(localizationService.text("주식", "Stocks"), stockPanel)
         mainTabbedPane.addTab(localizationService.text("스크리너", "Screener"), screenerView)
-        mainTabbedPane.addTab(localizationService.text("캘린더", "Calendar"), calendarView)
         mainTabbedPane.addTab(localizationService.text("환율 및 주요 지표", "FX & Major Indicators"), marketIndicatorsView)
         mainTabbedPane.addTab(localizationService.text("뉴스", "News"), newsView)
         mainTabbedPane.addTab(localizationService.text("리서치", "Research"), researchView)
+        mainTabbedPane.addTab(localizationService.text("캘린더", "Calendar"), calendarView)
         mainPanel.add(mainTabbedPane, BorderLayout.CENTER)
 
         watchlistView.onTickerSelected = { ticker, _ ->
@@ -208,51 +205,8 @@ class MarketTickerView(
 
     }
 
-    private fun setupDisplayModePanel() {
-        val group = ButtonGroup()
-
-        group.add(mixedDisplayButton)
-        group.add(krwDisplayButton)
-
-        refreshDisplayModePanelLabels()
-        displayModePanel.add(displayModeLabel)
-        displayModePanel.add(mixedDisplayButton)
-        displayModePanel.add(krwDisplayButton)
-        quickToggleButton.toolTipText = localizationService.text(
-            "표시 모드 빠른 전환",
-            "Quick toggle between mixed and converted display"
-        )
-        quickToggleButton.isFocusable = false
-        displayModePanel.add(quickToggleButton)
-
-        mixedDisplayButton.addActionListener {
-            if (mixedDisplayButton.isSelected) {
-                updatePriceDisplayMode(AppSettingsService.PriceDisplayMode.MIXED)
-            }
-        }
-
-        krwDisplayButton.addActionListener {
-            if (krwDisplayButton.isSelected) {
-                updatePriceDisplayMode(AppSettingsService.PriceDisplayMode.KRW_CONVERTED)
-            }
-        }
-
-        quickToggleButton.addActionListener {
-            val next = if (appSettingsService.getPriceDisplayMode() == AppSettingsService.PriceDisplayMode.MIXED) {
-                AppSettingsService.PriceDisplayMode.KRW_CONVERTED
-            } else {
-                AppSettingsService.PriceDisplayMode.MIXED
-            }
-            updatePriceDisplayMode(next)
-        }
-
-        syncDisplayModeButtons()
-    }
-
     private fun applyDisplaySettings() {
         marketPulseTicker.isVisible = true
-        refreshDisplayModePanelLabels()
-        syncDisplayModeButtons()
         if (!appSettingsService.isMarketPulseVisible()) {
             marketPulseTicker.setChunks(
                 listOf(
@@ -470,29 +424,4 @@ class MarketTickerView(
         chartView.refreshChart()
     }
 
-    private fun refreshDisplayModePanelLabels() {
-        displayModeLabel.text = localizationService.text("표시", "Display")
-        mixedDisplayButton.text = localizationService.text("혼용", "Mixed")
-        krwDisplayButton.text = localizationService.text("기준 통화", "Converted")
-        mixedDisplayButton.toolTipText = localizationService.text("원문 통화로 표시", "Show native currency")
-        krwDisplayButton.toolTipText = localizationService.text("기준 통화로 환산해 표시", "Convert values to the selected base currency")
-    }
-
-    private fun syncDisplayModeButtons() {
-        val mode = appSettingsService.getPriceDisplayMode()
-        mixedDisplayButton.isSelected = mode == AppSettingsService.PriceDisplayMode.MIXED
-        krwDisplayButton.isSelected = mode == AppSettingsService.PriceDisplayMode.KRW_CONVERTED
-        quickToggleButton.isSelected = mode == AppSettingsService.PriceDisplayMode.KRW_CONVERTED
-    }
-
-    private fun updatePriceDisplayMode(mode: AppSettingsService.PriceDisplayMode) {
-        if (appSettingsService.getPriceDisplayMode() == mode) {
-            return
-        }
-
-        appSettingsService.setPriceDisplayMode(mode)
-        ApplicationManager.getApplication().messageBus
-            .syncPublisher(SettingsUpdateListener.TOPIC)
-            .onSettingsUpdated()
-    }
 }

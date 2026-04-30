@@ -14,7 +14,6 @@ class MarketTypeScreenerExtensionsTest {
             MarketType.SHANGHAI,
             MarketType.HONG_KONG,
             MarketType.TOKYO,
-            MarketType.VIETNAM,
             MarketType.UPBIT,
             MarketType.BITHUMB
         )

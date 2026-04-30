@@ -211,12 +211,11 @@ class NaverNewsProvider(
             overview?.industry?.industryGroupKor ?: basic?.industryCodeType?.industryGroupKor
         ).joinToString(" · ")
 
-        val metaSecondary = listOfNotNull(
-            metricValue(basic, "marketValue")?.let { metricValueDesc(basic, "marketValue") ?: it }
-                ?: overview?.stockItemListedInfo?.marketValueKrw
-        ).joinToString(" · ")
-
         val primaryMetrics = listOfNotNull(
+            basic?.closePrice?.takeIf { it.isNotBlank() }?.let { "현재가 $it" },
+            basic?.fluctuationsRatio?.takeIf { it.isNotBlank() }?.let { "등락률 ${it}%" },
+            metricValue(basic, "marketValue")?.let { "시총 ${metricValueDesc(basic, "marketValue") ?: it}" }
+                ?: overview?.stockItemListedInfo?.marketValueKrw?.let { "시총 $it" },
             metricValue(basic, "per")?.let { "PER $it" },
             metricValue(basic, "pbr")?.let { "PBR $it" }
         ).joinToString(" · ")
@@ -224,8 +223,7 @@ class NaverNewsProvider(
         val secondaryMetrics = listOfNotNull(
             metricValue(basic, "highPriceOf52Weeks")?.let { high ->
                 metricValue(basic, "lowPriceOf52Weeks")?.let { low -> "52주 $low - $high" }
-            },
-            metricValue(basic, "dividendYieldRatio")?.let { "배당 $it" }
+            }
         ).joinToString(" · ")
 
         val summary = overview?.summaries?.summary
@@ -237,7 +235,7 @@ class NaverNewsProvider(
         return TickerOverviewCard(
             title = title,
             metaPrimary = metaPrimary,
-            metaSecondary = metaSecondary,
+            metaSecondary = "",
             primaryMetrics = primaryMetrics,
             secondaryMetrics = secondaryMetrics,
             summary = clipSummary(summary),
@@ -260,11 +258,9 @@ class NaverNewsProvider(
             overview.exchangeType.takeIf { it.isNotBlank() }
         ).joinToString(" · ")
 
-        val metaSecondary = listOfNotNull(
-            overview.profileInfo?.marketCap?.toLong()?.let { "시총 ${formatLargeKrw(it)}" }
-        ).joinToString(" · ")
-
         val primaryMetrics = listOfNotNull(
+            "현재가 ${formatCoinNumber(overview.tradePrice)}",
+            overview.profileInfo?.marketCap?.toLong()?.let { "시총 ${formatLargeKrw(it)}" },
             "${formatSignedPercent(overview.changeRate)} · ${formatSignedNumber(overview.changeValue)} KRW",
             overview.krwPremiumRate?.let { "김프 ${formatSignedPercent(it)}" }
         ).joinToString(" · ")
@@ -280,7 +276,7 @@ class NaverNewsProvider(
         return TickerOverviewCard(
             title = title.ifBlank { ticker.name },
             metaPrimary = metaPrimary,
-            metaSecondary = metaSecondary,
+            metaSecondary = "",
             primaryMetrics = primaryMetrics,
             secondaryMetrics = secondaryMetrics,
             summary = clipSummary(plainText(overview.profileInfo?.contentKr.orEmpty())),
@@ -301,22 +297,19 @@ class NaverNewsProvider(
                     ticker.marketType.name,
                     detail.upJongName?.takeIf { it.isNotBlank() }
                 ).joinToString(" · "),
-                metaSecondary = listOfNotNull(
-                    detail.marketSum?.takeIf { it.isNotBlank() }?.let { "시총 ${formatKrwValue(it)}" }
-                ).joinToString(" · "),
+                metaSecondary = "",
                 primaryMetrics = listOfNotNull(
                     detail.nowVal?.takeIf { it.isNotBlank() }?.let { "현재가 $it" },
                     detail.changeRate?.takeIf { it.isNotBlank() }?.let { "등락률 ${it}%" },
+                    detail.marketSum?.takeIf { it.isNotBlank() }?.let { "시총 ${formatKrwValue(it)}" },
                     detail.per?.takeIf { it.isNotBlank() }?.let { "PER ${it}배" },
                     detail.pbr?.takeIf { it.isNotBlank() }?.let { "PBR ${it}배" }
                 ).joinToString(" · "),
                 secondaryMetrics = listOfNotNull(
-                    detail.eps?.takeIf { it.isNotBlank() }?.let { "EPS $it" },
-                    detail.bps?.takeIf { it.isNotBlank() }?.let { "BPS $it" },
+                    detail.eps?.takeIf { it.isNotBlank() }?.let { "EPS ${it}" },
                     detail.high52week?.takeIf { it.isNotBlank() }?.let { high ->
                         detail.low52week?.takeIf { it.isNotBlank() }?.let { low -> "52주 $low - $high" }
-                    },
-                    detail.dividendRate?.takeIf { it.isNotBlank() }?.let { "배당 $it%" }
+                    }
                 ).joinToString(" · "),
                 summary = clipSummary(plainText(detail.summaryText())),
                 siteUrl = null
