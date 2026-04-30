@@ -122,7 +122,8 @@ data class ScreenedTicker(
     val marketCap: String,
     val pe: String,
     val price: String,
-    val change: String,
+    val changeRate: String,
+    val changeAmount: String,
     val volume: String,
     val signalLabel: String
 )

@@ -114,18 +114,18 @@ class MarketTickerView(
 
         val searchResultPanel = JBScrollPane(searchResultList).apply {
             border = javax.swing.BorderFactory.createTitledBorder(localizationService.text("검색 결과", "Search Results"))
-            preferredSize = Dimension(360, 0)
+            preferredSize = Dimension(360, 110)
         }
 
         rebuildWatchlistTabs()
         watchlistPortfolioTabbedPane.minimumSize = Dimension(0, 240)
 
-        val topSplitter = com.intellij.ui.JBSplitter(true, 0.48f).apply {
+        val topSplitter = com.intellij.ui.JBSplitter(true, 0.30f).apply {
             firstComponent = searchResultPanel
             secondComponent = watchlistPortfolioTabbedPane
             dividerWidth = 8
-            firstComponent.minimumSize = Dimension(280, 300)
-            secondComponent.minimumSize = Dimension(0, 240)
+            firstComponent.minimumSize = Dimension(220, 100)
+            secondComponent.minimumSize = Dimension(0, 140)
         }
 
         marketPulseTicker.border = JBUI.Borders.empty(4, 8)
@@ -147,16 +147,16 @@ class MarketTickerView(
         searchHeaderPanel.add(searchField, BorderLayout.CENTER)
         searchPanel.add(searchHeaderPanel, BorderLayout.NORTH)
         searchPanel.add(topSplitter, BorderLayout.CENTER)
-        searchPanel.minimumSize = Dimension(0, 420)
+        searchPanel.minimumSize = Dimension(0, 240)
 
         rebuildBottomTabs()
 
-        val mainSplitter = com.intellij.ui.JBSplitter(true, 0.80f).apply {
+        val mainSplitter = com.intellij.ui.JBSplitter(true, 0.62f).apply {
             firstComponent = searchPanel
             secondComponent = bottomTabbedPane
             dividerWidth = 10
-            firstComponent.minimumSize = Dimension(0, 420)
-            secondComponent.minimumSize = Dimension(0, 200)
+            firstComponent.minimumSize = Dimension(0, 240)
+            secondComponent.minimumSize = Dimension(0, 120)
         }
         val stockPanel = JPanel(BorderLayout()).apply {
             add(mainSplitter, BorderLayout.CENTER)
@@ -164,10 +164,10 @@ class MarketTickerView(
         }
         mainTabbedPane.addTab(localizationService.text("주식", "Stocks"), stockPanel)
         mainTabbedPane.addTab(localizationService.text("스크리너", "Screener"), screenerView)
-        mainTabbedPane.addTab(localizationService.text("캘린더", "Calendar"), calendarView)
         mainTabbedPane.addTab(localizationService.text("환율 및 주요 지표", "FX & Major Indicators"), marketIndicatorsView)
         mainTabbedPane.addTab(localizationService.text("뉴스", "News"), newsView)
         mainTabbedPane.addTab(localizationService.text("리서치", "Research"), researchView)
+        mainTabbedPane.addTab(localizationService.text("캘린더", "Calendar"), calendarView)
         mainPanel.add(mainTabbedPane, BorderLayout.CENTER)
 
         watchlistView.onTickerSelected = { ticker, _ ->

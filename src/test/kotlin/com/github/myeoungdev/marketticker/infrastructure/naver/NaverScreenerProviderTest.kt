@@ -122,6 +122,41 @@ class NaverScreenerProviderTest {
         )
     }
 
+    @Test
+    fun `국내 스크리너의 하락 등락값은 음수 부호를 유지한다`() {
+        wireMockServer.stubFor(
+            get(urlPathEqualTo("/domestic/market/stock/default"))
+                .withQueryParam("tradeType", equalTo("KRX"))
+                .withQueryParam("marketType", equalTo("ALL"))
+                .withQueryParam("orderType", equalTo("down"))
+                .withQueryParam("startIdx", equalTo("0"))
+                .withQueryParam("pageSize", equalTo("10"))
+                .willReturn(
+                    okJson(
+                        """
+                        [
+                          {
+                            "itemname": "하락주",
+                            "itemcode": "000002",
+                            "sosok": "0",
+                            "marketStatus": "CLOSE",
+                            "nowPrice": "980",
+                            "prevChangeRate": "-2.00",
+                            "tradeVolume": "12345"
+                          }
+                        ]
+                        """.trimIndent()
+                    )
+                )
+        )
+
+        val result = provider.getScreen(MarketType.KOREA, ScreenerPreset.DOWN, limit = 10)
+
+        assertThat(result).hasSize(1)
+        assertThat(result.first().changeRate).isEqualTo("-2.00")
+        assertThat(result.first().changeAmount).startsWith("-")
+    }
+
     private fun createClient(baseUrl: String): NaverClient {
         return NaverClient(
             client = HttpClient.newBuilder().connectTimeout(Duration.ofMillis(500)).build(),

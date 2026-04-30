@@ -10,8 +10,6 @@ import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBLabel
-import com.intellij.ui.components.JBScrollPane
-import com.intellij.ui.components.panels.VerticalLayout
 import com.intellij.util.ui.JBUI
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -47,14 +45,11 @@ class StockOverviewPanel : JPanel(BorderLayout()), Disposable {
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var requestJob: Job? = null
 
-    private val titleLabel = JLabel(localizationService.text("선택 종목 개요", "Selected Stock Overview"))
-    private val statusLabel = JLabel(localizationService.text("관심종목을 선택하면 개요를 표시합니다.", "Select a watchlist ticker to see overview."))
     private val overviewTitleLabel = JLabel()
+    private val statusLabel = JLabel(localizationService.text("관심종목을 선택하면 개요를 표시합니다.", "Select a watchlist ticker to see overview."))
     private val overviewMetaPrimaryLabel = JLabel()
     private val overviewMetaSecondaryLabel = JLabel()
-    private val metricTitleLabel = JLabel(localizationService.text("핵심 지표", "Key Metrics"))
     private val overviewMetricWrap = JPanel(FlowLayout(FlowLayout.LEFT, 6, 6))
-    private val summaryTitleLabel = JLabel(localizationService.text("요약", "Summary"))
     private val overviewSummaryArea = JTextArea()
     private val overviewSiteButton = JButton(localizationService.text("공식 사이트", "Official Site"))
     private val contentPanel = JPanel(BorderLayout(0, 10))
@@ -64,28 +59,22 @@ class StockOverviewPanel : JPanel(BorderLayout()), Disposable {
 
     init {
         border = JBUI.Borders.empty(8)
-        titleLabel.font = titleLabel.font.deriveFont(titleLabel.font.size2D + 1f)
-        statusLabel.foreground = JBColor.GRAY
         overviewTitleLabel.font = overviewTitleLabel.font.deriveFont(Font.BOLD, overviewTitleLabel.font.size2D + 2f)
+        statusLabel.foreground = JBColor.GRAY
         overviewMetaPrimaryLabel.foreground = JBColor.GRAY
         overviewMetaSecondaryLabel.foreground = JBColor.GRAY
-        metricTitleLabel.font = metricTitleLabel.font.deriveFont(Font.BOLD)
-        summaryTitleLabel.font = summaryTitleLabel.font.deriveFont(Font.BOLD)
         overviewMetricWrap.isOpaque = false
         overviewSummaryArea.isEditable = false
-        overviewSummaryArea.isOpaque = true
+        overviewSummaryArea.isOpaque = false
         overviewSummaryArea.lineWrap = true
         overviewSummaryArea.wrapStyleWord = true
-        overviewSummaryArea.rows = 6
-        overviewSummaryArea.margin = JBUI.insets(8)
-        overviewSummaryArea.border = JBUI.Borders.empty()
-        overviewSummaryArea.background = JBColor(Color(250, 251, 252), Color(43, 46, 51))
-        overviewSummaryArea.foreground = JBColor.foreground()
-        overviewSummaryArea.font = overviewSummaryArea.font.deriveFont(12f)
+        overviewSummaryArea.rows = 2
+        overviewSummaryArea.foreground = JBColor.GRAY
+        overviewSummaryArea.font = overviewSummaryArea.font.deriveFont(11.5f)
         overviewSiteButton.isVisible = false
         overviewSiteButton.addActionListener { currentOverviewUrl?.let(BrowserUtil::browse) }
-        preferredSize = Dimension(0, 260)
-        minimumSize = Dimension(0, 200)
+        preferredSize = null
+        minimumSize = Dimension(0, 100)
 
         contentPanel.isOpaque = false
         contentPanel.add(buildHeaderPanel(), BorderLayout.NORTH)
@@ -99,7 +88,7 @@ class StockOverviewPanel : JPanel(BorderLayout()), Disposable {
 
     fun showTicker(ticker: Ticker) {
         requestJob?.cancel()
-        titleLabel.text = localizationService.text("${ticker.name} 개요", "${ticker.name} Overview")
+        overviewTitleLabel.text = ticker.name
         statusLabel.text = localizationService.text("개요를 불러오는 중...", "Loading overview...")
         showLoadingState()
 
@@ -128,15 +117,13 @@ class StockOverviewPanel : JPanel(BorderLayout()), Disposable {
             return
         }
 
-        overviewTitleLabel.text = card.title
+        overviewTitleLabel.text = card.title.ifBlank { overviewTitleLabel.text }
         overviewMetaPrimaryLabel.text = card.metaPrimary
         overviewMetaSecondaryLabel.text = card.metaSecondary
         overviewMetaSecondaryLabel.isVisible = card.metaSecondary.isNotBlank()
         renderMetricChips(card)
-        overviewSummaryArea.text = card.summary.ifBlank {
-            localizationService.text("요약 정보가 없습니다.", "No summary available.")
-        }
-        overviewSummaryArea.caretPosition = 0
+        overviewSummaryArea.text = card.summary.takeIf { it.isNotBlank() } ?: ""
+        overviewSummaryArea.isVisible = overviewSummaryArea.text.isNotBlank()
         currentOverviewUrl = card.siteUrl
         overviewSiteButton.isVisible = !currentOverviewUrl.isNullOrBlank()
         emptyStatePanel.isVisible = false
@@ -148,6 +135,8 @@ class StockOverviewPanel : JPanel(BorderLayout()), Disposable {
         overviewMetaPrimaryLabel.text = ""
         overviewMetaSecondaryLabel.text = ""
         overviewMetricWrap.removeAll()
+        overviewSummaryArea.text = ""
+        overviewSummaryArea.isVisible = false
         overviewMetaSecondaryLabel.isVisible = false
         currentOverviewUrl = null
         overviewSiteButton.isVisible = false
@@ -165,10 +154,11 @@ class StockOverviewPanel : JPanel(BorderLayout()), Disposable {
     }
 
     private fun showLoadingState() {
-        overviewTitleLabel.text = ""
         overviewMetaPrimaryLabel.text = ""
         overviewMetaSecondaryLabel.text = ""
         overviewMetricWrap.removeAll()
+        overviewSummaryArea.text = ""
+        overviewSummaryArea.isVisible = false
         currentOverviewUrl = null
         overviewSiteButton.isVisible = false
         emptyStatePanel.removeAll()
@@ -207,36 +197,36 @@ class StockOverviewPanel : JPanel(BorderLayout()), Disposable {
     }
 
     private fun buildHeaderPanel(): JComponent {
-        return JPanel(BorderLayout(0, 10)).apply {
+        return JPanel(BorderLayout(0, 4)).apply {
             isOpaque = false
             add(
                 JPanel(BorderLayout()).apply {
                     isOpaque = false
-                    add(titleLabel, BorderLayout.NORTH)
                     add(statusLabel, BorderLayout.SOUTH)
                 },
                 BorderLayout.NORTH
             )
             add(
-                JPanel(BorderLayout(0, 10)).apply {
+                JPanel(BorderLayout(0, 4)).apply {
                     border = JBUI.Borders.compound(
                         JBUI.Borders.customLine(JBColor.border(), 1),
-                        JBUI.Borders.empty(12)
+                        JBUI.Borders.empty(6)
                     )
                     add(
-                        JPanel(BorderLayout(0, 8)).apply {
+                        JPanel().apply {
+                            layout = BoxLayout(this, BoxLayout.Y_AXIS)
                             isOpaque = false
-                            add(
-                                JPanel().apply {
-                                    layout = BoxLayout(this, BoxLayout.Y_AXIS)
-                                    isOpaque = false
-                                    add(overviewTitleLabel)
-                                    add(Box.createVerticalStrut(4))
-                                    add(overviewMetaPrimaryLabel)
-                                    add(overviewMetaSecondaryLabel)
-                                },
-                                BorderLayout.NORTH
-                            )
+                            add(overviewTitleLabel)
+                            add(Box.createVerticalStrut(4))
+                            add(overviewMetaPrimaryLabel)
+                            add(Box.createVerticalStrut(4))
+                            add(overviewMetaSecondaryLabel)
+                        },
+                        BorderLayout.NORTH
+                    )
+                    add(
+                        JPanel(BorderLayout(0, 2)).apply {
+                            isOpaque = false
                             add(overviewMetricWrap, BorderLayout.CENTER)
                             add(
                                 JPanel(FlowLayout(FlowLayout.RIGHT, 0, 0)).apply {
@@ -246,22 +236,13 @@ class StockOverviewPanel : JPanel(BorderLayout()), Disposable {
                                 BorderLayout.EAST
                             )
                         },
-                        BorderLayout.NORTH
+                        BorderLayout.CENTER
                     )
                     add(
-                        JPanel(VerticalLayout(4)).apply {
-                            isOpaque = false
-                            add(summaryTitleLabel)
-                            add(
-                                JBScrollPane(overviewSummaryArea).apply {
-                                    border = BorderFactory.createLineBorder(JBColor.border())
-                                    horizontalScrollBarPolicy = JBScrollPane.HORIZONTAL_SCROLLBAR_NEVER
-                                    preferredSize = Dimension(0, 96)
-                                    minimumSize = Dimension(0, 96)
-                                }
-                            )
+                        overviewSummaryArea.apply {
+                            border = JBUI.Borders.emptyTop(6)
                         },
-                        BorderLayout.CENTER
+                        BorderLayout.SOUTH
                     )
                 },
                 BorderLayout.CENTER

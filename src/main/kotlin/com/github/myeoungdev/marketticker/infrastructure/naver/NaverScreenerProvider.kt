@@ -1,6 +1,7 @@
 package com.github.myeoungdev.marketticker.infrastructure.naver
 
 import com.github.myeoungdev.marketticker.application.provider.ScreenerProvider
+import com.github.myeoungdev.marketticker.common.extenion.parseCommaToDouble
 import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.domain.model.screener.ScreenedTicker
@@ -64,7 +65,8 @@ class NaverScreenerProvider(
                 marketCap = item.marketSum,
                 pe = item.per,
                 price = item.nowPrice,
-                change = item.prevChangeRate,
+                changeRate = item.prevChangeRate,
+                changeAmount = formatChangeAmount(item.nowPrice, item.prevChangeRate),
                 volume = item.tradeVolume,
                 signalLabel = preset.labelEn
             )
@@ -120,7 +122,8 @@ class NaverScreenerProvider(
                 marketCap = item.marketValue,
                 pe = "",
                 price = item.currentPrice,
-                change = item.fluctuationsRatio,
+                changeRate = item.fluctuationsRatio,
+                changeAmount = item.compareToPreviousClosePrice,
                 volume = item.accumulatedTradingVolume,
                 signalLabel = preset.labelEn
             )
@@ -159,7 +162,8 @@ class NaverScreenerProvider(
                 marketCap = formatDecimal(item.marketCap),
                 pe = "",
                 price = formatDecimal(item.tradePrice),
-                change = formatDecimal(item.changeRate),
+                changeRate = formatSignedDecimal(item.changeRate),
+                changeAmount = formatSignedDecimal(item.changeValue),
                 volume = formatDecimal(item.accumulatedTradingVolume, 6),
                 signalLabel = preset.labelEn
             )
@@ -168,5 +172,28 @@ class NaverScreenerProvider(
 
     private fun formatDecimal(value: Double, digits: Int = 2): String {
         return "%.${digits}f".format(java.util.Locale.US, value)
+    }
+
+    private fun formatSignedDecimal(value: Double, digits: Int = 2): String {
+        val formatted = formatDecimal(kotlin.math.abs(value), digits)
+        return when {
+            value > 0 -> "+$formatted"
+            value < 0 -> "-$formatted"
+            else -> formatted
+        }
+    }
+
+    private fun formatChangeAmount(price: String, changeRate: String): String {
+        val current = price.parseCommaToDouble()
+        val rate = changeRate.parseCommaToDouble()
+        if (current == 0.0 || rate == 0.0) return ""
+        val previous = current / (1 + rate / 100.0)
+        val delta = current - previous
+        val sign = when {
+            delta > 0 -> "+"
+            delta < 0 -> "-"
+            else -> ""
+        }
+        return "$sign${formatDecimal(kotlin.math.abs(delta), 2)}"
     }
 }

@@ -62,7 +62,8 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
         arrayOf(
             localizationService.text("종목명", "Name"),
             localizationService.text("현재가", "Price"),
-            localizationService.text("등락률", "Change")
+            localizationService.text("등락값", "Change Amt"),
+            localizationService.text("등락률", "Change %")
         ),
         0
     ) {
@@ -146,9 +147,10 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
         marketCombo.selectedItem = MarketType.KOREA
         rebuildPresetModel()
 
-        screenTable.columnModel.getColumn(0).preferredWidth = 170
+        screenTable.columnModel.getColumn(0).preferredWidth = 145
         screenTable.columnModel.getColumn(1).preferredWidth = 90
-        screenTable.columnModel.getColumn(2).preferredWidth = 70
+        screenTable.columnModel.getColumn(2).preferredWidth = 90
+        screenTable.columnModel.getColumn(3).preferredWidth = 70
     }
 
     private fun bindTable() {
@@ -213,7 +215,8 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
                 arrayOf(
                     row.ticker.name,
                     formatPriceText(row),
-                    formatChangeText(row.change)
+                    formatChangeAmountText(row.changeAmount, row),
+                    formatChangeRateText(row.changeRate)
                 )
             )
         }
@@ -269,10 +272,24 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
         )
     }
 
-    private fun formatChangeText(raw: String): String {
+    private fun formatChangeRateText(raw: String): String {
         val value = raw.replace("%", "").replace(",", "").trim().toDoubleOrNull() ?: return raw
         val sign = if (value > 0) "+" else ""
         return "$sign${localizationService.formatDecimal(value, 2)}%"
+    }
+
+    private fun formatChangeAmountText(raw: String, row: ScreenedTicker): String {
+        val value = raw.replace(",", "").trim().toDoubleOrNull() ?: return raw
+        val sign = when {
+            value > 0 -> "+"
+            value < 0 -> "-"
+            else -> ""
+        }
+        val digits = when (row.ticker.marketType.nativeCurrency()) {
+            CurrencyType.KRW -> 0
+            else -> 2
+        }
+        return "$sign${localizationService.formatDecimal(kotlin.math.abs(value), digits)}"
     }
 
     private fun formatPriceText(row: ScreenedTicker): String {
@@ -307,14 +324,12 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
 
             component.foreground = if (isSelected) table.selectionForeground else table.foreground
 
-            if (column == 2 && value is String) {
-                val numeric = value.replace("%", "").replace(",", "").toDoubleOrNull()
-                if (numeric != null) {
-                    component.foreground = when {
-                        numeric > 0 -> JBColor.RED
-                        numeric < 0 -> JBColor.BLUE
-                        else -> if (isSelected) table.selectionForeground else table.foreground
-                    }
+            if (column in setOf(2, 3) && value is String) {
+                val numeric = value.parseCommaToDouble()
+                component.foreground = when {
+                    numeric > 0 -> JBColor.RED
+                    numeric < 0 -> JBColor.BLUE
+                    else -> if (isSelected) table.selectionForeground else table.foreground
                 }
             }
 
