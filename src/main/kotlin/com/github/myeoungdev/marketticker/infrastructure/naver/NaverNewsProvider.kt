@@ -306,6 +306,7 @@ class NaverNewsProvider(
                     detail.pbr?.takeIf { it.isNotBlank() }?.let { "PBR ${it}배" }
                 ).joinToString(" · "),
                 secondaryMetrics = listOfNotNull(
+                    detail.eps?.takeIf { it.isNotBlank() }?.let { "EPS ${it}" },
                     detail.high52week?.takeIf { it.isNotBlank() }?.let { high ->
                         detail.low52week?.takeIf { it.isNotBlank() }?.let { low -> "52주 $low - $high" }
                     }
