@@ -69,10 +69,15 @@ class MarketTickerView(
 
     private val marketPulseTicker = MarketPulseTicker()
     private val marketPulseContainer = JPanel(BorderLayout())
-    private val watchlistPortfolioTabbedPane = JTabbedPane()
-    private val bottomTabbedPane = JTabbedPane()
-    private val topLevelTabbedPane = JTabbedPane()
-    private val mainTabbedPane = JTabbedPane()
+    private val watchlistPortfolioTabbedPane = JTabbedPane().apply {
+        tabLayoutPolicy = JTabbedPane.SCROLL_TAB_LAYOUT
+    }
+    private val bottomTabbedPane = JTabbedPane().apply {
+        tabLayoutPolicy = JTabbedPane.SCROLL_TAB_LAYOUT
+    }
+    private val mainTabbedPane = JTabbedPane().apply {
+        tabLayoutPolicy = JTabbedPane.SCROLL_TAB_LAYOUT
+    }
     private var latestIndicators: List<MarketIndicator> = emptyList()
     private var latestPrices: List<TickerPrice> = emptyList()
 
