@@ -70,13 +70,13 @@ class MarketTickerView(
     private val marketPulseTicker = MarketPulseTicker()
     private val marketPulseContainer = JPanel(BorderLayout())
     private val watchlistPortfolioTabbedPane = JTabbedPane().apply {
-        tabLayoutPolicy = JTabbedPane.SCROLL_TAB_LAYOUT
+        tabLayoutPolicy = JTabbedPane.WRAP_TAB_LAYOUT
     }
     private val bottomTabbedPane = JTabbedPane().apply {
-        tabLayoutPolicy = JTabbedPane.SCROLL_TAB_LAYOUT
+        tabLayoutPolicy = JTabbedPane.WRAP_TAB_LAYOUT
     }
     private val mainTabbedPane = JTabbedPane().apply {
-        tabLayoutPolicy = JTabbedPane.SCROLL_TAB_LAYOUT
+        tabLayoutPolicy = JTabbedPane.WRAP_TAB_LAYOUT
     }
     private var latestIndicators: List<MarketIndicator> = emptyList()
     private var latestPrices: List<TickerPrice> = emptyList()
@@ -169,7 +169,7 @@ class MarketTickerView(
         }
         mainTabbedPane.addTab(localizationService.text("주식", "Stocks"), stockPanel)
         mainTabbedPane.addTab(localizationService.text("스크리너", "Screener"), screenerView)
-        mainTabbedPane.addTab(localizationService.text("환율 및 주요 지표", "FX & Major Indicators"), marketIndicatorsView)
+        mainTabbedPane.addTab(localizationService.text("주요 지표", "Major Indicators"), marketIndicatorsView)
         mainTabbedPane.addTab(localizationService.text("뉴스", "News"), newsView)
         mainTabbedPane.addTab(localizationService.text("리서치", "Research"), researchView)
         mainTabbedPane.addTab(localizationService.text("캘린더", "Calendar"), calendarView)

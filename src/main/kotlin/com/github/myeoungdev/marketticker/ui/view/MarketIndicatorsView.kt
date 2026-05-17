@@ -24,6 +24,7 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.ScrollPaneConstants
 import javax.swing.SwingConstants
+import javax.swing.Timer
 
 /**
  * 환율과 주요 시장 지표를 섹션별 카드 그리드로 보여주는 탭입니다.
@@ -33,6 +34,8 @@ class MarketIndicatorsView : JPanel(BorderLayout()), Disposable {
     private val localizationService = service<LocalizationService>()
     private val moneyDisplayFormatter = MoneyDisplayFormatter()
     private var latestIndicators: List<MarketIndicator> = emptyList()
+    private var lastLayoutSignature: LayoutSignature? = null
+    private var layoutRefreshInProgress = false
 
     private val contentPanel = JPanel().apply {
         layout = BoxLayout(this, BoxLayout.Y_AXIS)
@@ -43,6 +46,12 @@ class MarketIndicatorsView : JPanel(BorderLayout()), Disposable {
         localizationService.text("표시할 지표가 없습니다.", "No indicators available."),
         SwingConstants.CENTER
     )
+
+    private val layoutRefreshTimer = Timer(120) {
+        refreshLayout(force = false)
+    }.apply {
+        isRepeats = false
+    }
 
     init {
         border = JBUI.Borders.empty(8)
@@ -56,7 +65,7 @@ class MarketIndicatorsView : JPanel(BorderLayout()), Disposable {
 
         addComponentListener(object : ComponentAdapter() {
             override fun componentResized(e: ComponentEvent) {
-                refreshLayout()
+                scheduleLayoutRefresh()
             }
         })
 
@@ -65,30 +74,52 @@ class MarketIndicatorsView : JPanel(BorderLayout()), Disposable {
 
     fun renderIndicators(indicators: List<MarketIndicator>) {
         latestIndicators = indicators
-        refreshLayout()
+        refreshLayout(force = true)
     }
 
     override fun dispose() {
+        layoutRefreshTimer.stop()
         // No-op. The view only renders externally supplied data.
     }
 
-    private fun refreshLayout() {
-        contentPanel.removeAll()
-
-        val sections = groupMarketIndicators(latestIndicators)
-        if (sections.isEmpty()) {
-            contentPanel.add(emptyStatePanel())
-        } else {
-            sections.forEachIndexed { index, section ->
-                contentPanel.add(createSectionPanel(section))
-                if (index < sections.lastIndex) {
-                    contentPanel.add(Box.createVerticalStrut(8))
-                }
-            }
+    private fun scheduleLayoutRefresh() {
+        if (!isShowing) {
+            refreshLayout(force = true)
+            return
         }
 
-        contentPanel.revalidate()
-        contentPanel.repaint()
+        layoutRefreshTimer.restart()
+    }
+
+    private fun refreshLayout(force: Boolean) {
+        if (layoutRefreshInProgress) return
+
+        val sections = groupMarketIndicators(latestIndicators)
+        val signature = LayoutSignature.from(sections, contentPanel.width.takeIf { it > 0 } ?: width)
+        if (!force && signature == lastLayoutSignature) {
+            return
+        }
+
+        layoutRefreshInProgress = true
+        contentPanel.removeAll()
+        try {
+            if (sections.isEmpty()) {
+                contentPanel.add(emptyStatePanel())
+            } else {
+                sections.forEachIndexed { index, section ->
+                    contentPanel.add(createSectionPanel(section))
+                    if (index < sections.lastIndex) {
+                        contentPanel.add(Box.createVerticalStrut(8))
+                    }
+                }
+            }
+
+            lastLayoutSignature = signature
+            contentPanel.revalidate()
+            contentPanel.repaint()
+        } finally {
+            layoutRefreshInProgress = false
+        }
     }
 
     private fun emptyStatePanel(): JPanel {
@@ -133,6 +164,22 @@ class MarketIndicatorsView : JPanel(BorderLayout()), Disposable {
             indicators.forEach { add(createIndicatorCard(it)) }
             repeat(rows * columns - indicators.size) {
                 add(JPanel().apply { isOpaque = false })
+            }
+        }
+    }
+
+    private data class LayoutSignature(
+        val sectionSizes: List<Int>,
+        val columnsBySection: List<Int>,
+    ) {
+        companion object {
+            fun from(sections: List<MarketIndicatorSection>, availableWidth: Int): LayoutSignature {
+                return LayoutSignature(
+                    sectionSizes = sections.map { it.indicators.size },
+                    columnsBySection = sections.map { section ->
+                        calculateIndicatorCardColumns(availableWidth, section.indicators.size)
+                    }
+                )
             }
         }
     }

@@ -59,7 +59,9 @@ class NewsView : JPanel(BorderLayout()), Disposable {
     private val detailSummaryArea = JTextArea()
     private val detailLinkLabel = JLabel()
 
-    private val newsTabs = JTabbedPane()
+    private val newsTabs = JTabbedPane().apply {
+        tabLayoutPolicy = JTabbedPane.WRAP_TAB_LAYOUT
+    }
     private val categorySelector = JComboBox<String>()
     private val categoryKeys = mutableListOf<String>()
     private var selectedCategoryKey: String = "MAINNEWS"

@@ -72,7 +72,9 @@ class ResearchView : JPanel(BorderLayout()) {
     private val rankingList = createResearchList(rankingModel)
     private val stockList = createResearchList(stockModel)
 
-    private val tabs = JTabbedPane()
+    private val tabs = JTabbedPane().apply {
+        tabLayoutPolicy = JTabbedPane.WRAP_TAB_LAYOUT
+    }
     private val detailTitleLabel = JLabel(localizationService.text("리서치를 선택하세요", "Select research"))
     private val detailMetaLabel = JLabel(" ")
     private val detailBodyPane = JEditorPane("text/html", "")
