@@ -1,3 +1,4 @@
+
 # Market Ticker
 
 <p align="center">
@@ -17,6 +18,8 @@
 Market Ticker is a JetBrains IDE plugin for developers who want a compact market dashboard without leaving the editor. It combines watchlists, overview, news, research, screener, calendar, alerts, chart, heatmap, and portfolio tracking in a single tool window.
 
 ## Preview
+
+<img width="1510" height="898" alt="스크린샷 2026-06-04 오후 11 51 15" src="https://github.com/user-attachments/assets/a6552e21-8a73-4ca7-a819-7eaf2887ea0d" />
 
 - Watchlist-first stock workspace inside the IDE
 - Selector-based news categories optimized for narrow tool-window space
