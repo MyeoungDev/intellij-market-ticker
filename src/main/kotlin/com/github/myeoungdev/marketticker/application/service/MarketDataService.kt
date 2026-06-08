@@ -172,6 +172,13 @@ class MarketDataService(
         forceRefresh()
     }
 
+    fun removePortfolioEntry(entry: WatchlistRepository.WatchlistEntry) {
+        watchlistRepository.clearPortfolio(entry.symbol, entry.marketType)
+        ApplicationManager.getApplication().messageBus.syncPublisher(WatchlistEntryUpdateListener.TOPIC)
+            .onWatchlistEntryUpdated()
+        forceRefresh()
+    }
+
     /**
      * 현재 저장된 모든 WatchlistEntry 를 반환하는 메서드 입니다.
      */

@@ -155,4 +155,26 @@ class WatchlistRepositoryTest {
         assertEquals(DEFAULT_TICKER.name, second.name)
     }
 
+    @Test
+    fun `포트폴리오 삭제는 관심종목을 유지하고 포트폴리오 필드만 비운다`() {
+        service.addTicker(DEFAULT_TICKER)
+        service.updateWatchlistEntryPortfolio(
+            service.getWatchlistEntries().single().copy(
+                purchasePrice = 1000.0,
+                quantity = 3.0,
+                targetWeightPercentage = 25.0,
+                realizedProfitLoss = 10.0
+            )
+        )
+
+        service.clearPortfolio(DEFAULT_TICKER.symbol, DEFAULT_TICKER.marketType.name)
+
+        val entry = service.getWatchlistEntries().single()
+        assertEquals(DEFAULT_TICKER.symbol, entry.symbol)
+        assertEquals(null, entry.purchasePrice)
+        assertEquals(null, entry.quantity)
+        assertEquals(null, entry.targetWeightPercentage)
+        assertEquals(0.0, entry.realizedProfitLoss)
+    }
+
 }

@@ -1,0 +1,58 @@
+name: Bug report
+description: Report a reproducible problem in Market Ticker.
+title: "[Bug] "
+labels: ["bug"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. Clear reproduction steps help us fix UI and data issues faster.
+  - type: textarea
+    id: description
+    attributes:
+      label: Description
+      description: What is broken, and where does it happen?
+      placeholder: "Example: In Stocks > Portfolio, right-clicking a portfolio row does not show the expected action."
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Steps to reproduce
+      description: List the exact clicks or actions needed to reproduce the problem.
+      placeholder: |
+        1. Open the Stocks tab.
+        2. Open the Portfolio tab.
+        3. Right-click a portfolio row.
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happened instead?
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What should happen?
+    validations:
+      required: true
+  - type: input
+    id: plugin-version
+    attributes:
+      label: Plugin version
+      placeholder: "Example: 1.2.3"
+  - type: input
+    id: ide-version
+    attributes:
+      label: IDE and OS
+      placeholder: "Example: IntelliJ IDEA 2025.1, macOS 15"
+  - type: textarea
+    id: evidence
+    attributes:
+      label: Screenshots or logs
+      description: Attach screenshots, screencasts, or relevant IDE logs if available.
+
