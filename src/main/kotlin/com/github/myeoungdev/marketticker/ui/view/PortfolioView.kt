@@ -7,15 +7,19 @@ import com.github.myeoungdev.marketticker.application.service.MarketDataService
 import com.github.myeoungdev.marketticker.application.service.MoneyDisplayFormatter
 import com.github.myeoungdev.marketticker.domain.model.CurrencyType
 import com.github.myeoungdev.marketticker.domain.model.MarketType
+import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.domain.model.TickerPrice
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
+import com.intellij.openapi.ui.Messages
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.table.JBTable
 import com.intellij.util.ui.JBUI
 import java.awt.BorderLayout
 import java.awt.Component
+import java.awt.event.MouseAdapter
+import java.awt.event.MouseEvent
 import javax.swing.JMenuItem
 import javax.swing.JPanel
 import javax.swing.JPopupMenu
@@ -57,6 +61,9 @@ class PortfolioView {
 
     private var currentWatchlistEntries: List<WatchlistRepository.WatchlistEntry> = emptyList()
     private var currentPrices: List<TickerPrice> = emptyList()
+    private var portfolioEntries: List<WatchlistRepository.WatchlistEntry> = emptyList()
+
+    var onTickerSelected: ((Ticker, TickerPrice?) -> Unit)? = null
 
     init {
         setupUI()
@@ -80,25 +87,72 @@ class PortfolioView {
         portfolioTable.setDefaultRenderer(Object::class.java, PriceCellRenderer())
         val popupMenu = JPopupMenu()
         val editPortfolioItem = JMenuItem(localizationService.text("포트폴리오 정보 편집", "Edit portfolio"))
+        val removePortfolioItem = JMenuItem(localizationService.text("포트폴리오에서 삭제", "Remove from portfolio"))
 
         editPortfolioItem.addActionListener {
-            val selectedRow = portfolioTable.selectedRow
-            if (selectedRow != -1) {
-                getWatchlistEntryAtRow(selectedRow)?.let { entry ->
-                    val dialog = PortfolioEditDialog(entry)
-                    if (dialog.showAndGet()) {
-                        val updatedEntry = entry.copy(
-                            purchasePrice = dialog.purchasePrice,
-                            quantity = dialog.quantity,
-                            groupTag = dialog.groupTag
-                        )
-                        marketDataService.updateWatchlistEntryPortfolio(updatedEntry)
-                    }
-                }
+            val entry = getSelectedWatchlistEntry() ?: return@addActionListener
+            val dialog = PortfolioEditDialog(entry)
+            if (dialog.showAndGet()) {
+                val updatedEntry = entry.copy(
+                    purchasePrice = dialog.purchasePrice,
+                    quantity = dialog.quantity,
+                    groupTag = dialog.groupTag
+                )
+                marketDataService.updateWatchlistEntryPortfolio(updatedEntry)
             }
         }
+
+        removePortfolioItem.addActionListener {
+            val entry = getSelectedWatchlistEntry() ?: return@addActionListener
+            val confirmed = Messages.showYesNoDialog(
+                panel,
+                localizationService.text(
+                    "${entry.name}의 포트폴리오 정보를 삭제할까요?\n관심종목에서는 삭제되지 않습니다.",
+                    "Remove portfolio data for ${entry.name}?\nThe ticker will remain in the watchlist."
+                ),
+                localizationService.text("포트폴리오 삭제", "Remove Portfolio"),
+                Messages.getQuestionIcon()
+            )
+            if (confirmed == Messages.YES) {
+                marketDataService.removePortfolioEntry(entry)
+            }
+        }
+
+        portfolioTable.addMouseListener(object : MouseAdapter() {
+            override fun mouseClicked(e: MouseEvent) {
+                val row = portfolioTable.rowAtPoint(e.point)
+                if (row < 0) return
+                selectRow(row)
+
+                if (e.clickCount == 2) {
+                    val entry = getSelectedWatchlistEntry() ?: return
+                    val ticker = entry.toTicker()
+                    val selectedPrice = currentPrices.find {
+                        it.symbol == entry.symbol && it.marketType == MarketType.of(entry.marketType)
+                    }
+                    onTickerSelected?.invoke(ticker, selectedPrice)
+                }
+            }
+
+            override fun mousePressed(e: MouseEvent) {
+                maybeShowPopup(e)
+            }
+
+            override fun mouseReleased(e: MouseEvent) {
+                maybeShowPopup(e)
+            }
+
+            private fun maybeShowPopup(e: MouseEvent) {
+                if (!e.isPopupTrigger) return
+                val row = portfolioTable.rowAtPoint(e.point)
+                if (row < 0) return
+                selectRow(row)
+                popupMenu.show(e.component, e.x, e.y)
+            }
+        })
+
         popupMenu.add(editPortfolioItem)
-        portfolioTable.componentPopupMenu = popupMenu
+        popupMenu.add(removePortfolioItem)
         panel.add(JBScrollPane(portfolioTable), BorderLayout.CENTER)
         panel.border = JBUI.Borders.empty(5)
     }
@@ -135,6 +189,7 @@ class PortfolioView {
                     val unrealized = (currentPrice - purchasePrice) * quantity
                     Triple(entry, price, PortfolioMetrics(marketValue, unrealized))
                 }
+            portfolioEntries = portfolioRows.map { it.first }
 
             portfolioRows.forEach { (entry, price, metrics) ->
                 val returnRate = if ((entry.purchasePrice ?: 0.0) > 0.0) {
@@ -162,12 +217,29 @@ class PortfolioView {
     }
 
     private fun getWatchlistEntryAtRow(row: Int): WatchlistRepository.WatchlistEntry? {
-        val filteredEntries = currentWatchlistEntries.filter { entry ->
-            val quantity = entry.quantity ?: 0.0
-            val purchasePrice = entry.purchasePrice ?: 0.0
-            quantity > 0 && purchasePrice > 0
-        }
-        return filteredEntries.getOrNull(row)
+        return portfolioEntries.getOrNull(row)
+    }
+
+    private fun getSelectedWatchlistEntry(): WatchlistRepository.WatchlistEntry? {
+        val selectedViewRow = portfolioTable.selectedRow
+        if (selectedViewRow < 0) return null
+        return getWatchlistEntryAtRow(portfolioTable.convertRowIndexToModel(selectedViewRow))
+    }
+
+    private fun selectRow(viewRow: Int) {
+        portfolioTable.setRowSelectionInterval(viewRow, viewRow)
+        portfolioTable.requestFocusInWindow()
+    }
+
+    private fun WatchlistRepository.WatchlistEntry.toTicker(): Ticker {
+        return Ticker(
+            symbol = symbol,
+            tradingSymbol = tradingSymbol,
+            name = name,
+            marketType = MarketType.of(marketType),
+            nationCode = nationCode,
+            nationName = nationName
+        )
     }
 
     private data class PortfolioMetrics(

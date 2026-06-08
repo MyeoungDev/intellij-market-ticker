@@ -114,6 +114,23 @@ class WatchlistRepository : PersistentStateComponent<WatchlistRepository.State> 
         }
     }
 
+    fun clearPortfolio(symbol: String, marketType: String) {
+        val index = marketTickerState.tickers.indexOfFirst {
+            it.symbol == symbol && it.marketType == marketType
+        }
+
+        if (index != -1) {
+            val watchlistEntry = marketTickerState.tickers[index]
+            watchlistEntry.purchasePrice = null
+            watchlistEntry.quantity = null
+            watchlistEntry.targetWeightPercentage = null
+            watchlistEntry.realizedProfitLoss = 0.0
+            logger.info { "Cleared portfolio for ${watchlistEntry.symbol}" }
+        } else {
+            logger.warn { "Watchlist entry not found for portfolio clear: $symbol/$marketType" }
+        }
+    }
+
     private fun normalizeEntry(entry: WatchlistEntry): WatchlistEntry {
         val normalizedMarketType = MarketType.of(entry.marketType).name
         val normalizedTradingSymbol = entry.tradingSymbol.ifBlank { entry.symbol }

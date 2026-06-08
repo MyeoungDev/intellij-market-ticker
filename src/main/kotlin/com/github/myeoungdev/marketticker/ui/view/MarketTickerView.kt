@@ -177,11 +177,10 @@ class MarketTickerView(
         mainPanel.add(mainTabbedPane, BorderLayout.CENTER)
 
         watchlistView.onTickerSelected = { ticker, _ ->
-            chartView.updateSelection(ticker)
-            stockOverviewView.showTicker(ticker)
-            researchView.showStockResearch(ticker)
-            stockNewsView.showTicker(ticker)
-            stockResearchView.showTicker(ticker)
+            showTickerDetails(ticker)
+        }
+        portfolioView.onTickerSelected = { ticker, _ ->
+            showTickerDetails(ticker)
         }
 
         applyDisplaySettings()
@@ -428,6 +427,14 @@ class MarketTickerView(
         portfolioView.updateWith(latestPrices)
         heatmapView.updateHeatmap(latestPrices)
         chartView.refreshChart()
+    }
+
+    private fun showTickerDetails(ticker: Ticker) {
+        chartView.updateSelection(ticker)
+        stockOverviewView.showTicker(ticker)
+        researchView.showStockResearch(ticker)
+        stockNewsView.showTicker(ticker)
+        stockResearchView.showTicker(ticker)
     }
 
 }
