@@ -5,6 +5,8 @@
 .kotlin
 .qodana
 build
+.omx/
+.codex/
 .codex
 .omx
 .codex/*

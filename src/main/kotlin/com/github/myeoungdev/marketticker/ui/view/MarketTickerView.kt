@@ -90,6 +90,7 @@ class MarketTickerView(
         screenerView.dispose()
         calendarView.dispose()
         marketIndicatorsView.dispose()
+        chartView.dispose()
         stockOverviewView.dispose()
         stockNewsView.dispose()
         stockResearchView.dispose()

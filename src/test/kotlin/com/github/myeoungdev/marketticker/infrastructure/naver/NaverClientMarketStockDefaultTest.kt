@@ -58,6 +58,49 @@ class NaverClientMarketStockDefaultTest {
         assertThat(result.first().marketSum).isEqualTo("1249642052000000")
     }
 
+    @Test
+    fun `국내 마켓 스크리너는 명시적 null 선택 필드를 허용한다`() {
+        wireMockServer.stubFor(
+            get(urlPathEqualTo("/domestic/market/stock/default"))
+                .withQueryParam("tradeType", equalTo("KRX"))
+                .withQueryParam("marketType", equalTo("ALL"))
+                .withQueryParam("orderType", equalTo("searchTop"))
+                .withQueryParam("startIdx", equalTo("0"))
+                .withQueryParam("pageSize", equalTo("1"))
+                .willReturn(
+                    okJson(
+                        """
+                        [
+                          {
+                            "itemname": "테스트",
+                            "itemcode": "000001",
+                            "sosok": "0",
+                            "marketStatus": "OPEN",
+                            "nowPrice": "1000",
+                            "prevChangeRate": null,
+                            "tradeVolume": null,
+                            "marketSum": null,
+                            "per": null
+                          }
+                        ]
+                        """.trimIndent()
+                    )
+                )
+        )
+
+        val result = naverClient.fetchDomesticMarketStockDefault(
+            tradeType = "KRX",
+            marketType = "ALL",
+            orderType = "searchTop",
+            startIdx = 0,
+            pageSize = 1
+        )
+
+        assertThat(result).hasSize(1)
+        assertThat(result.first().prevChangeRate).isNull()
+        assertThat(result.first().marketSum).isNull()
+    }
+
     private fun createClient(baseUrl: String): NaverClient {
         return NaverClient(
             client = HttpClient.newBuilder().connectTimeout(Duration.ofMillis(500)).build(),

@@ -123,6 +123,33 @@ class NaverScreenerProviderTest {
     }
 
     @Test
+    fun `국내 검색 상위가 빈 응답이면 거래량 상위로 보정한다`() {
+        wireMockServer.stubFor(
+            get(urlPathEqualTo("/domestic/market/stock/default"))
+                .withQueryParam("tradeType", equalTo("KRX"))
+                .withQueryParam("marketType", equalTo("ALL"))
+                .withQueryParam("orderType", equalTo("searchTop"))
+                .withQueryParam("startIdx", equalTo("0"))
+                .withQueryParam("pageSize", equalTo("10"))
+                .willReturn(okJson("[]"))
+        )
+        wireMockServer.stubFor(
+            get(urlPathEqualTo("/domestic/market/stock/default"))
+                .withQueryParam("tradeType", equalTo("KRX"))
+                .withQueryParam("marketType", equalTo("ALL"))
+                .withQueryParam("orderType", equalTo("quantTop"))
+                .withQueryParam("startIdx", equalTo("0"))
+                .withQueryParam("pageSize", equalTo("10"))
+                .willReturn(okJson(NaverFixtures.JSON_DOMESTIC_MARKET_STOCK_DEFAULT_SUCCESS))
+        )
+
+        val result = provider.getScreen(MarketType.KOREA, ScreenerPreset.SEARCH_TOP, limit = 10)
+
+        assertThat(result).isNotEmpty
+        assertThat(result.first().ticker.symbol).isEqualTo("005930")
+    }
+
+    @Test
     fun `국내 스크리너의 하락 등락값은 음수 부호를 유지한다`() {
         wireMockServer.stubFor(
             get(urlPathEqualTo("/domestic/market/stock/default"))

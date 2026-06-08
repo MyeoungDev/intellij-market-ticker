@@ -65,6 +65,7 @@ class NewsView : JPanel(BorderLayout()), Disposable {
     private val categorySelector = JComboBox<String>()
     private val categoryKeys = mutableListOf<String>()
     private var selectedCategoryKey: String = "MAINNEWS"
+    private var rebuildingCategories: Boolean = false
     private var categoryArticles: Map<String, List<NewsArticle>> = emptyMap()
 
     private val categoryListModel = DefaultListModel<NewsArticle>()
@@ -185,6 +186,7 @@ class NewsView : JPanel(BorderLayout()), Disposable {
             }
         }
         categorySelector.addActionListener {
+            if (rebuildingCategories) return@addActionListener
             val selectedIndex = categorySelector.selectedIndex
             if (selectedIndex >= 0 && selectedIndex < categoryKeys.size) {
                 val key = categoryKeys[selectedIndex]
@@ -271,21 +273,26 @@ class NewsView : JPanel(BorderLayout()), Disposable {
     }
 
     private fun rebuildCategories() {
-        categorySelector.removeAllItems()
-        categoryKeys.clear()
+        rebuildingCategories = true
+        try {
+            categorySelector.removeAllItems()
+            categoryKeys.clear()
 
-        categoryArticles.keys.forEach { key ->
-            categoryKeys += key
-            categorySelector.addItem(displayCategory(key))
-        }
+            categoryArticles.keys.forEach { key ->
+                categoryKeys += key
+                categorySelector.addItem(displayCategory(key))
+            }
 
-        if (!categoryKeys.contains(selectedCategoryKey)) {
-            selectedCategoryKey = categoryKeys.firstOrNull() ?: "MAINNEWS"
-        }
+            if (!categoryKeys.contains(selectedCategoryKey)) {
+                selectedCategoryKey = categoryKeys.firstOrNull() ?: "MAINNEWS"
+            }
 
-        val selectedIndex = categoryKeys.indexOf(selectedCategoryKey)
-        if (selectedIndex >= 0) {
-            categorySelector.selectedIndex = selectedIndex
+            val selectedIndex = categoryKeys.indexOf(selectedCategoryKey)
+            if (selectedIndex >= 0) {
+                categorySelector.selectedIndex = selectedIndex
+            }
+        } finally {
+            rebuildingCategories = false
         }
     }
 

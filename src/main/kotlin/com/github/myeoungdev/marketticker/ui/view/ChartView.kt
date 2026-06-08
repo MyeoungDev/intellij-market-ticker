@@ -4,12 +4,14 @@ import com.github.myeoungdev.marketticker.application.service.LocalizationServic
 import com.github.myeoungdev.marketticker.application.service.ChartDataService
 import com.github.myeoungdev.marketticker.application.service.PriceHistoryService
 import com.github.myeoungdev.marketticker.domain.model.Ticker
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import kotlinx.coroutines.*
 import java.awt.*
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.concurrent.atomic.AtomicLong
 import javax.swing.JComboBox
 import javax.swing.JLabel
 import javax.swing.JPanel
@@ -17,7 +19,7 @@ import javax.swing.JPanel
 /**
  * 선택된 종목의 히스토리 데이터를 캔들/거래량/이동평균으로 렌더링하는 뷰입니다.
  */
-class ChartView : JPanel(BorderLayout()) {
+class ChartView : JPanel(BorderLayout()), Disposable {
 
     private val historyService = service<PriceHistoryService>()
     private val chartDataService = service<ChartDataService>()
@@ -29,6 +31,8 @@ class ChartView : JPanel(BorderLayout()) {
     private var candles: List<PriceHistoryService.Candle> = emptyList()
     private var ma5: List<Double?> = emptyList()
     private var ma20: List<Double?> = emptyList()
+    private var loading: Boolean = false
+    private val refreshSequence = AtomicLong()
 
     private val titleLabel = JLabel(localizationService.text("차트: 종목을 선택하세요", "Chart: select a symbol"))
     private val periodCombo = JComboBox(PriceHistoryService.Period.values())
@@ -55,6 +59,7 @@ class ChartView : JPanel(BorderLayout()) {
     fun updateSelection(ticker: Ticker) {
         selectedTicker = ticker
         titleLabel.text = localizationService.text("차트", "Chart") + ": ${ticker.name} (${ticker.symbol})"
+        clearChart(loading = true)
         refreshChart()
     }
 
@@ -63,11 +68,22 @@ class ChartView : JPanel(BorderLayout()) {
      */
     fun refreshChart() {
         val ticker = selectedTicker ?: return
+        val requestedPeriod = period
+        val requestId = refreshSequence.incrementAndGet()
+        loading = true
+        canvas.repaint()
 
         scope.launch {
-            val data = chartDataService.loadCandles(ticker, period)
+            val data = chartDataService.loadCandles(ticker, requestedPeriod)
 
             ApplicationManager.getApplication().invokeLater {
+                if (requestId != refreshSequence.get()) {
+                    return@invokeLater
+                }
+                if (selectedTicker != ticker || period != requestedPeriod) {
+                    return@invokeLater
+                }
+                loading = false
                 candles = data.takeLast(visibleCandleLimit())
                 ma5 = historyService.movingAverage(candles, 5)
                 ma20 = historyService.movingAverage(candles, 20)
@@ -76,9 +92,16 @@ class ChartView : JPanel(BorderLayout()) {
         }
     }
 
-    override fun removeNotify() {
-        super.removeNotify()
+    override fun dispose() {
         scope.cancel()
+    }
+
+    private fun clearChart(loading: Boolean) {
+        this.loading = loading
+        candles = emptyList()
+        ma5 = emptyList()
+        ma20 = emptyList()
+        canvas.repaint()
     }
 
     /**
@@ -105,7 +128,12 @@ class ChartView : JPanel(BorderLayout()) {
 
             if (candles.isEmpty()) {
                 g2.color = Color.LIGHT_GRAY
-                g2.drawString(localizationService.text("차트 데이터가 없습니다.", "No chart data yet."), 16, 24)
+                val message = if (loading) {
+                    localizationService.text("차트 데이터를 불러오는 중...", "Loading chart data...")
+                } else {
+                    localizationService.text("차트 데이터가 없습니다.", "No chart data yet.")
+                }
+                g2.drawString(message, 16, 24)
                 return
             }
 

@@ -43,8 +43,21 @@ class NaverScreenerProvider(
             ScreenerPreset.DOWN -> "down"
         }
 
-        return client.fetchDomesticMarketStockDefault("KRX", "ALL", orderType, 0, limit).map { item ->
-            val marketType = when (item.sosok) {
+        val items = client.fetchDomesticMarketStockDefault("KRX", "ALL", orderType, 0, limit)
+            .ifEmpty {
+                if (preset == ScreenerPreset.SEARCH_TOP) {
+                    client.fetchDomesticMarketStockDefault("KRX", "ALL", "quantTop", 0, limit)
+                } else {
+                    emptyList()
+                }
+            }
+
+        return items.map { item ->
+            val itemCode = item.itemcode.orEmpty()
+            val itemName = item.itemname.orEmpty()
+            val nowPrice = item.nowPrice.orEmpty()
+            val prevChangeRate = item.prevChangeRate.orEmpty()
+            val marketType = when (item.sosok.orEmpty()) {
                 "0" -> MarketType.KOSPI
                 "1" -> MarketType.KOSDAQ
                 else -> MarketType.UNKNOWN
@@ -52,22 +65,22 @@ class NaverScreenerProvider(
 
             ScreenedTicker(
                 ticker = Ticker(
-                    symbol = item.itemcode,
-                    tradingSymbol = item.itemcode,
-                    name = item.itemname,
+                    symbol = itemCode,
+                    tradingSymbol = itemCode,
+                    name = itemName,
                     marketType = marketType,
                     nationCode = "KOR",
                     nationName = "대한민국"
                 ),
                 sector = marketType.displayName,
                 industry = preset.labelKo,
-                exchange = item.marketStatus,
-                marketCap = item.marketSum,
-                pe = item.per,
-                price = item.nowPrice,
-                changeRate = item.prevChangeRate,
-                changeAmount = formatChangeAmount(item.nowPrice, item.prevChangeRate),
-                volume = item.tradeVolume,
+                exchange = item.marketStatus.orEmpty(),
+                marketCap = item.marketSum.orEmpty(),
+                pe = item.per.orEmpty(),
+                price = nowPrice,
+                changeRate = prevChangeRate,
+                changeAmount = formatChangeAmount(nowPrice, prevChangeRate),
+                volume = item.tradeVolume.orEmpty(),
                 signalLabel = preset.labelEn
             )
         }

@@ -7,15 +7,15 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class NaverDomesticMarketStockItem(
-    val itemcode: String = "",
-    val itemname: String = "",
-    val sosok: String = "",
-    val marketStatus: String = "",
-    val nowPrice: String = "",
-    val prevChangeRate: String = "",
-    val tradeVolume: String = "",
-    val tradeAmount: String = "",
-    val marketSum: String = "",
-    val per: String = "",
+    val itemcode: String? = "",
+    val itemname: String? = "",
+    val sosok: String? = "",
+    val marketStatus: String? = "",
+    val nowPrice: String? = "",
+    val prevChangeRate: String? = "",
+    val tradeVolume: String? = "",
+    val tradeAmount: String? = "",
+    val marketSum: String? = "",
+    val per: String? = "",
     val listedDate: String? = null
 )

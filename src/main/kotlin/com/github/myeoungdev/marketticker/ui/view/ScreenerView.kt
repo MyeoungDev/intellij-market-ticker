@@ -44,6 +44,7 @@ import javax.swing.JPopupMenu
 import javax.swing.JTable
 import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.DefaultTableModel
+import java.util.concurrent.atomic.AtomicLong
 
 class ScreenerView : JPanel(BorderLayout()), Disposable {
 
@@ -76,6 +77,7 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
     }
 
     private var currentRows: List<ScreenedTicker> = emptyList()
+    private val loadSequence = AtomicLong()
 
     init {
         border = JBUI.Borders.empty(10)
@@ -193,11 +195,26 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
     private fun loadPreset(forceRefresh: Boolean) {
         val market = currentMarket()
         val preset = presetCombo.selectedItem as? ScreenerPreset ?: availablePresetsFor(market).first()
+        val requestId = loadSequence.incrementAndGet()
         statusLabel.text = localizationService.text("스크리너를 불러오는 중...", "Loading screener...")
 
         scope.launch {
-            val rows = screenerService.loadScreen(market, preset, limit = 25, forceRefresh = forceRefresh)
+            val result = runCatching {
+                screenerService.loadScreen(market, preset, limit = 25, forceRefresh = forceRefresh)
+            }
             withContext(Dispatchers.Main) {
+                if (requestId != loadSequence.get()) {
+                    return@withContext
+                }
+                val rows = result.getOrElse {
+                    currentRows = emptyList()
+                    renderRows(emptyList())
+                    statusLabel.text = localizationService.text(
+                        "${displayMarket(market)} · ${displayPreset(market, preset)} 조회 실패",
+                        "${displayMarket(market)} · ${displayPreset(market, preset)} failed"
+                    )
+                    return@withContext
+                }
                 currentRows = rows
                 renderRows(rows)
                 statusLabel.text = localizationService.text(
