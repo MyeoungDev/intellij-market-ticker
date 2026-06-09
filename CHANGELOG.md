@@ -9,6 +9,7 @@
 - Fixed polling interval changes not taking effect until the previous long delay completed.
 
 ### Added
+- Added NXT venue support for domestic stocks, including KRX/NXT screener selection and configurable domestic stock venue display. (#35)
 - Added longer fixed and open-market polling interval options up to 1 hour. (#36)
 
 ## [0.0.2] - 2026-06-08
