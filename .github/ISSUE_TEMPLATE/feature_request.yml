@@ -4,28 +4,15 @@ title: "[Feature] "
 labels: ["enhancement"]
 body:
   - type: textarea
-    id: problem
+    id: description
     attributes:
-      label: Problem
-      description: What workflow or limitation should this solve?
-      placeholder: "Example: Portfolio entries can be edited but not removed without deleting the watchlist item."
+      label: Description
+      description: What should be added or improved?
+      placeholder: "Example: Add NXT as a selectable domestic screener market."
     validations:
       required: true
-  - type: textarea
-    id: proposal
-    attributes:
-      label: Proposed solution
-      description: Describe the behavior you want.
-    validations:
-      required: true
-  - type: textarea
-    id: alternatives
-    attributes:
-      label: Alternatives considered
-      description: Optional. Describe any workaround or alternate design.
   - type: textarea
     id: context
     attributes:
       label: Additional context
-      description: Add screenshots, related issues, or examples if useful.
-
+      description: Add links, screenshots, examples, or implementation notes if useful.
