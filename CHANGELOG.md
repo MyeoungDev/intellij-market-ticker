@@ -6,8 +6,10 @@
 
 ### Fixed
 - Removed the group/tag field from portfolio registration and edit dialogs.
+- Fixed polling interval changes not taking effect until the previous long delay completed.
 
 ### Added
+- Added longer fixed and open-market polling interval options up to 1 hour. (#36)
 
 ## [0.0.2] - 2026-06-08
 ### Fixed
