@@ -4,6 +4,7 @@ import com.fasterxml.jackson.module.kotlin.readValue
 import com.github.myeoungdev.marketticker.application.service.PriceHistoryService
 import com.github.myeoungdev.marketticker.common.config.httpClient
 import com.github.myeoungdev.marketticker.common.config.objectMapper
+import com.github.myeoungdev.marketticker.domain.model.DomesticTradeType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCoinPrice
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCryptoCandle
@@ -413,15 +414,39 @@ class NaverClient(
      * @param codeType 기본값은 `KRX`이며, 네이버 상세 API가 요구하는 코드 구분자입니다.
      * @return 조회 성공 시 상세 DTO, 실패 시 `null`
      */
-    fun fetchDomesticStockDetail(itemCode: String, codeType: String = "KRX"): NaverDomesticStockDetail? {
+    fun fetchDomesticStockDetail(itemCode: String): NaverDomesticStockDetail? {
+        return fetchDomesticStockDetailInternal(itemCode, domesticTradeType = null)
+    }
+
+    fun fetchDomesticStockDetail(itemCode: String, codeType: String): NaverDomesticStockDetail? {
+        return fetchDomesticStockDetail(itemCode, DomesticTradeType.of(codeType))
+    }
+
+    fun fetchDomesticStockDetail(
+        itemCode: String,
+        domesticTradeType: DomesticTradeType
+    ): NaverDomesticStockDetail? {
+        return fetchDomesticStockDetailInternal(
+            itemCode = itemCode,
+            domesticTradeType = domesticTradeType.takeUnless { it == DomesticTradeType.KRX }
+        )
+    }
+
+    private fun fetchDomesticStockDetailInternal(
+        itemCode: String,
+        domesticTradeType: DomesticTradeType?
+    ): NaverDomesticStockDetail? {
         checkBackgroundThread()
         val normalizedItemCode = itemCode.trim()
         if (normalizedItemCode.isBlank()) return null
 
         return try {
             val encodedItemCode = URLEncoder.encode(normalizedItemCode, Charsets.UTF_8)
-            val encodedCodeType = URLEncoder.encode(codeType.trim().ifBlank { "KRX" }, Charsets.UTF_8)
-            val fullUrl = "$domesticStockDetailUrl/$encodedItemCode/detail?codeType=$encodedCodeType"
+            val baseUrl = "$domesticStockDetailUrl/$encodedItemCode/detail"
+            val fullUrl = domesticTradeType?.let {
+                val encodedCodeType = URLEncoder.encode(it.code, Charsets.UTF_8)
+                "$baseUrl?codeType=$encodedCodeType"
+            } ?: baseUrl
 
             val request = HttpRequest.newBuilder()
                 .uri(URI.create(fullUrl))

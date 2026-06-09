@@ -1,5 +1,6 @@
 package com.github.myeoungdev.marketticker.infrastructure.naver
 
+import com.github.myeoungdev.marketticker.domain.model.DomesticTradeType
 import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.screener.ScreenerPreset
 import com.github.myeoungdev.marketticker.fixtures.naver.NaverFixtures
@@ -49,6 +50,33 @@ class NaverScreenerProviderTest {
         assertThat(result.first().ticker.marketType).isIn(MarketType.KOSPI, MarketType.UNKNOWN)
         assertThat(result.first().marketCap).isNotBlank()
         assertThat(result.first().price).isNotBlank()
+    }
+
+    @Test
+    fun `국내 스크리너는 NXT tradeType으로 조회할 수 있다`() {
+        wireMockServer.stubFor(
+            get(urlPathEqualTo("/domestic/market/stock/default"))
+                .withQueryParam("tradeType", equalTo("NXT"))
+                .withQueryParam("marketType", equalTo("ALL"))
+                .withQueryParam("orderType", equalTo("searchTop"))
+                .withQueryParam("startIdx", equalTo("0"))
+                .withQueryParam("pageSize", equalTo("10"))
+                .willReturn(okJson(NaverFixtures.JSON_DOMESTIC_MARKET_STOCK_DEFAULT_SUCCESS))
+        )
+
+        val result = provider.getScreen(
+            market = MarketType.KOREA,
+            preset = ScreenerPreset.SEARCH_TOP,
+            limit = 10,
+            domesticTradeType = DomesticTradeType.NXT
+        )
+
+        assertThat(result).isNotEmpty
+        wireMockServer.verify(
+            getRequestedFor(urlPathEqualTo("/domestic/market/stock/default"))
+                .withQueryParam("tradeType", equalTo("NXT"))
+                .withQueryParam("marketType", equalTo("ALL"))
+        )
     }
 
     @Test

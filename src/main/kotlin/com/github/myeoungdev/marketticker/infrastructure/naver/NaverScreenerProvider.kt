@@ -2,6 +2,7 @@ package com.github.myeoungdev.marketticker.infrastructure.naver
 
 import com.github.myeoungdev.marketticker.application.provider.ScreenerProvider
 import com.github.myeoungdev.marketticker.common.extenion.parseCommaToDouble
+import com.github.myeoungdev.marketticker.domain.model.DomesticTradeType
 import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.domain.model.screener.ScreenedTicker
@@ -12,11 +13,16 @@ class NaverScreenerProvider(
     private val client: NaverClient = NaverClient()
 ) : ScreenerProvider {
 
-    override fun getScreen(market: MarketType, preset: ScreenerPreset, limit: Int): List<ScreenedTicker> {
+    override fun getScreen(
+        market: MarketType,
+        preset: ScreenerPreset,
+        limit: Int,
+        domesticTradeType: DomesticTradeType
+    ): List<ScreenedTicker> {
         return when (market) {
             MarketType.KOREA,
             MarketType.KOSPI,
-            MarketType.KOSDAQ -> getDomesticScreen(preset, limit)
+            MarketType.KOSDAQ -> getDomesticScreen(preset, limit, domesticTradeType)
 
             MarketType.USA,
             MarketType.NASDAQ,
@@ -34,7 +40,11 @@ class NaverScreenerProvider(
         }
     }
 
-    private fun getDomesticScreen(preset: ScreenerPreset, limit: Int): List<ScreenedTicker> {
+    private fun getDomesticScreen(
+        preset: ScreenerPreset,
+        limit: Int,
+        domesticTradeType: DomesticTradeType
+    ): List<ScreenedTicker> {
         val orderType = when (preset) {
             ScreenerPreset.SEARCH_TOP -> "searchTop"
             ScreenerPreset.PRICE_TOP -> "priceTop"
@@ -43,10 +53,11 @@ class NaverScreenerProvider(
             ScreenerPreset.DOWN -> "down"
         }
 
-        val items = client.fetchDomesticMarketStockDefault("KRX", "ALL", orderType, 0, limit)
+        val tradeType = domesticTradeType.code
+        val items = client.fetchDomesticMarketStockDefault(tradeType, "ALL", orderType, 0, limit)
             .ifEmpty {
                 if (preset == ScreenerPreset.SEARCH_TOP) {
-                    client.fetchDomesticMarketStockDefault("KRX", "ALL", "quantTop", 0, limit)
+                    client.fetchDomesticMarketStockDefault(tradeType, "ALL", "quantTop", 0, limit)
                 } else {
                     emptyList()
                 }

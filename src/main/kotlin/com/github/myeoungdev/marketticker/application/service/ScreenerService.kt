@@ -2,6 +2,7 @@ package com.github.myeoungdev.marketticker.application.service
 
 import com.github.myeoungdev.marketticker.application.provider.DefaultDataSourceRegistry
 import com.github.myeoungdev.marketticker.application.provider.ScreenerProvider
+import com.github.myeoungdev.marketticker.domain.model.DomesticTradeType
 import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.screener.ScreenedTicker
 import com.github.myeoungdev.marketticker.domain.model.screener.ScreenerPreset
@@ -30,10 +31,11 @@ class ScreenerService(
         market: MarketType,
         preset: ScreenerPreset,
         limit: Int = 25,
-        forceRefresh: Boolean = false
+        forceRefresh: Boolean = false,
+        domesticTradeType: DomesticTradeType = DomesticTradeType.KRX
     ): List<ScreenedTicker> {
-        return cached("screen:${market.name}:${preset.name}:$limit", 60_000L, forceRefresh) {
-            screenerProvider.getScreen(market, preset, limit)
+        return cached("screen:${market.name}:${domesticTradeType.name}:${preset.name}:$limit", 60_000L, forceRefresh) {
+            screenerProvider.getScreen(market, preset, limit, domesticTradeType)
         }
     }
 

@@ -139,7 +139,6 @@ class NaverNewsProviderTest {
     private fun stubDomesticTicker() {
         wireMockServer.stubFor(
             get(urlPathEqualTo("/domestic/detail/003280/detail"))
-                .withQueryParam("codeType", equalTo("KRX"))
                 .willReturn(okJson(NaverFixtures.JSON_DOMESTIC_STOCK_DETAIL_SUCCESS))
         )
         wireMockServer.stubFor(

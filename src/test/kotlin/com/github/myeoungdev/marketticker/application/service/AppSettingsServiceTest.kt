@@ -54,6 +54,30 @@ class AppSettingsServiceTest {
     }
 
     @Test
+    fun `국내 주식 시세 기준 기본값은 KRX NXT 혼합이다`() {
+        val service = AppSettingsService()
+
+        assertThat(service.getDomesticTradeVenueMode()).isEqualTo(AppSettingsService.DomesticTradeVenueMode.MIXED)
+    }
+
+    @Test
+    fun `국내 주식 시세 기준을 저장하고 조회한다`() {
+        val service = AppSettingsService()
+
+        service.setDomesticTradeVenueMode(AppSettingsService.DomesticTradeVenueMode.NXT_ONLY)
+
+        assertThat(service.getDomesticTradeVenueMode()).isEqualTo(AppSettingsService.DomesticTradeVenueMode.NXT_ONLY)
+    }
+
+    @Test
+    fun `국내 주식 시세 기준의 알 수 없는 저장값은 혼합으로 보정한다`() {
+        val service = AppSettingsService()
+        service.loadState(AppSettingsService.State(domesticTradeVenueMode = "INVALID"))
+
+        assertThat(service.getDomesticTradeVenueMode()).isEqualTo(AppSettingsService.DomesticTradeVenueMode.MIXED)
+    }
+
+    @Test
     fun `기준 통화 기본값은 원화다`() {
         val service = AppSettingsService()
 

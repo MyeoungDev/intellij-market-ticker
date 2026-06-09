@@ -62,7 +62,11 @@ data class NaverStockPrice(
     // 국제 증권 식별 코드
     val isinCode: String?,
 
-    val currencyType: CurrencyResponse
+    val currencyType: CurrencyResponse,
+
+    val overMarketPriceInfo: NaverOverMarketPriceInfo? = null,
+
+    val integratedPriceInfo: NaverIntegratedPriceInfo? = null
 ) {
 
     fun toTickerPrice(): TickerPrice {
@@ -84,7 +88,9 @@ data class NaverStockPrice(
             marketType = stockExchangeType.toMarketType(),
             currency = CurrencyType.of(currencyType.code),
             nationCode = stockExchangeType.nationCode,
-            nationName = stockExchangeType.nationName
+            nationName = stockExchangeType.nationName,
+            overMarketPrice = overMarketPriceInfo?.toDomainPrice(),
+            integratedPrice = integratedPriceInfo?.toDomainPrice()
         )
     }
 
@@ -100,6 +106,52 @@ data class NaverStockPrice(
             "VNM", "HSX", "HOSE", "HNX" -> MarketType.VIETNAM
             else -> MarketType.of(this.code)
         }
+    }
+}
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class NaverOverMarketPriceInfo(
+    val overMarketStatus: String? = null,
+    val overPrice: String? = null,
+    val openPrice: String? = null,
+    val highPrice: String? = null,
+    val lowPrice: String? = null,
+    val compareToPreviousClosePrice: String? = null,
+    val fluctuationsRatio: String? = null,
+    val accumulatedTradingVolume: String? = null,
+    val accumulatedTradingValue: String? = null
+) {
+    fun toDomainPrice(): DomesticAlternativePrice {
+        return DomesticAlternativePrice(
+            currentPrice = overPrice.orEmpty().parseCommaToDouble(),
+            openPrice = openPrice.orEmpty().parseCommaToDouble(),
+            highPrice = highPrice.orEmpty().parseCommaToDouble(),
+            lowPrice = lowPrice.orEmpty().parseCommaToDouble(),
+            changeAmount = compareToPreviousClosePrice.orEmpty().parseCommaToDouble(),
+            changeRate = fluctuationsRatio.orEmpty().parseCommaToDouble(),
+            tradeVolume = accumulatedTradingVolume.orEmpty().parseCommaToLong(),
+            tradeValue = accumulatedTradingValue.orEmpty().parseCommaToDouble(),
+            marketStatus = MarketStatus.of(overMarketStatus.orEmpty())
+        )
+    }
+}
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class NaverIntegratedPriceInfo(
+    val openPrice: String? = null,
+    val highPrice: String? = null,
+    val lowPrice: String? = null,
+    val accumulatedTradingVolume: String? = null,
+    val accumulatedTradingValue: String? = null
+) {
+    fun toDomainPrice(): DomesticIntegratedPrice {
+        return DomesticIntegratedPrice(
+            openPrice = openPrice.orEmpty().parseCommaToDouble(),
+            highPrice = highPrice.orEmpty().parseCommaToDouble(),
+            lowPrice = lowPrice.orEmpty().parseCommaToDouble(),
+            tradeVolume = accumulatedTradingVolume.orEmpty().parseCommaToLong(),
+            tradeValue = accumulatedTradingValue.orEmpty().parseCommaToDouble()
+        )
     }
 }
 
