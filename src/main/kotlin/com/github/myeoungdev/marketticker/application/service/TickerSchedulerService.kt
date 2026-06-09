@@ -1,9 +1,13 @@
 package com.github.myeoungdev.marketticker.application.service
 
+import com.github.myeoungdev.marketticker.application.listener.SettingsUpdateListener
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import io.github.oshai.kotlinlogging.KotlinLogging
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -23,42 +27,89 @@ class TickerSchedulerService(
 ) {
     private val marketDataService = service<MarketDataService>()
     private val appSettingsService = service<AppSettingsService>()
+    private val pollingLoop = TickerPollingLoop(
+        cs = cs,
+        refreshMode = appSettingsService::getRefreshMode,
+        refreshPrices = marketDataService::refreshPrices,
+        hasOpenMarket = {
+            marketDataService.currentPrices.value.any {
+                it.marketStatus.name == "OPEN" || it.marketStatus.name == "EXTENDED"
+            }
+        },
+        fixedIntervalSec = appSettingsService::getFixedIntervalSec,
+        openIntervalSec = appSettingsService::getOpenIntervalSec,
+        closedIntervalSec = appSettingsService::getClosedIntervalSec
+    )
 
     init {
         logger.info { "Scheduler Started." }
         marketDataService.forceRefresh()
+        subscribeSettingsUpdates()
         startPolling()
     }
 
     private fun startPolling() {
-        cs.launch {
+        pollingLoop.restart()
+    }
+
+    private fun subscribeSettingsUpdates() {
+        ApplicationManager.getApplication().messageBus.connect()
+            .subscribe(SettingsUpdateListener.TOPIC, object : SettingsUpdateListener {
+                override fun onSettingsUpdated() {
+                    logger.info { "Settings updated. Restart polling loop." }
+                    startPolling()
+                }
+            })
+    }
+}
+
+internal class TickerPollingLoop(
+    private val cs: CoroutineScope,
+    private val refreshMode: () -> AppSettingsService.RefreshMode,
+    private val refreshPrices: suspend () -> Unit,
+    private val hasOpenMarket: () -> Boolean,
+    private val fixedIntervalSec: () -> Long,
+    private val openIntervalSec: () -> Long,
+    private val closedIntervalSec: () -> Long,
+    private val toDelayMillis: (Long) -> Long = { it * 1000L },
+    private val errorDelayMillis: Long = 3_000L
+) {
+    private var pollingJob: Job? = null
+
+    fun restart() {
+        pollingJob?.cancel()
+        pollingJob = cs.launch {
             while (isActive) {
                 try {
-                    when (appSettingsService.getRefreshMode()) {
+                    when (refreshMode()) {
                         AppSettingsService.RefreshMode.MANUAL -> delay(500L)
                         AppSettingsService.RefreshMode.FIXED -> {
-                            marketDataService.refreshPrices()
-                            delay(appSettingsService.getFixedIntervalSec() * 1000L)
+                            refreshPrices()
+                            delay(toDelayMillis(fixedIntervalSec()))
                         }
 
                         AppSettingsService.RefreshMode.AUTO -> {
-                            marketDataService.refreshPrices()
-                            val hasOpenMarket = marketDataService.currentPrices.value.any {
-                                it.marketStatus.name == "OPEN" || it.marketStatus.name == "EXTENDED"
-                            }
-                            val intervalSec = if (hasOpenMarket) {
-                                appSettingsService.getOpenIntervalSec()
+                            refreshPrices()
+                            val intervalSec = if (hasOpenMarket()) {
+                                openIntervalSec()
                             } else {
-                                appSettingsService.getClosedIntervalSec()
+                                closedIntervalSec()
                             }
-                            delay(intervalSec * 1000L)
+                            delay(toDelayMillis(intervalSec))
                         }
                     }
+                } catch (e: CancellationException) {
+                    throw e
                 } catch (e: Exception) {
                     logger.error(e) { "Error during polling loop" }
-                    delay(3_000L)
+                    delay(errorDelayMillis)
                 }
             }
         }
+    }
+
+    fun cancel() {
+        pollingJob?.cancel()
+        pollingJob = null
     }
 }

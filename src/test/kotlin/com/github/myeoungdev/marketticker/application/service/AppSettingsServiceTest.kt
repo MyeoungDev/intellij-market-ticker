@@ -10,20 +10,66 @@ class AppSettingsServiceTest {
     fun `고정 주기를 허용 범위 내로 저장한다`() {
         val service = AppSettingsService()
 
-        service.setFixedIntervalSec(100)
+        service.setFixedIntervalSec(3600)
 
-        assertThat(service.getFixedIntervalSec()).isEqualTo(10)
+        assertThat(service.getFixedIntervalSec()).isEqualTo(3600)
+    }
+
+    @Test
+    fun `고정 주기는 장중 최대 범위로 제한한다`() {
+        val service = AppSettingsService()
+
+        service.setFixedIntervalSec(7200)
+
+        assertThat(service.getFixedIntervalSec()).isEqualTo(3600)
     }
 
     @Test
     fun `자동 주기 open closed 값을 각각 저장한다`() {
         val service = AppSettingsService()
 
-        service.setOpenIntervalSec(3)
+        service.setOpenIntervalSec(1800)
         service.setClosedIntervalSec(10)
 
-        assertThat(service.getOpenIntervalSec()).isEqualTo(3)
+        assertThat(service.getOpenIntervalSec()).isEqualTo(1800)
         assertThat(service.getClosedIntervalSec()).isEqualTo(10)
+    }
+
+    @Test
+    fun `장중 주기는 장중 최대 범위로 제한한다`() {
+        val service = AppSettingsService()
+
+        service.setOpenIntervalSec(7200)
+
+        assertThat(service.getOpenIntervalSec()).isEqualTo(3600)
+    }
+
+    @Test
+    fun `비장중 주기는 기존 짧은 범위를 유지한다`() {
+        val service = AppSettingsService()
+
+        service.setClosedIntervalSec(60)
+
+        assertThat(service.getClosedIntervalSec()).isEqualTo(10)
+    }
+
+    @Test
+    fun `폴링 주기 표시 문자열을 초 분 시간 단위로 변환한다`() {
+        assertThat(AppSettingsService.formatPollingInterval(30)).isEqualTo("30s")
+        assertThat(AppSettingsService.formatPollingInterval(300)).isEqualTo("5m")
+        assertThat(AppSettingsService.formatPollingInterval(3600)).isEqualTo("1h")
+    }
+
+    @Test
+    fun `장중 폴링 주기 옵션은 중간 초와 분 단위 선택지를 포함한다`() {
+        assertThat(AppSettingsService.ACTIVE_INTERVAL_OPTIONS).contains(
+            15L,
+            20L,
+            45L,
+            120L,
+            180L,
+            900L
+        )
     }
 
     @Test

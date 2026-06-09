@@ -10,12 +10,16 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.panel
+import java.awt.Component
+import java.awt.Dimension
 import java.util.Locale
+import javax.swing.DefaultListCellRenderer
 import javax.swing.JCheckBox
 import javax.swing.JComboBox
 import javax.swing.JComponent
+import javax.swing.JLabel
+import javax.swing.JList
 import javax.swing.JPanel
-import java.awt.Dimension
 
 /**
  * 사용자 설정을 메인 화면과 분리해 관리하는 모달 다이얼로그입니다.
@@ -29,9 +33,9 @@ class SettingsDialog(
     private val marketDataService = service<MarketDataService>()
 
     private val refreshModeCombo = JComboBox(AppSettingsService.RefreshMode.values())
-    private val fixedIntervalCombo = JComboBox(arrayOf(3L, 6L, 10L))
-    private val openIntervalCombo = JComboBox(arrayOf(3L, 6L, 10L))
-    private val closedIntervalCombo = JComboBox(arrayOf(3L, 6L, 10L))
+    private val fixedIntervalCombo = JComboBox(AppSettingsService.ACTIVE_INTERVAL_OPTIONS)
+    private val openIntervalCombo = JComboBox(AppSettingsService.ACTIVE_INTERVAL_OPTIONS)
+    private val closedIntervalCombo = JComboBox(AppSettingsService.CLOSED_INTERVAL_OPTIONS)
     private val languageCombo = JComboBox(AppSettingsService.UiLanguage.values())
     private val priceDisplayModeCombo = JComboBox(AppSettingsService.PriceDisplayMode.values())
     private val baseCurrencyCombo = JComboBox(arrayOf(
@@ -46,6 +50,10 @@ class SettingsDialog(
 
     init {
         title = localizationService.text("Market Ticker 설정", "Market Ticker Settings")
+
+        fixedIntervalCombo.renderer = pollingIntervalRenderer()
+        openIntervalCombo.renderer = pollingIntervalRenderer()
+        closedIntervalCombo.renderer = pollingIntervalRenderer()
 
         refreshModeCombo.selectedItem = settingsService.getRefreshMode()
         fixedIntervalCombo.selectedItem = settingsService.getFixedIntervalSec()
@@ -79,15 +87,15 @@ class SettingsDialog(
                 cell(refreshModeCombo).align(AlignX.FILL)
             }
 
-            row(localizationService.text("고정 주기(초)", "Fixed interval (sec)")) {
+            row(localizationService.text("고정 주기", "Fixed interval")) {
                 cell(fixedIntervalCombo).align(AlignX.FILL)
             }
 
-            row(localizationService.text("장중 주기(초)", "Open market interval (sec)")) {
+            row(localizationService.text("장중 주기", "Open market interval")) {
                 cell(openIntervalCombo).align(AlignX.FILL)
             }
 
-            row(localizationService.text("비장중 주기(초)", "Closed market interval (sec)")) {
+            row(localizationService.text("비장중 주기", "Closed market interval")) {
                 cell(closedIntervalCombo).align(AlignX.FILL)
             }
 
@@ -154,5 +162,27 @@ class SettingsDialog(
         fixedIntervalCombo.isEnabled = mode == AppSettingsService.RefreshMode.FIXED
         openIntervalCombo.isEnabled = mode == AppSettingsService.RefreshMode.AUTO
         closedIntervalCombo.isEnabled = mode == AppSettingsService.RefreshMode.AUTO
+    }
+
+    private fun pollingIntervalRenderer(): DefaultListCellRenderer {
+        return object : DefaultListCellRenderer() {
+            override fun getListCellRendererComponent(
+                list: JList<*>?,
+                value: Any?,
+                index: Int,
+                isSelected: Boolean,
+                cellHasFocus: Boolean
+            ): Component {
+                val label = super.getListCellRendererComponent(
+                    list,
+                    value,
+                    index,
+                    isSelected,
+                    cellHasFocus
+                ) as JLabel
+                label.text = AppSettingsService.formatPollingInterval(value as? Long ?: 0L)
+                return label
+            }
+        }
     }
 }

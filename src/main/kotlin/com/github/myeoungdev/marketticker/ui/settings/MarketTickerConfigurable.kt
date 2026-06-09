@@ -9,6 +9,7 @@ import com.intellij.openapi.components.service
 import com.intellij.openapi.options.Configurable
 import com.intellij.ui.dsl.builder.AlignX
 import com.intellij.ui.dsl.builder.panel
+import java.awt.Component
 import java.util.Locale
 import javax.swing.DefaultListCellRenderer
 import javax.swing.JCheckBox
@@ -26,9 +27,9 @@ class MarketTickerConfigurable : Configurable {
     private val localizationService = service<LocalizationService>()
 
     private val refreshModeCombo = JComboBox(AppSettingsService.RefreshMode.values())
-    private val fixedIntervalCombo = JComboBox(arrayOf(3L, 6L, 10L))
-    private val openIntervalCombo = JComboBox(arrayOf(3L, 6L, 10L))
-    private val closedIntervalCombo = JComboBox(arrayOf(3L, 6L, 10L))
+    private val fixedIntervalCombo = JComboBox(AppSettingsService.ACTIVE_INTERVAL_OPTIONS)
+    private val openIntervalCombo = JComboBox(AppSettingsService.ACTIVE_INTERVAL_OPTIONS)
+    private val closedIntervalCombo = JComboBox(AppSettingsService.CLOSED_INTERVAL_OPTIONS)
     private val languageCombo = JComboBox(AppSettingsService.UiLanguage.values())
     private val priceDisplayModeCombo = JComboBox(AppSettingsService.PriceDisplayMode.values())
     private val domesticTradeVenueModeCombo = JComboBox(AppSettingsService.DomesticTradeVenueMode.values())
@@ -54,6 +55,9 @@ class MarketTickerConfigurable : Configurable {
     override fun createComponent(): JComponent {
         if (component == null) {
             refreshModeCombo.addActionListener { updateIntervalControlAvailability() }
+            fixedIntervalCombo.renderer = pollingIntervalRenderer()
+            openIntervalCombo.renderer = pollingIntervalRenderer()
+            closedIntervalCombo.renderer = pollingIntervalRenderer()
             domesticTradeVenueModeCombo.renderer = object : DefaultListCellRenderer() {
                 override fun getListCellRendererComponent(
                     list: JList<*>?,
@@ -61,7 +65,7 @@ class MarketTickerConfigurable : Configurable {
                     index: Int,
                     isSelected: Boolean,
                     cellHasFocus: Boolean
-                ): java.awt.Component {
+                ): Component {
                     val label = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus) as JLabel
                     label.text = displayDomesticTradeVenueMode(
                         value as? AppSettingsService.DomesticTradeVenueMode
@@ -79,15 +83,15 @@ class MarketTickerConfigurable : Configurable {
                     cell(refreshModeCombo).align(AlignX.FILL)
                 }
 
-                row(localizationService.text("고정 주기(초)", "Fixed interval (sec)")) {
+                row(localizationService.text("고정 주기", "Fixed interval")) {
                     cell(fixedIntervalCombo).align(AlignX.FILL)
                 }
 
-                row(localizationService.text("장중 주기(초)", "Open market interval (sec)")) {
+                row(localizationService.text("장중 주기", "Open market interval")) {
                     cell(openIntervalCombo).align(AlignX.FILL)
                 }
 
-                row(localizationService.text("비장중 주기(초)", "Closed market interval (sec)")) {
+                row(localizationService.text("비장중 주기", "Closed market interval")) {
                     cell(closedIntervalCombo).align(AlignX.FILL)
                 }
 
@@ -219,6 +223,28 @@ class MarketTickerConfigurable : Configurable {
             AppSettingsService.DomesticTradeVenueMode.KRX_ONLY -> localizationService.text("KRX 고정", "KRX only")
             AppSettingsService.DomesticTradeVenueMode.NXT_ONLY -> localizationService.text("NXT 고정", "NXT only")
             AppSettingsService.DomesticTradeVenueMode.MIXED -> localizationService.text("KRX + NXT 혼합", "KRX + NXT mixed")
+        }
+    }
+
+    private fun pollingIntervalRenderer(): DefaultListCellRenderer {
+        return object : DefaultListCellRenderer() {
+            override fun getListCellRendererComponent(
+                list: JList<*>?,
+                value: Any?,
+                index: Int,
+                isSelected: Boolean,
+                cellHasFocus: Boolean
+            ): Component {
+                val label = super.getListCellRendererComponent(
+                    list,
+                    value,
+                    index,
+                    isSelected,
+                    cellHasFocus
+                ) as JLabel
+                label.text = AppSettingsService.formatPollingInterval(value as? Long ?: 0L)
+                return label
+            }
         }
     }
 }

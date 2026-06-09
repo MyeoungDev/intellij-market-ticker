@@ -19,6 +19,40 @@ import com.github.myeoungdev.marketticker.domain.model.CurrencyType
 @Service(Service.Level.APP)
 class AppSettingsService : PersistentStateComponent<AppSettingsService.State> {
 
+    companion object {
+        const val MIN_INTERVAL_SEC: Long = 3L
+        const val MAX_ACTIVE_INTERVAL_SEC: Long = 3600L
+        const val MAX_CLOSED_INTERVAL_SEC: Long = 10L
+
+        val ACTIVE_INTERVAL_OPTIONS: Array<Long> = arrayOf(
+            3L,
+            5L,
+            6L,
+            10L,
+            15L,
+            20L,
+            30L,
+            45L,
+            60L,
+            120L,
+            180L,
+            300L,
+            600L,
+            900L,
+            1800L,
+            3600L
+        )
+        val CLOSED_INTERVAL_OPTIONS: Array<Long> = arrayOf(3L, 6L, 10L)
+
+        fun formatPollingInterval(seconds: Long): String {
+            return when {
+                seconds >= 3600L && seconds % 3600L == 0L -> "${seconds / 3600L}h"
+                seconds >= 60L && seconds % 60L == 0L -> "${seconds / 60L}m"
+                else -> "${seconds}s"
+            }
+        }
+    }
+
     /**
      * 가격 갱신 동작 모드입니다.
      */
@@ -119,17 +153,17 @@ class AppSettingsService : PersistentStateComponent<AppSettingsService.State> {
 
     fun getFixedIntervalSec(): Long = settingsState.fixedIntervalSec
     fun setFixedIntervalSec(value: Long) {
-        settingsState.fixedIntervalSec = value.coerceIn(3L, 10L)
+        settingsState.fixedIntervalSec = value.coerceIn(MIN_INTERVAL_SEC, MAX_ACTIVE_INTERVAL_SEC)
     }
 
     fun getOpenIntervalSec(): Long = settingsState.openIntervalSec
     fun setOpenIntervalSec(value: Long) {
-        settingsState.openIntervalSec = value.coerceIn(3L, 10L)
+        settingsState.openIntervalSec = value.coerceIn(MIN_INTERVAL_SEC, MAX_ACTIVE_INTERVAL_SEC)
     }
 
     fun getClosedIntervalSec(): Long = settingsState.closedIntervalSec
     fun setClosedIntervalSec(value: Long) {
-        settingsState.closedIntervalSec = value.coerceIn(3L, 10L)
+        settingsState.closedIntervalSec = value.coerceIn(MIN_INTERVAL_SEC, MAX_CLOSED_INTERVAL_SEC)
     }
 
     fun getUiLanguage(): UiLanguage = UiLanguage.of(settingsState.uiLanguage)
