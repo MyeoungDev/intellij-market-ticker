@@ -49,7 +49,7 @@ Market Ticker takes the opposite approach:
   Fast symbol lookup across Korean stocks, global stocks, indexes, and crypto.
 
 - `📌 Watchlist`
-  Add, group, tag, edit, and remove tracked symbols without leaving the IDE.
+  Add, group, edit, and remove tracked symbols without leaving the IDE.
 
 - `⚡ Quotes`
   Real-time refresh with `AUTO / FIXED / MANUAL` modes.

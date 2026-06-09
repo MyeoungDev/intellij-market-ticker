@@ -19,36 +19,30 @@ class PortfolioEditDialog(private val entry: WatchlistRepository.WatchlistEntry)
 
     private val purchasePriceField = JBTextField()
     private val quantityField = JBTextField()
-    private val groupTagField = JBTextField()
 
     var purchasePrice: Double? = null
         private set
     var quantity: Double? = null
-        private set
-    var groupTag: String = ""
         private set
 
     init {
         title = localizationService.text("${entry.name} 포트폴리오 편집", "${entry.name} Portfolio Edit")
         purchasePriceField.text = entry.purchasePrice?.toString() ?: ""
         quantityField.text = entry.quantity?.toString() ?: ""
-        groupTagField.text = entry.groupTag
         init()
-        setSize(420, 220)
+        setSize(420, 180)
         isResizable = false
     }
 
     override fun createCenterPanel(): JComponent {
         return JBPanel<JBPanel<*>>(BorderLayout()).apply {
-            preferredSize = Dimension(420, 170)
+            preferredSize = Dimension(420, 120)
             border = JBUI.Borders.empty(8, 0)
             add(
                 FormBuilder.createFormBuilder()
                     .addLabeledComponent(JBLabel(localizationService.text("매수 단가", "Avg buy price")), purchasePriceField, 1, false)
                     .addVerticalGap(8)
                     .addLabeledComponent(JBLabel(localizationService.text("수량", "Quantity")), quantityField, 1, false)
-                    .addVerticalGap(8)
-                    .addLabeledComponent(JBLabel(localizationService.text("그룹/태그", "Group/Tag")), groupTagField, 1, false)
                     .panel,
                 BorderLayout.CENTER
             )
@@ -58,7 +52,6 @@ class PortfolioEditDialog(private val entry: WatchlistRepository.WatchlistEntry)
     override fun doOKAction() {
         purchasePrice = purchasePriceField.text.toDoubleOrNull()
         quantity = quantityField.text.toDoubleOrNull()
-        groupTag = groupTagField.text.trim()
         super.doOKAction()
     }
 

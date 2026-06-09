@@ -95,8 +95,7 @@ class PortfolioView {
             if (dialog.showAndGet()) {
                 val updatedEntry = entry.copy(
                     purchasePrice = dialog.purchasePrice,
-                    quantity = dialog.quantity,
-                    groupTag = dialog.groupTag
+                    quantity = dialog.quantity
                 )
                 marketDataService.updateWatchlistEntryPortfolio(updatedEntry)
             }
