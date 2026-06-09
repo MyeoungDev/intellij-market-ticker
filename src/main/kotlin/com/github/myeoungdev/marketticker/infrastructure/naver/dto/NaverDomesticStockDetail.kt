@@ -1,5 +1,6 @@
 package com.github.myeoungdev.marketticker.infrastructure.naver.dto
 
+import com.fasterxml.jackson.annotation.JsonAlias
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
 
 /**
@@ -12,7 +13,9 @@ data class NaverDomesticStockDetail(
     val itemcode: String? = null,
     val itemname: String? = null,
     val marketStatus: String? = null,
+    @JsonAlias("nowPrice")
     val nowVal: String? = null,
+    @JsonAlias("prevChangeRate")
     val changeRate: String? = null,
     val marketSum: String? = null,
     val per: String? = null,

@@ -3,6 +3,7 @@ package com.github.myeoungdev.marketticker.infrastructure.naver
 import com.fasterxml.jackson.module.kotlin.readValue
 import com.github.myeoungdev.marketticker.application.service.PriceHistoryService
 import com.github.myeoungdev.marketticker.common.config.objectMapper
+import com.github.myeoungdev.marketticker.domain.model.DomesticTradeType
 import com.github.myeoungdev.marketticker.domain.model.IndicatorCategory
 import com.github.myeoungdev.marketticker.domain.model.CurrencyType
 import com.github.myeoungdev.marketticker.domain.model.MarketType
@@ -15,6 +16,7 @@ import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverResearch
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverResearchRankingResponse
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCoinOverview
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCryptoChartResponse
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverRealTimeStockPriceResponse
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverSearchResponse
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.ResearchCategoryKey
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.ResearchRankingType
@@ -194,6 +196,72 @@ class NaverClientTest {
             assertThat(tickerPrice.marketType).isEqualTo(MarketType.TOKYO)
             assertThat(tickerPrice.currency).isEqualTo(CurrencyType.JPY)
             assertThat(tickerPrice.currentPrice).isEqualTo(9200.00)
+        }
+
+        @Test
+        fun `국내 실시간 시세 응답의 NXT와 통합 가격 정보를 도메인에 보존한다`() {
+            val response: NaverRealTimeStockPriceResponse = objectMapper.readValue(
+                """
+                {
+                  "datas": [
+                    {
+                      "symbolCode": "005930",
+                      "stockName": "삼성전자",
+                      "stockExchangeType": {
+                        "code": "KS",
+                        "zoneId": "Asia/Seoul",
+                        "nationType": "KOR",
+                        "delayTime": 0,
+                        "startTime": "0900",
+                        "endTime": "1530",
+                        "closePriceSendTime": "1630",
+                        "nameKor": "코스피",
+                        "nameEng": "KOSPI",
+                        "nationCode": "KOR",
+                        "nationName": "대한민국",
+                        "stockType": "domestic",
+                        "name": "KOSPI"
+                      },
+                      "openPrice": "310,000",
+                      "highPrice": "312,000",
+                      "lowPrice": "300,000",
+                      "closePrice": "306,500",
+                      "fluctuationsRatio": "3.72",
+                      "compareToPreviousClosePrice": "11,000",
+                      "accumulatedTradingVolume": "8,936,765",
+                      "accumulatedTradingValue": "2,735,830백만",
+                      "marketStatus": "OPEN",
+                      "currencyType": { "code": "KRW", "text": "Republic of Korea won", "name": "KRW" },
+                      "overMarketPriceInfo": {
+                        "overMarketStatus": "OPEN",
+                        "overPrice": "306,500",
+                        "openPrice": "310,000",
+                        "highPrice": "315,000",
+                        "lowPrice": "300,000",
+                        "compareToPreviousClosePrice": "11,000",
+                        "fluctuationsRatio": "3.72",
+                        "accumulatedTradingVolume": "9,303,125",
+                        "accumulatedTradingValue": "2,875,859백만"
+                      },
+                      "integratedPriceInfo": {
+                        "openPrice": "310,000",
+                        "highPrice": "315,000",
+                        "lowPrice": "300,000",
+                        "accumulatedTradingVolume": "18,239,890",
+                        "accumulatedTradingValue": "5,611,689백만"
+                      }
+                    }
+                  ]
+                }
+                """.trimIndent()
+            )
+
+            val tickerPrice = response.datas.first().toTickerPrice()
+
+            assertThat(tickerPrice.currentPrice).isEqualTo(306500.0)
+            assertThat(tickerPrice.overMarketPrice?.currentPrice).isEqualTo(306500.0)
+            assertThat(tickerPrice.overMarketPrice?.highPrice).isEqualTo(315000.0)
+            assertThat(tickerPrice.integratedPrice?.tradeVolume).isEqualTo(18239890L)
         }
 
         @Test
@@ -832,9 +900,9 @@ class NaverClientTest {
         }
 
         @Test
-        fun `국내 종목 상세 API 성공 시 핵심 지표와 기업 설명을 반환한다`() {
+        fun `국내 종목 상세 API 기본 조회는 codeType 없이 핵심 지표와 기업 설명을 반환한다`() {
             wireMockServer.stubFor(
-                get(urlEqualTo("/domestic/detail/003280/detail?codeType=KRX"))
+                get(urlEqualTo("/domestic/detail/003280/detail"))
                     .willReturn(
                         aResponse()
                             .withStatus(200)
@@ -850,6 +918,38 @@ class NaverClientTest {
             assertThat(result?.per).isEqualTo("20.48")
             assertThat(result?.pbr).isEqualTo("2.46")
             assertThat(result?.summaryText()).contains("해운기업", "종합물류기업")
+        }
+
+        @Test
+        fun `국내 종목 상세 API는 NXT codeType으로 조회할 수 있다`() {
+            wireMockServer.stubFor(
+                get(urlEqualTo("/domestic/detail/005930/detail?codeType=NXT"))
+                    .willReturn(
+                        aResponse()
+                            .withStatus(200)
+                            .withHeader("Content-Type", "application/json")
+                            .withBody(
+                                """
+                                {
+                                  "itemcode": "005930",
+                                  "itemname": "삼성전자",
+                                  "nowPrice": "306500",
+                                  "prevChangeRate": "3.72",
+                                  "per": "24.75",
+                                  "pbr": "4.26",
+                                  "comment1": "NXT 기준 상세 정보입니다."
+                                }
+                                """.trimIndent()
+                            )
+                    )
+            )
+
+            val result = naverClient.fetchDomesticStockDetail("005930", DomesticTradeType.NXT)
+
+            assertThat(result).isNotNull
+            assertThat(result?.itemname).isEqualTo("삼성전자")
+            assertThat(result?.nowVal).isEqualTo("306500")
+            assertThat(result?.changeRate).isEqualTo("3.72")
         }
 
         @Test

@@ -1,6 +1,7 @@
 package com.github.myeoungdev.marketticker.ui.statusbar
 
 import com.github.myeoungdev.marketticker.application.listener.SettingsUpdateListener
+import com.github.myeoungdev.marketticker.application.service.DomesticDisplayPriceSelector
 import com.github.myeoungdev.marketticker.application.service.MarketDataService
 import com.github.myeoungdev.marketticker.application.service.MoneyDisplayFormatter
 import com.github.myeoungdev.marketticker.common.extenion.toCommaString
@@ -31,6 +32,7 @@ class MarketTickerStatusBarWidget(
 
     private val marketDataService = service<MarketDataService>()
     private val moneyDisplayFormatter = MoneyDisplayFormatter()
+    private val domesticDisplayPriceSelector = DomesticDisplayPriceSelector()
 
     private val scope = CoroutineScope(SupervisorJob() + Dispatchers.Default)
 
@@ -92,7 +94,8 @@ class MarketTickerStatusBarWidget(
         val list = prices
         if (list.isEmpty()) return "Market Ticker: watchlist empty"
 
-        val tickerPrice = list.getOrNull(index) ?: return "Market Ticker: loading..."
+        val tickerPrice = list.getOrNull(index)?.let(domesticDisplayPriceSelector::select)
+            ?: return "Market Ticker: loading..."
 
         val arrow = when (tickerPrice.priceStatus) {
             PriceStatus.RISING -> "▲"

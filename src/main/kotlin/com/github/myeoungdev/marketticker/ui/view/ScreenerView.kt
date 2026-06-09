@@ -8,6 +8,7 @@ import com.github.myeoungdev.marketticker.application.service.MoneyDisplayFormat
 import com.github.myeoungdev.marketticker.application.service.ScreenerService
 import com.github.myeoungdev.marketticker.common.extenion.parseCommaToDouble
 import com.github.myeoungdev.marketticker.domain.model.CurrencyType
+import com.github.myeoungdev.marketticker.domain.model.DomesticTradeType
 import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.domain.model.screener.ScreenedTicker
@@ -33,6 +34,7 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.awt.BorderLayout
 import java.awt.Component
+import java.awt.FlowLayout
 import javax.swing.DefaultComboBoxModel
 import javax.swing.JButton
 import javax.swing.JComboBox
@@ -56,6 +58,8 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private val marketCombo = JComboBox(DefaultComboBoxModel(MarketType.screenerMarkets().toTypedArray()))
+    private val domesticTradeTypePanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
+    private val domesticTradeTypeCombo = JComboBox(DefaultComboBoxModel(DomesticTradeType.values()))
     private val presetCombo = JComboBox(DefaultComboBoxModel(ScreenerPreset.values()))
     private val refreshButton = JButton()
     private val statusLabel = JLabel()
@@ -98,8 +102,9 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
     private fun buildToolbar(): JPanel {
         return JPanel(BorderLayout(8, 0)).apply {
             add(
-                JPanel(java.awt.GridLayout(1, 2, 8, 0)).apply {
+                JPanel(FlowLayout(FlowLayout.LEFT, 8, 0)).apply {
                     add(marketCombo)
+                    add(domesticTradeTypePanel.apply { add(domesticTradeTypeCombo) })
                     add(presetCombo)
                 },
                 BorderLayout.CENTER
@@ -108,8 +113,10 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
         }.also {
             marketCombo.addActionListener {
                 rebuildPresetModel()
+                updateDomesticTradeTypeControl()
                 loadPreset(forceRefresh = false)
             }
+            domesticTradeTypeCombo.addActionListener { loadPreset(forceRefresh = false) }
             presetCombo.addActionListener { loadPreset(forceRefresh = false) }
             refreshButton.addActionListener { loadPreset(forceRefresh = true) }
         }
@@ -132,6 +139,20 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
                 return label
             }
         }
+        domesticTradeTypeCombo.renderer = object : javax.swing.DefaultListCellRenderer() {
+            override fun getListCellRendererComponent(
+                list: JList<*>?,
+                value: Any?,
+                index: Int,
+                isSelected: Boolean,
+                cellHasFocus: Boolean
+            ): Component {
+                val label = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus) as JLabel
+                val tradeType = value as? DomesticTradeType
+                label.text = tradeType?.let { localizationService.text(it.labelKo, it.labelEn) } ?: ""
+                return label
+            }
+        }
         presetCombo.renderer = object : javax.swing.DefaultListCellRenderer() {
             override fun getListCellRendererComponent(
                 list: JList<*>?,
@@ -147,6 +168,8 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
             }
         }
         marketCombo.selectedItem = MarketType.KOREA
+        domesticTradeTypeCombo.selectedItem = DomesticTradeType.KRX
+        updateDomesticTradeTypeControl()
         rebuildPresetModel()
 
         screenTable.columnModel.getColumn(0).preferredWidth = 145
@@ -194,13 +217,20 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
 
     private fun loadPreset(forceRefresh: Boolean) {
         val market = currentMarket()
+        val domesticTradeType = currentDomesticTradeType()
         val preset = presetCombo.selectedItem as? ScreenerPreset ?: availablePresetsFor(market).first()
         val requestId = loadSequence.incrementAndGet()
         statusLabel.text = localizationService.text("스크리너를 불러오는 중...", "Loading screener...")
 
         scope.launch {
             val result = runCatching {
-                screenerService.loadScreen(market, preset, limit = 25, forceRefresh = forceRefresh)
+                screenerService.loadScreen(
+                    market = market,
+                    preset = preset,
+                    limit = 25,
+                    forceRefresh = forceRefresh,
+                    domesticTradeType = domesticTradeType
+                )
             }
             withContext(Dispatchers.Main) {
                 if (requestId != loadSequence.get()) {
@@ -210,16 +240,16 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
                     currentRows = emptyList()
                     renderRows(emptyList())
                     statusLabel.text = localizationService.text(
-                        "${displayMarket(market)} · ${displayPreset(market, preset)} 조회 실패",
-                        "${displayMarket(market)} · ${displayPreset(market, preset)} failed"
+                        "${displayMarket(market, domesticTradeType)} · ${displayPreset(market, preset)} 조회 실패",
+                        "${displayMarket(market, domesticTradeType)} · ${displayPreset(market, preset)} failed"
                     )
                     return@withContext
                 }
                 currentRows = rows
                 renderRows(rows)
                 statusLabel.text = localizationService.text(
-                    "${displayMarket(market)} · ${displayPreset(market, preset)} ${rows.size}건",
-                    "${displayMarket(market)} · ${displayPreset(market, preset)} ${rows.size} items"
+                    "${displayMarket(market, domesticTradeType)} · ${displayPreset(market, preset)} ${rows.size}건",
+                    "${displayMarket(market, domesticTradeType)} · ${displayPreset(market, preset)} ${rows.size} items"
                 )
             }
         }
@@ -253,6 +283,20 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
         return marketCombo.selectedItem as? MarketType ?: MarketType.KOREA
     }
 
+    private fun currentDomesticTradeType(): DomesticTradeType {
+        return domesticTradeTypeCombo.selectedItem as? DomesticTradeType ?: DomesticTradeType.KRX
+    }
+
+    private fun updateDomesticTradeTypeControl() {
+        domesticTradeTypePanel.isVisible = currentMarket().isKoreanMarket()
+        domesticTradeTypeCombo.toolTipText = localizationService.text(
+            "국내 주식 조회 기준 거래소입니다.",
+            "Trading venue for domestic stock screening."
+        )
+        domesticTradeTypePanel.revalidate()
+        domesticTradeTypePanel.repaint()
+    }
+
     private fun subscribeSettingsUpdates() {
         ApplicationManager.getApplication().messageBus.connect(this)
             .subscribe(SettingsUpdateListener.TOPIC, object : SettingsUpdateListener {
@@ -278,8 +322,9 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
         return market.availableScreenerPresets()
     }
 
-    private fun displayMarket(market: MarketType): String {
-        return localizationService.text(market.screenerLabelKo(), market.screenerLabelEn())
+    private fun displayMarket(market: MarketType, domesticTradeType: DomesticTradeType = currentDomesticTradeType()): String {
+        val base = localizationService.text(market.screenerLabelKo(), market.screenerLabelEn())
+        return if (market.isKoreanMarket()) "$base ${domesticTradeType.code}" else base
     }
 
     private fun displayPreset(market: MarketType, preset: ScreenerPreset): String {

@@ -1,6 +1,7 @@
 package com.github.myeoungdev.marketticker.application.provider
 
 import com.github.myeoungdev.marketticker.domain.model.MarketType
+import com.github.myeoungdev.marketticker.domain.model.DomesticTradeType
 import com.github.myeoungdev.marketticker.domain.model.screener.ScreenedTicker
 import com.github.myeoungdev.marketticker.domain.model.screener.ScreenerPreset
 
@@ -9,5 +10,10 @@ import com.github.myeoungdev.marketticker.domain.model.screener.ScreenerPreset
  */
 interface ScreenerProvider {
 
-    fun getScreen(market: MarketType, preset: ScreenerPreset, limit: Int = 25): List<ScreenedTicker>
+    fun getScreen(
+        market: MarketType,
+        preset: ScreenerPreset,
+        limit: Int = 25,
+        domesticTradeType: DomesticTradeType = DomesticTradeType.KRX
+    ): List<ScreenedTicker>
 }

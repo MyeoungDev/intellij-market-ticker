@@ -2,6 +2,7 @@ package com.github.myeoungdev.marketticker.ui.view
 
 import com.github.myeoungdev.marketticker.application.listener.SettingsUpdateListener
 import com.github.myeoungdev.marketticker.application.service.AppSettingsService
+import com.github.myeoungdev.marketticker.application.service.DomesticDisplayPriceSelector
 import com.github.myeoungdev.marketticker.application.service.LocalizationService
 import com.github.myeoungdev.marketticker.application.service.MarketDataService
 import com.github.myeoungdev.marketticker.application.service.MarketIndicatorService
@@ -44,6 +45,7 @@ class MarketTickerView(
     private val localizationService = service<LocalizationService>()
     private val appSettingsService = service<AppSettingsService>()
     private val moneyDisplayFormatter = MoneyDisplayFormatter()
+    private val domesticDisplayPriceSelector = DomesticDisplayPriceSelector()
 
     private val scope = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private var searchJob: Job = Job()
@@ -114,7 +116,7 @@ class MarketTickerView(
             priceLookup = { ticker ->
                 latestPrices.firstOrNull {
                     it.symbol == ticker.symbol && it.marketType == ticker.marketType
-                }
+                }?.let(domesticDisplayPriceSelector::select)
             }
         )
 
@@ -272,6 +274,8 @@ class MarketTickerView(
                 rebuildBottomTabs()
                 renderMarketPulse()
                 marketIndicatorsView.renderIndicators(latestIndicators)
+                refreshPriceViews()
+                searchResultList.repaint()
             }
         })
     }
@@ -298,9 +302,10 @@ class MarketTickerView(
             marketDataService.currentPrices.collect { prices ->
                 withContext(Dispatchers.Main) {
                     latestPrices = prices
-                    watchlistView.updateWith(prices)
-                    portfolioView.updateWith(prices)
-                    heatmapView.updateHeatmap(prices)
+                    val displayPrices = displayPrices()
+                    watchlistView.updateWith(displayPrices)
+                    portfolioView.updateWith(displayPrices)
+                    heatmapView.updateHeatmap(displayPrices)
                     chartView.refreshChart()
                     searchResultList.repaint()
                 }
@@ -423,10 +428,15 @@ class MarketTickerView(
     }
 
     private fun refreshPriceViews() {
-        watchlistView.updateWith(latestPrices)
-        portfolioView.updateWith(latestPrices)
-        heatmapView.updateHeatmap(latestPrices)
+        val displayPrices = displayPrices()
+        watchlistView.updateWith(displayPrices)
+        portfolioView.updateWith(displayPrices)
+        heatmapView.updateHeatmap(displayPrices)
         chartView.refreshChart()
+    }
+
+    private fun displayPrices(): List<TickerPrice> {
+        return latestPrices.map(domesticDisplayPriceSelector::select)
     }
 
     private fun showTickerDetails(ticker: Ticker) {

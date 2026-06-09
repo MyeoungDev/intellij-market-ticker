@@ -73,6 +73,21 @@ class AppSettingsService : PersistentStateComponent<AppSettingsService.State> {
     }
 
     /**
+     * 국내 주식 시세를 조회할 거래소 기준입니다.
+     */
+    enum class DomesticTradeVenueMode {
+        KRX_ONLY,
+        NXT_ONLY,
+        MIXED;
+
+        companion object {
+            fun of(value: String): DomesticTradeVenueMode {
+                return values().find { it.name == value } ?: MIXED
+            }
+        }
+    }
+
+    /**
      * 영속화 대상 설정 상태입니다.
      */
     data class State(
@@ -82,6 +97,7 @@ class AppSettingsService : PersistentStateComponent<AppSettingsService.State> {
         var closedIntervalSec: Long = 10L,
         var uiLanguage: String = UiLanguage.AUTO.name,
         var priceDisplayMode: String = PriceDisplayMode.MIXED.name,
+        var domesticTradeVenueMode: String = DomesticTradeVenueMode.MIXED.name,
         var baseCurrency: String = CurrencyType.KRW.code,
         var showMarketPulse: Boolean = true,
         var showChartTab: Boolean = true,
@@ -131,6 +147,14 @@ class AppSettingsService : PersistentStateComponent<AppSettingsService.State> {
      */
     fun setPriceDisplayMode(mode: PriceDisplayMode) {
         settingsState.priceDisplayMode = mode.name
+    }
+
+    fun getDomesticTradeVenueMode(): DomesticTradeVenueMode {
+        return DomesticTradeVenueMode.of(settingsState.domesticTradeVenueMode)
+    }
+
+    fun setDomesticTradeVenueMode(mode: DomesticTradeVenueMode) {
+        settingsState.domesticTradeVenueMode = mode.name
     }
 
     /**

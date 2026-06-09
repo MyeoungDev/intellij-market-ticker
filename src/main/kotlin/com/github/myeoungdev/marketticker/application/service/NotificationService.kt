@@ -27,6 +27,7 @@ class NotificationService {
 
     private val priceAlertService = service<PriceAlertService>()
     private val moneyDisplayFormatter = MoneyDisplayFormatter()
+    private val domesticDisplayPriceSelector = DomesticDisplayPriceSelector()
 
     private val lastAlertTimeMap = ConcurrentHashMap<String, Long>()
 
@@ -38,21 +39,22 @@ class NotificationService {
      */
     fun checkAndNotify(prices: List<TickerPrice>) {
         prices.forEach { price ->
-            val rule = priceAlertService.getAlert(price.symbol) ?: return@forEach
-            if (!priceAlertService.shouldTriggerAlert(price)) return@forEach
+            val selectedPrice = domesticDisplayPriceSelector.select(price)
+            val rule = priceAlertService.getAlert(selectedPrice.symbol) ?: return@forEach
+            if (!priceAlertService.shouldTriggerAlert(selectedPrice)) return@forEach
 
             val now = System.currentTimeMillis()
-            val lastTime = lastAlertTimeMap.getOrDefault(price.symbol, 0L)
+            val lastTime = lastAlertTimeMap.getOrDefault(selectedPrice.symbol, 0L)
             val minIntervalMs = (rule.repeatIntervalMinutes.coerceAtLeast(1) * 60 * 1000).toLong()
 
             if (AlertMode.of(rule.alertMode) == AlertMode.REPEATING && now - lastTime < minIntervalMs) {
                 return@forEach
             }
 
-            sendNotification(price, rule.soundEnabled)
-            lastAlertTimeMap[price.symbol] = now
+            sendNotification(selectedPrice, rule.soundEnabled)
+            lastAlertTimeMap[selectedPrice.symbol] = now
             if (AlertMode.of(rule.alertMode) == AlertMode.ONCE) {
-                priceAlertService.markTriggered(price.symbol)
+                priceAlertService.markTriggered(selectedPrice.symbol)
             }
         }
     }

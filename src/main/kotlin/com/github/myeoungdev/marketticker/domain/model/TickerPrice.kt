@@ -21,5 +21,27 @@ data class TickerPrice(
     val marketType: MarketType,                 // 시장 (KOREA, USA, COIN)
     val currency: CurrencyType,               // 통화 (KRW, USD)
     val nationCode: String?,
-    val nationName: String?
+    val nationName: String?,
+    val overMarketPrice: DomesticAlternativePrice? = null,
+    val integratedPrice: DomesticIntegratedPrice? = null
+)
+
+data class DomesticAlternativePrice(
+    val currentPrice: Double,
+    val openPrice: Double = 0.0,
+    val highPrice: Double = 0.0,
+    val lowPrice: Double = 0.0,
+    val changeAmount: Double = 0.0,
+    val changeRate: Double = 0.0,
+    val tradeVolume: Long = 0L,
+    val tradeValue: Double = 0.0,
+    val marketStatus: MarketStatus = MarketStatus.UNKNOWN
+)
+
+data class DomesticIntegratedPrice(
+    val openPrice: Double = 0.0,
+    val highPrice: Double = 0.0,
+    val lowPrice: Double = 0.0,
+    val tradeVolume: Long = 0L,
+    val tradeValue: Double = 0.0
 )
