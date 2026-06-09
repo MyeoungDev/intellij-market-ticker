@@ -4,6 +4,11 @@
 
 ## [Unreleased]
 
+### Fixed
+- Removed the group/tag field from portfolio registration and edit dialogs.
+
+### Added
+
 ## [0.0.2] - 2026-06-08
 ### Fixed
 - Added portfolio item removal while keeping the watchlist entry. (#32)
