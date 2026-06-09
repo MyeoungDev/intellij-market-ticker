@@ -24,22 +24,16 @@ body:
         1. Open the Stocks tab.
         2. Open the Portfolio tab.
         3. Right-click a portfolio row.
-    validations:
-      required: true
   - type: textarea
     id: actual
     attributes:
       label: Actual behavior
       description: What happened instead?
-    validations:
-      required: true
   - type: textarea
     id: expected
     attributes:
       label: Expected behavior
       description: What should happen?
-    validations:
-      required: true
   - type: input
     id: plugin-version
     attributes:
