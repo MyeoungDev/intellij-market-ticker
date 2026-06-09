@@ -8,7 +8,6 @@ body:
     attributes:
       label: Description
       description: What should be added or improved?
-      placeholder: "Example: Add NXT as a selectable domestic screener market."
     validations:
       required: true
   - type: textarea
