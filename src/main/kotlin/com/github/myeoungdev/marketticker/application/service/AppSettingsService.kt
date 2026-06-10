@@ -125,6 +125,7 @@ class AppSettingsService : PersistentStateComponent<AppSettingsService.State> {
      * 영속화 대상 설정 상태입니다.
      */
     data class State(
+        var automaticPollingEnabled: Boolean = true,
         var refreshMode: String = RefreshMode.AUTO.name,
         var fixedIntervalSec: Long = 6L,
         var openIntervalSec: Long = 3L,
@@ -144,6 +145,11 @@ class AppSettingsService : PersistentStateComponent<AppSettingsService.State> {
 
     override fun loadState(state: State) {
         XmlSerializerUtil.copyBean(state, settingsState)
+    }
+
+    fun isAutomaticPollingEnabled(): Boolean = settingsState.automaticPollingEnabled
+    fun setAutomaticPollingEnabled(enabled: Boolean) {
+        settingsState.automaticPollingEnabled = enabled
     }
 
     fun getRefreshMode(): RefreshMode = RefreshMode.of(settingsState.refreshMode)

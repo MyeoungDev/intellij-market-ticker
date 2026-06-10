@@ -84,6 +84,22 @@ class AppSettingsServiceTest {
     }
 
     @Test
+    fun `자동 폴링은 기본으로 활성화되어 있다`() {
+        val service = AppSettingsService()
+
+        assertThat(service.isAutomaticPollingEnabled()).isTrue()
+    }
+
+    @Test
+    fun `자동 폴링 활성 상태를 저장하고 조회한다`() {
+        val service = AppSettingsService()
+
+        service.setAutomaticPollingEnabled(false)
+
+        assertThat(service.isAutomaticPollingEnabled()).isFalse()
+    }
+
+    @Test
     fun `가격 표시 모드를 저장하고 조회한다`() {
         val service = AppSettingsService()
 

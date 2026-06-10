@@ -1,6 +1,7 @@
 package com.github.myeoungdev.marketticker.startup
 
 import com.github.myeoungdev.marketticker.application.service.MarketIndicatorService
+import com.github.myeoungdev.marketticker.application.service.AppSettingsService
 import com.github.myeoungdev.marketticker.application.service.MarketDataService
 import com.github.myeoungdev.marketticker.application.service.TickerSchedulerService
 import com.intellij.openapi.components.service
@@ -18,6 +19,8 @@ class MarketTickerStartupActivity : ProjectActivity {
     override suspend fun execute(project: Project) {
         service<TickerSchedulerService>()
         service<MarketIndicatorService>()
-        service<MarketDataService>().forceRefresh()
+        if (service<AppSettingsService>().isAutomaticPollingEnabled()) {
+            service<MarketDataService>().forceRefresh()
+        }
     }
 }

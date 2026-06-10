@@ -32,6 +32,7 @@ class SettingsDialog(
     private val localizationService = service<LocalizationService>()
     private val marketDataService = service<MarketDataService>()
 
+    private val automaticPollingCheckBox = JCheckBox()
     private val refreshModeCombo = JComboBox(AppSettingsService.RefreshMode.values())
     private val fixedIntervalCombo = JComboBox(AppSettingsService.ACTIVE_INTERVAL_OPTIONS)
     private val openIntervalCombo = JComboBox(AppSettingsService.ACTIVE_INTERVAL_OPTIONS)
@@ -55,6 +56,7 @@ class SettingsDialog(
         openIntervalCombo.renderer = pollingIntervalRenderer()
         closedIntervalCombo.renderer = pollingIntervalRenderer()
 
+        automaticPollingCheckBox.isSelected = settingsService.isAutomaticPollingEnabled()
         refreshModeCombo.selectedItem = settingsService.getRefreshMode()
         fixedIntervalCombo.selectedItem = settingsService.getFixedIntervalSec()
         openIntervalCombo.selectedItem = settingsService.getOpenIntervalSec()
@@ -64,6 +66,10 @@ class SettingsDialog(
         baseCurrencyCombo.selectedItem = settingsService.getBaseCurrency()
         marketPulseCheckBox.isSelected = settingsService.isMarketPulseVisible()
 
+        automaticPollingCheckBox.addActionListener {
+            updateIntervalControlAvailability()
+            persistSettings()
+        }
         refreshModeCombo.addActionListener {
             updateIntervalControlAvailability()
             persistSettings()
@@ -83,6 +89,11 @@ class SettingsDialog(
 
     override fun createCenterPanel(): JComponent {
         return panel {
+            row {
+                automaticPollingCheckBox.text = localizationService.text("자동 폴링 사용", "Enable automatic polling")
+                cell(automaticPollingCheckBox)
+            }
+
             row(localizationService.text("업데이트 모드", "Refresh mode")) {
                 cell(refreshModeCombo).align(AlignX.FILL)
             }
@@ -142,6 +153,7 @@ class SettingsDialog(
             ?: AppSettingsService.PriceDisplayMode.MIXED
         val baseCurrency = baseCurrencyCombo.selectedItem as? CurrencyType ?: CurrencyType.KRW
 
+        settingsService.setAutomaticPollingEnabled(automaticPollingCheckBox.isSelected)
         settingsService.setRefreshMode(mode)
         settingsService.setFixedIntervalSec(fixed)
         settingsService.setOpenIntervalSec(open)
@@ -158,10 +170,12 @@ class SettingsDialog(
     }
 
     private fun updateIntervalControlAvailability() {
+        val automaticPollingEnabled = automaticPollingCheckBox.isSelected
         val mode = refreshModeCombo.selectedItem as? AppSettingsService.RefreshMode ?: AppSettingsService.RefreshMode.AUTO
-        fixedIntervalCombo.isEnabled = mode == AppSettingsService.RefreshMode.FIXED
-        openIntervalCombo.isEnabled = mode == AppSettingsService.RefreshMode.AUTO
-        closedIntervalCombo.isEnabled = mode == AppSettingsService.RefreshMode.AUTO
+        refreshModeCombo.isEnabled = automaticPollingEnabled
+        fixedIntervalCombo.isEnabled = automaticPollingEnabled && mode == AppSettingsService.RefreshMode.FIXED
+        openIntervalCombo.isEnabled = automaticPollingEnabled && mode == AppSettingsService.RefreshMode.AUTO
+        closedIntervalCombo.isEnabled = automaticPollingEnabled && mode == AppSettingsService.RefreshMode.AUTO
     }
 
     private fun pollingIntervalRenderer(): DefaultListCellRenderer {

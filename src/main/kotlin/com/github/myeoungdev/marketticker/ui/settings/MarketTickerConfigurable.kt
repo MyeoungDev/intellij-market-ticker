@@ -26,6 +26,7 @@ class MarketTickerConfigurable : Configurable {
     private val settingsService = service<AppSettingsService>()
     private val localizationService = service<LocalizationService>()
 
+    private val automaticPollingCheckBox = JCheckBox()
     private val refreshModeCombo = JComboBox(AppSettingsService.RefreshMode.values())
     private val fixedIntervalCombo = JComboBox(AppSettingsService.ACTIVE_INTERVAL_OPTIONS)
     private val openIntervalCombo = JComboBox(AppSettingsService.ACTIVE_INTERVAL_OPTIONS)
@@ -54,6 +55,7 @@ class MarketTickerConfigurable : Configurable {
 
     override fun createComponent(): JComponent {
         if (component == null) {
+            automaticPollingCheckBox.addActionListener { updateIntervalControlAvailability() }
             refreshModeCombo.addActionListener { updateIntervalControlAvailability() }
             fixedIntervalCombo.renderer = pollingIntervalRenderer()
             openIntervalCombo.renderer = pollingIntervalRenderer()
@@ -79,6 +81,11 @@ class MarketTickerConfigurable : Configurable {
                 "KRX + NXT Mixed uses KRX during regular market hours (09:00-15:30), and NXT outside regular hours when NXT is available (08:00-20:00)."
             )
             component = panel {
+                row {
+                    automaticPollingCheckBox.text = localizationService.text("자동 폴링 사용", "Enable automatic polling")
+                    cell(automaticPollingCheckBox)
+                }
+
                 row(localizationService.text("업데이트 모드", "Refresh mode")) {
                     cell(refreshModeCombo).align(AlignX.FILL)
                 }
@@ -148,7 +155,8 @@ class MarketTickerConfigurable : Configurable {
             ?: AppSettingsService.DomesticTradeVenueMode.MIXED
         val baseCurrency = baseCurrencyCombo.selectedItem as? CurrencyType ?: CurrencyType.KRW
 
-        return mode != settingsService.getRefreshMode() ||
+        return automaticPollingCheckBox.isSelected != settingsService.isAutomaticPollingEnabled() ||
+                mode != settingsService.getRefreshMode() ||
                 fixed != settingsService.getFixedIntervalSec() ||
                 open != settingsService.getOpenIntervalSec() ||
                 closed != settingsService.getClosedIntervalSec() ||
@@ -173,6 +181,7 @@ class MarketTickerConfigurable : Configurable {
             ?: AppSettingsService.DomesticTradeVenueMode.MIXED
         val baseCurrency = baseCurrencyCombo.selectedItem as? CurrencyType ?: CurrencyType.KRW
 
+        settingsService.setAutomaticPollingEnabled(automaticPollingCheckBox.isSelected)
         settingsService.setRefreshMode(mode)
         settingsService.setFixedIntervalSec(fixed)
         settingsService.setOpenIntervalSec(open)
@@ -193,6 +202,7 @@ class MarketTickerConfigurable : Configurable {
     }
 
     override fun reset() {
+        automaticPollingCheckBox.isSelected = settingsService.isAutomaticPollingEnabled()
         refreshModeCombo.selectedItem = settingsService.getRefreshMode()
         fixedIntervalCombo.selectedItem = settingsService.getFixedIntervalSec()
         openIntervalCombo.selectedItem = settingsService.getOpenIntervalSec()
@@ -212,10 +222,12 @@ class MarketTickerConfigurable : Configurable {
     }
 
     private fun updateIntervalControlAvailability() {
+        val automaticPollingEnabled = automaticPollingCheckBox.isSelected
         val mode = refreshModeCombo.selectedItem as? AppSettingsService.RefreshMode ?: AppSettingsService.RefreshMode.AUTO
-        fixedIntervalCombo.isEnabled = mode == AppSettingsService.RefreshMode.FIXED
-        openIntervalCombo.isEnabled = mode == AppSettingsService.RefreshMode.AUTO
-        closedIntervalCombo.isEnabled = mode == AppSettingsService.RefreshMode.AUTO
+        refreshModeCombo.isEnabled = automaticPollingEnabled
+        fixedIntervalCombo.isEnabled = automaticPollingEnabled && mode == AppSettingsService.RefreshMode.FIXED
+        openIntervalCombo.isEnabled = automaticPollingEnabled && mode == AppSettingsService.RefreshMode.AUTO
+        closedIntervalCombo.isEnabled = automaticPollingEnabled && mode == AppSettingsService.RefreshMode.AUTO
     }
 
     private fun displayDomesticTradeVenueMode(mode: AppSettingsService.DomesticTradeVenueMode): String {

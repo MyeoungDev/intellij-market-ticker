@@ -106,7 +106,109 @@ class TickerPollingLoopTest {
         loop.cancel()
     }
 
+    @Test
+    fun `자동 폴링이 비활성화되면 가격 갱신을 호출하지 않는다`() {
+        val refreshCount = AtomicInteger()
+        val loop = tickerPollingLoop(
+            pollingEnabled = { false },
+            refreshMode = { AppSettingsService.RefreshMode.FIXED },
+            refreshPrices = {
+                refreshCount.incrementAndGet()
+            }
+        )
+
+        loop.restart()
+        Thread.sleep(100)
+
+        assertThat(refreshCount.get()).isZero()
+        loop.cancel()
+    }
+
+    @Test
+    fun `자동 폴링이 다시 활성화되면 가격 갱신을 재개한다`() {
+        val pollingEnabled = AtomicReference(false)
+        val firstRefresh = CountDownLatch(1)
+        val loop = tickerPollingLoop(
+            pollingEnabled = pollingEnabled::get,
+            refreshMode = { AppSettingsService.RefreshMode.FIXED },
+            refreshPrices = {
+                firstRefresh.countDown()
+            }
+        )
+
+        loop.restart()
+        assertThat(firstRefresh.await(100, TimeUnit.MILLISECONDS)).isFalse()
+
+        pollingEnabled.set(true)
+
+        assertThat(firstRefresh.await(1, TimeUnit.SECONDS)).isTrue()
+        loop.cancel()
+    }
+
+    @Test
+    fun `자동 폴링이 활성 상태에서 비활성화되면 이후 가격 갱신을 중단한다`() {
+        val pollingEnabled = AtomicReference(true)
+        val firstRefresh = CountDownLatch(1)
+        val secondRefresh = CountDownLatch(1)
+        val refreshCount = AtomicInteger()
+        val loop = tickerPollingLoop(
+            pollingEnabled = pollingEnabled::get,
+            refreshMode = { AppSettingsService.RefreshMode.FIXED },
+            fixedIntervalSec = { 3L },
+            refreshPrices = {
+                when (refreshCount.incrementAndGet()) {
+                    1 -> firstRefresh.countDown()
+                    2 -> secondRefresh.countDown()
+                }
+            }
+        )
+
+        loop.restart()
+        assertThat(firstRefresh.await(1, TimeUnit.SECONDS)).isTrue()
+
+        pollingEnabled.set(false)
+        loop.restart()
+
+        assertThat(secondRefresh.await(150, TimeUnit.MILLISECONDS)).isFalse()
+        assertThat(refreshCount.get()).isEqualTo(1)
+        loop.cancel()
+    }
+
+    @Test
+    fun `비활성 상태에서 변경한 고정 주기는 재활성화 후 다음 대기에 반영된다`() {
+        val pollingEnabled = AtomicReference(false)
+        val fixedIntervalSec = AtomicLong(900L)
+        val firstRefresh = CountDownLatch(1)
+        val secondRefresh = CountDownLatch(1)
+        val refreshCount = AtomicInteger()
+        val loop = tickerPollingLoop(
+            pollingEnabled = pollingEnabled::get,
+            refreshMode = { AppSettingsService.RefreshMode.FIXED },
+            fixedIntervalSec = fixedIntervalSec::get,
+            refreshPrices = {
+                when (refreshCount.incrementAndGet()) {
+                    1 -> firstRefresh.countDown()
+                    2 -> secondRefresh.countDown()
+                }
+            }
+        )
+
+        loop.restart()
+        assertThat(firstRefresh.await(100, TimeUnit.MILLISECONDS)).isFalse()
+
+        fixedIntervalSec.set(3L)
+        loop.restart()
+        assertThat(firstRefresh.await(100, TimeUnit.MILLISECONDS)).isFalse()
+
+        pollingEnabled.set(true)
+
+        assertThat(firstRefresh.await(1, TimeUnit.SECONDS)).isTrue()
+        assertThat(secondRefresh.await(500, TimeUnit.MILLISECONDS)).isTrue()
+        loop.cancel()
+    }
+
     private fun tickerPollingLoop(
+        pollingEnabled: () -> Boolean = { true },
         refreshMode: () -> AppSettingsService.RefreshMode,
         refreshPrices: suspend () -> Unit,
         hasOpenMarket: () -> Boolean = { true },
@@ -116,6 +218,7 @@ class TickerPollingLoopTest {
     ): TickerPollingLoop {
         return TickerPollingLoop(
             cs = scope,
+            pollingEnabled = pollingEnabled,
             refreshMode = refreshMode,
             refreshPrices = refreshPrices,
             hasOpenMarket = hasOpenMarket,
