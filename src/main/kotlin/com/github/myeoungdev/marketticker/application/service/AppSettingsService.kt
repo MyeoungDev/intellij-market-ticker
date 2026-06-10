@@ -135,7 +135,6 @@ class AppSettingsService : PersistentStateComponent<AppSettingsService.State> {
         var domesticTradeVenueMode: String = DomesticTradeVenueMode.MIXED.name,
         var baseCurrency: String = CurrencyType.KRW.code,
         var showMarketPulse: Boolean = true,
-        var showMarketSessionIndicator: Boolean = true,
         var showChartTab: Boolean = true,
         var showHeatmapTab: Boolean = true
     )
@@ -222,12 +221,6 @@ class AppSettingsService : PersistentStateComponent<AppSettingsService.State> {
      */
     fun setMarketPulseVisible(visible: Boolean) {
         settingsState.showMarketPulse = visible
-    }
-
-    fun isMarketSessionIndicatorVisible(): Boolean = settingsState.showMarketSessionIndicator
-
-    fun setMarketSessionIndicatorVisible(visible: Boolean) {
-        settingsState.showMarketSessionIndicator = visible
     }
 
     /**

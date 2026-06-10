@@ -31,7 +31,12 @@ class TickerSchedulerService(
         cs = cs,
         pollingEnabled = appSettingsService::isAutomaticPollingEnabled,
         refreshMode = appSettingsService::getRefreshMode,
-        refreshPrices = { marketDataService.refreshPrices(PriceRefreshSource.AUTOMATIC) },
+        refreshPrices = marketDataService::refreshPrices,
+        hasOpenMarket = {
+            marketDataService.currentPrices.value.any {
+                it.marketStatus.name == "OPEN" || it.marketStatus.name == "EXTENDED"
+            }
+        },
         fixedIntervalSec = appSettingsService::getFixedIntervalSec,
         openIntervalSec = appSettingsService::getOpenIntervalSec,
         closedIntervalSec = appSettingsService::getClosedIntervalSec
@@ -40,7 +45,7 @@ class TickerSchedulerService(
     init {
         logger.info { "Scheduler Started." }
         if (appSettingsService.isAutomaticPollingEnabled()) {
-            marketDataService.refreshPricesAsync(PriceRefreshSource.STARTUP)
+            marketDataService.forceRefresh()
         }
         subscribeSettingsUpdates()
         startPolling()
@@ -65,7 +70,8 @@ internal class TickerPollingLoop(
     private val cs: CoroutineScope,
     private val pollingEnabled: () -> Boolean,
     private val refreshMode: () -> AppSettingsService.RefreshMode,
-    private val refreshPrices: suspend () -> PriceRefreshResult,
+    private val refreshPrices: suspend () -> Unit,
+    private val hasOpenMarket: () -> Boolean,
     private val fixedIntervalSec: () -> Long,
     private val openIntervalSec: () -> Long,
     private val closedIntervalSec: () -> Long,
@@ -91,8 +97,8 @@ internal class TickerPollingLoop(
                         }
 
                         AppSettingsService.RefreshMode.AUTO -> {
-                            val result = refreshPrices()
-                            val intervalSec = if (result.requested) {
+                            refreshPrices()
+                            val intervalSec = if (hasOpenMarket()) {
                                 openIntervalSec()
                             } else {
                                 closedIntervalSec()

@@ -12,9 +12,6 @@
 - Added NXT venue support for domestic stocks, including KRX/NXT screener selection and configurable domestic stock venue display. (#35)
 - Added longer fixed and open-market polling interval options up to 1 hour. (#36)
 - Added a user-facing option to enable or disable automatic price polling while keeping manual refresh actions available.
-- Added market-hours filtering for automatic price polling to skip closed regular stock markets while preserving manual refresh.
-- Added an initial startup price refresh and watchlist market-session indicator so closed-market stocks still show their latest fetched price.
-- Added a setting to show or hide the watchlist market-session indicator column.
 
 ## [0.0.2] - 2026-06-08
 ### Fixed
