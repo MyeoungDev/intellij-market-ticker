@@ -3,6 +3,7 @@ package com.github.myeoungdev.marketticker.startup
 import com.github.myeoungdev.marketticker.application.service.MarketIndicatorService
 import com.github.myeoungdev.marketticker.application.service.AppSettingsService
 import com.github.myeoungdev.marketticker.application.service.MarketDataService
+import com.github.myeoungdev.marketticker.application.service.PriceRefreshSource
 import com.github.myeoungdev.marketticker.application.service.TickerSchedulerService
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -20,7 +21,7 @@ class MarketTickerStartupActivity : ProjectActivity {
         service<TickerSchedulerService>()
         service<MarketIndicatorService>()
         if (service<AppSettingsService>().isAutomaticPollingEnabled()) {
-            service<MarketDataService>().forceRefresh()
+            service<MarketDataService>().refreshPrices(PriceRefreshSource.STARTUP)
         }
     }
 }
