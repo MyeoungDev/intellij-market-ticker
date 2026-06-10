@@ -4,6 +4,8 @@
 
 ## [Unreleased]
 
+## [0.0.3] - 2026-06-10
+
 ### Fixed
 - Removed the group/tag field from portfolio registration and edit dialogs.
 - Fixed polling interval changes not taking effect until the previous long delay completed.
