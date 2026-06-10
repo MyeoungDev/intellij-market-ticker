@@ -29,6 +29,7 @@ class TickerSchedulerService(
     private val appSettingsService = service<AppSettingsService>()
     private val pollingLoop = TickerPollingLoop(
         cs = cs,
+        pollingEnabled = appSettingsService::isAutomaticPollingEnabled,
         refreshMode = appSettingsService::getRefreshMode,
         refreshPrices = marketDataService::refreshPrices,
         hasOpenMarket = {
@@ -43,7 +44,9 @@ class TickerSchedulerService(
 
     init {
         logger.info { "Scheduler Started." }
-        marketDataService.forceRefresh()
+        if (appSettingsService.isAutomaticPollingEnabled()) {
+            marketDataService.forceRefresh()
+        }
         subscribeSettingsUpdates()
         startPolling()
     }
@@ -65,6 +68,7 @@ class TickerSchedulerService(
 
 internal class TickerPollingLoop(
     private val cs: CoroutineScope,
+    private val pollingEnabled: () -> Boolean,
     private val refreshMode: () -> AppSettingsService.RefreshMode,
     private val refreshPrices: suspend () -> Unit,
     private val hasOpenMarket: () -> Boolean,
@@ -81,6 +85,10 @@ internal class TickerPollingLoop(
         pollingJob = cs.launch {
             while (isActive) {
                 try {
+                    if (!pollingEnabled()) {
+                        delay(500L)
+                        continue
+                    }
                     when (refreshMode()) {
                         AppSettingsService.RefreshMode.MANUAL -> delay(500L)
                         AppSettingsService.RefreshMode.FIXED -> {

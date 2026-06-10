@@ -3,6 +3,7 @@ package com.github.myeoungdev.marketticker.ui.view
 import com.github.myeoungdev.marketticker.application.listener.TickerUpdateListener
 import com.github.myeoungdev.marketticker.application.listener.WatchlistEntryUpdateListener
 import com.github.myeoungdev.marketticker.application.repository.WatchlistRepository
+import com.github.myeoungdev.marketticker.application.service.AppSettingsService
 import com.github.myeoungdev.marketticker.application.service.LocalizationService
 import com.github.myeoungdev.marketticker.application.service.MarketDataService
 import com.github.myeoungdev.marketticker.application.service.MoneyDisplayFormatter
@@ -37,6 +38,7 @@ import javax.swing.table.DefaultTableModel
 class WatchlistView(private val project: Project) {
 
     private val marketDataService = service<MarketDataService>()
+    private val appSettingsService = service<AppSettingsService>()
     private val alertService = service<PriceAlertService>()
     private val localizationService = service<LocalizationService>()
     private val moneyDisplayFormatter = MoneyDisplayFormatter()
@@ -81,7 +83,9 @@ class WatchlistView(private val project: Project) {
     private fun loadInitialData() {
         currentWatchlistEntries = marketDataService.getWatchlistEntries()
         updateGroupFilter()
-        marketDataService.forceRefresh()
+        if (appSettingsService.isAutomaticPollingEnabled()) {
+            marketDataService.forceRefresh()
+        }
     }
 
     private fun setupUI() {
