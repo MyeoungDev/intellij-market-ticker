@@ -23,8 +23,20 @@ import kotlinx.coroutines.launch
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
 import kotlinx.coroutines.withContext
+import java.time.ZonedDateTime
 
 private val logger = KotlinLogging.logger {}
+
+enum class PriceRefreshSource {
+    AUTOMATIC,
+    MANUAL,
+    STARTUP
+}
+
+data class PriceRefreshResult(
+    val requested: Boolean,
+    val fetchedCount: Int
+)
 
 /**
  * MarketTicker 의 데이터르 관리하는 메인 서비스 클래스 입니다.
@@ -45,6 +57,7 @@ class MarketDataService(
     private val watchlistRepository = service<WatchlistRepository>()
     private val notificationService = service<NotificationService>()
     private val priceHistoryService = service<PriceHistoryService>()
+    private val appSettingsService = service<AppSettingsService>()
 
     private val priceProvider: PriceProvider = DefaultDataSourceRegistry.priceProvider()
     private val searchProvider: SearchProvider = DefaultDataSourceRegistry.searchProvider()
@@ -58,18 +71,18 @@ class MarketDataService(
     /**
      * 등록된 Ticker 의 실시간 가격을 갱신하는 메서드 입니다.
      */
-    suspend fun refreshPrices() {
-        refreshMutex.withLock {
+    suspend fun refreshPrices(source: PriceRefreshSource = PriceRefreshSource.AUTOMATIC): PriceRefreshResult {
+        return refreshMutex.withLock {
             val watchlistEntries = watchlistRepository.getWatchlistEntries()
 
             if (watchlistEntries.isEmpty()) {
                 _currentPrices.emit(emptyList())
                 broadcastUpdate(emptyList())
-                return
+                return@withLock PriceRefreshResult(requested = false, fetchedCount = 0)
             }
 
             try {
-                val tickersForPriceProvider = watchlistEntries.map { entry ->
+                val watchlistTickers = watchlistEntries.map { entry ->
                     Ticker(
                         entry.symbol,
                         entry.tradingSymbol.ifBlank { entry.symbol },
@@ -79,18 +92,36 @@ class MarketDataService(
                         entry.nationName
                     )
                 }
+                val tickersForPriceProvider = PriceRefreshPlanner.selectTickers(
+                    tickers = watchlistTickers,
+                    source = source,
+                    now = ZonedDateTime.now(),
+                    domesticVenueMode = appSettingsService.getDomesticTradeVenueMode()
+                )
+
+                if (tickersForPriceProvider.isEmpty()) {
+                    logger.info { "Skipped automatic price refresh: no pollable tickers" }
+                    return@withLock PriceRefreshResult(requested = false, fetchedCount = 0)
+                }
 
                 val prices = withContext(Dispatchers.IO) {
                     priceProvider.getPrices(tickersForPriceProvider)
                 }
                 logger.info { "Fetched prices count: ${prices.size}" }
 
-                _currentPrices.emit(prices)
+                val updatedPrices = if (source == PriceRefreshSource.AUTOMATIC) {
+                    PriceRefreshPlanner.mergePrices(_currentPrices.value, prices)
+                } else {
+                    prices
+                }
+                _currentPrices.emit(updatedPrices)
                 priceHistoryService.append(prices)
                 notificationService.checkAndNotify(prices)
-                broadcastUpdate(prices)
+                broadcastUpdate(updatedPrices)
+                PriceRefreshResult(requested = true, fetchedCount = prices.size)
             } catch (e: Exception) {
                 logger.error(e) { "Failed to refresh prices" }
+                PriceRefreshResult(requested = false, fetchedCount = 0)
             }
         }
     }
@@ -199,8 +230,12 @@ class MarketDataService(
      * 강제로 가격을 갱신하는 메서드 입니다.
      */
     fun forceRefresh() {
+        refreshPricesAsync(PriceRefreshSource.MANUAL)
+    }
+
+    fun refreshPricesAsync(source: PriceRefreshSource = PriceRefreshSource.AUTOMATIC) {
         cs.launch(Dispatchers.IO) {
-            refreshPrices()
+            refreshPrices(source)
         }
     }
 

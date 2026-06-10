@@ -44,6 +44,7 @@ class MarketTickerConfigurable : Configurable {
         CurrencyType.EUR
     ))
     private val marketPulseCheckBox = JCheckBox()
+    private val marketSessionIndicatorCheckBox = JCheckBox()
     private val chartTabCheckBox = JCheckBox()
     private val heatmapTabCheckBox = JCheckBox()
 
@@ -128,6 +129,11 @@ class MarketTickerConfigurable : Configurable {
                 }
 
                 row {
+                    marketSessionIndicatorCheckBox.text = localizationService.text("관심종목 시장 상태 표시", "Show watchlist market status")
+                    cell(marketSessionIndicatorCheckBox)
+                }
+
+                row {
                     chartTabCheckBox.text = localizationService.text("차트 탭 표시", "Show chart tab")
                     cell(chartTabCheckBox)
                 }
@@ -165,6 +171,7 @@ class MarketTickerConfigurable : Configurable {
                 domesticTradeVenueMode != settingsService.getDomesticTradeVenueMode() ||
                 baseCurrency != settingsService.getBaseCurrency() ||
                 marketPulseCheckBox.isSelected != settingsService.isMarketPulseVisible() ||
+                marketSessionIndicatorCheckBox.isSelected != settingsService.isMarketSessionIndicatorVisible() ||
                 chartTabCheckBox.isSelected != settingsService.isChartTabVisible() ||
                 heatmapTabCheckBox.isSelected != settingsService.isHeatmapTabVisible()
     }
@@ -191,6 +198,7 @@ class MarketTickerConfigurable : Configurable {
         settingsService.setDomesticTradeVenueMode(domesticTradeVenueMode)
         settingsService.setBaseCurrency(baseCurrency)
         settingsService.setMarketPulseVisible(marketPulseCheckBox.isSelected)
+        settingsService.setMarketSessionIndicatorVisible(marketSessionIndicatorCheckBox.isSelected)
         settingsService.setChartTabVisible(chartTabCheckBox.isSelected)
         settingsService.setHeatmapTabVisible(heatmapTabCheckBox.isSelected)
 
@@ -212,6 +220,7 @@ class MarketTickerConfigurable : Configurable {
         domesticTradeVenueModeCombo.selectedItem = settingsService.getDomesticTradeVenueMode()
         baseCurrencyCombo.selectedItem = settingsService.getBaseCurrency()
         marketPulseCheckBox.isSelected = settingsService.isMarketPulseVisible()
+        marketSessionIndicatorCheckBox.isSelected = settingsService.isMarketSessionIndicatorVisible()
         chartTabCheckBox.isSelected = settingsService.isChartTabVisible()
         heatmapTabCheckBox.isSelected = settingsService.isHeatmapTabVisible()
         updateIntervalControlAvailability()

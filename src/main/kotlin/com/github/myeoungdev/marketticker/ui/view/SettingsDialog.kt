@@ -48,6 +48,7 @@ class SettingsDialog(
         CurrencyType.EUR
     ))
     private val marketPulseCheckBox = JCheckBox()
+    private val marketSessionIndicatorCheckBox = JCheckBox()
 
     init {
         title = localizationService.text("Market Ticker 설정", "Market Ticker Settings")
@@ -65,6 +66,7 @@ class SettingsDialog(
         priceDisplayModeCombo.selectedItem = settingsService.getPriceDisplayMode()
         baseCurrencyCombo.selectedItem = settingsService.getBaseCurrency()
         marketPulseCheckBox.isSelected = settingsService.isMarketPulseVisible()
+        marketSessionIndicatorCheckBox.isSelected = settingsService.isMarketSessionIndicatorVisible()
 
         automaticPollingCheckBox.addActionListener {
             updateIntervalControlAvailability()
@@ -81,6 +83,7 @@ class SettingsDialog(
         priceDisplayModeCombo.addActionListener { persistSettings() }
         baseCurrencyCombo.addActionListener { persistSettings() }
         marketPulseCheckBox.addActionListener { persistSettings() }
+        marketSessionIndicatorCheckBox.addActionListener { persistSettings() }
 
         updateIntervalControlAvailability()
         init()
@@ -128,6 +131,11 @@ class SettingsDialog(
             }
 
             row {
+                marketSessionIndicatorCheckBox.text = localizationService.text("관심종목 시장 상태 표시", "Show watchlist market status")
+                cell(marketSessionIndicatorCheckBox)
+            }
+
+            row {
                 button(localizationService.text("지금 새로고침", "Refresh now")) {
                     marketDataService.forceRefresh()
                 }
@@ -162,6 +170,7 @@ class SettingsDialog(
         settingsService.setPriceDisplayMode(priceDisplayMode)
         settingsService.setBaseCurrency(baseCurrency)
         settingsService.setMarketPulseVisible(marketPulseCheckBox.isSelected)
+        settingsService.setMarketSessionIndicatorVisible(marketSessionIndicatorCheckBox.isSelected)
 
         Locale.setDefault(localizationService.currentLocale())
         ApplicationManager.getApplication().messageBus
