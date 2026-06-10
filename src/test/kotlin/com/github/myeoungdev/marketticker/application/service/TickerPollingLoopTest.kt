@@ -36,6 +36,7 @@ class TickerPollingLoopTest {
                     1 -> firstRefresh.countDown()
                     2 -> secondRefresh.countDown()
                 }
+                PriceRefreshResult(requested = true, fetchedCount = 1)
             }
         )
 
@@ -57,13 +58,13 @@ class TickerPollingLoopTest {
         val refreshCount = AtomicInteger()
         val loop = tickerPollingLoop(
             refreshMode = { AppSettingsService.RefreshMode.AUTO },
-            hasOpenMarket = { true },
             openIntervalSec = openIntervalSec::get,
             refreshPrices = {
                 when (refreshCount.incrementAndGet()) {
                     1 -> firstRefresh.countDown()
                     2 -> secondRefresh.countDown()
                 }
+                PriceRefreshResult(requested = true, fetchedCount = 1)
             }
         )
 
@@ -73,6 +74,30 @@ class TickerPollingLoopTest {
         openIntervalSec.set(3L)
         loop.restart()
 
+        assertThat(secondRefresh.await(500, TimeUnit.MILLISECONDS)).isTrue()
+        loop.cancel()
+    }
+
+    @Test
+    fun `자동 주기는 가격 요청이 생략되면 비장중 주기를 사용한다`() {
+        val firstRefresh = CountDownLatch(1)
+        val secondRefresh = CountDownLatch(1)
+        val refreshCount = AtomicInteger()
+        val loop = tickerPollingLoop(
+            refreshMode = { AppSettingsService.RefreshMode.AUTO },
+            closedIntervalSec = { 3L },
+            refreshPrices = {
+                when (refreshCount.incrementAndGet()) {
+                    1 -> firstRefresh.countDown()
+                    2 -> secondRefresh.countDown()
+                }
+                PriceRefreshResult(requested = false, fetchedCount = 0)
+            }
+        )
+
+        loop.restart()
+
+        assertThat(firstRefresh.await(1, TimeUnit.SECONDS)).isTrue()
         assertThat(secondRefresh.await(500, TimeUnit.MILLISECONDS)).isTrue()
         loop.cancel()
     }
@@ -93,6 +118,7 @@ class TickerPollingLoopTest {
                     1 -> firstRefresh.countDown()
                     2 -> secondRefresh.countDown()
                 }
+                PriceRefreshResult(requested = true, fetchedCount = 1)
             }
         )
 
@@ -114,6 +140,7 @@ class TickerPollingLoopTest {
             refreshMode = { AppSettingsService.RefreshMode.FIXED },
             refreshPrices = {
                 refreshCount.incrementAndGet()
+                PriceRefreshResult(requested = true, fetchedCount = 1)
             }
         )
 
@@ -133,6 +160,7 @@ class TickerPollingLoopTest {
             refreshMode = { AppSettingsService.RefreshMode.FIXED },
             refreshPrices = {
                 firstRefresh.countDown()
+                PriceRefreshResult(requested = true, fetchedCount = 1)
             }
         )
 
@@ -160,6 +188,7 @@ class TickerPollingLoopTest {
                     1 -> firstRefresh.countDown()
                     2 -> secondRefresh.countDown()
                 }
+                PriceRefreshResult(requested = true, fetchedCount = 1)
             }
         )
 
@@ -190,6 +219,7 @@ class TickerPollingLoopTest {
                     1 -> firstRefresh.countDown()
                     2 -> secondRefresh.countDown()
                 }
+                PriceRefreshResult(requested = true, fetchedCount = 1)
             }
         )
 
@@ -210,8 +240,7 @@ class TickerPollingLoopTest {
     private fun tickerPollingLoop(
         pollingEnabled: () -> Boolean = { true },
         refreshMode: () -> AppSettingsService.RefreshMode,
-        refreshPrices: suspend () -> Unit,
-        hasOpenMarket: () -> Boolean = { true },
+        refreshPrices: suspend () -> PriceRefreshResult,
         fixedIntervalSec: () -> Long = { 3L },
         openIntervalSec: () -> Long = { 3L },
         closedIntervalSec: () -> Long = { 10L }
@@ -221,7 +250,6 @@ class TickerPollingLoopTest {
             pollingEnabled = pollingEnabled,
             refreshMode = refreshMode,
             refreshPrices = refreshPrices,
-            hasOpenMarket = hasOpenMarket,
             fixedIntervalSec = fixedIntervalSec,
             openIntervalSec = openIntervalSec,
             closedIntervalSec = closedIntervalSec,
