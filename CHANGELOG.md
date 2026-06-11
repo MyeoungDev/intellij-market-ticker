@@ -6,6 +6,7 @@
 
 ### Added
 - Added drag-and-drop reordering for watchlist rows when the group filter is set to All.
+- Extended closed-market polling interval options up to 1 hour and changed the default closed-market interval to 5 minutes.
 
 ## [0.0.3] - 2026-06-10
 

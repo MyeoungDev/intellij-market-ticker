@@ -153,7 +153,7 @@ class MarketTickerConfigurable : Configurable {
         val mode = refreshModeCombo.selectedItem as? AppSettingsService.RefreshMode ?: AppSettingsService.RefreshMode.AUTO
         val fixed = fixedIntervalCombo.selectedItem as? Long ?: 6L
         val open = openIntervalCombo.selectedItem as? Long ?: 3L
-        val closed = closedIntervalCombo.selectedItem as? Long ?: 10L
+        val closed = closedIntervalCombo.selectedItem as? Long ?: AppSettingsService.DEFAULT_CLOSED_INTERVAL_SEC
         val language = languageCombo.selectedItem as? AppSettingsService.UiLanguage ?: AppSettingsService.UiLanguage.AUTO
         val priceDisplayMode = priceDisplayModeCombo.selectedItem as? AppSettingsService.PriceDisplayMode
             ?: AppSettingsService.PriceDisplayMode.MIXED
@@ -180,7 +180,7 @@ class MarketTickerConfigurable : Configurable {
         val mode = refreshModeCombo.selectedItem as? AppSettingsService.RefreshMode ?: AppSettingsService.RefreshMode.AUTO
         val fixed = fixedIntervalCombo.selectedItem as? Long ?: 6L
         val open = openIntervalCombo.selectedItem as? Long ?: 3L
-        val closed = closedIntervalCombo.selectedItem as? Long ?: 10L
+        val closed = closedIntervalCombo.selectedItem as? Long ?: AppSettingsService.DEFAULT_CLOSED_INTERVAL_SEC
         val language = languageCombo.selectedItem as? AppSettingsService.UiLanguage ?: AppSettingsService.UiLanguage.AUTO
         val priceDisplayMode = priceDisplayModeCombo.selectedItem as? AppSettingsService.PriceDisplayMode
             ?: AppSettingsService.PriceDisplayMode.MIXED

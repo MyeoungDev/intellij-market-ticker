@@ -22,7 +22,8 @@ class AppSettingsService : PersistentStateComponent<AppSettingsService.State> {
     companion object {
         const val MIN_INTERVAL_SEC: Long = 3L
         const val MAX_ACTIVE_INTERVAL_SEC: Long = 3600L
-        const val MAX_CLOSED_INTERVAL_SEC: Long = 10L
+        const val DEFAULT_CLOSED_INTERVAL_SEC: Long = 300L
+        const val MAX_CLOSED_INTERVAL_SEC: Long = 3600L
 
         val ACTIVE_INTERVAL_OPTIONS: Array<Long> = arrayOf(
             3L,
@@ -42,7 +43,15 @@ class AppSettingsService : PersistentStateComponent<AppSettingsService.State> {
             1800L,
             3600L
         )
-        val CLOSED_INTERVAL_OPTIONS: Array<Long> = arrayOf(3L, 6L, 10L)
+        val CLOSED_INTERVAL_OPTIONS: Array<Long> = arrayOf(
+            30L,
+            60L,
+            180L,
+            300L,
+            600L,
+            1800L,
+            3600L
+        )
 
         fun formatPollingInterval(seconds: Long): String {
             return when {
@@ -129,7 +138,7 @@ class AppSettingsService : PersistentStateComponent<AppSettingsService.State> {
         var refreshMode: String = RefreshMode.AUTO.name,
         var fixedIntervalSec: Long = 6L,
         var openIntervalSec: Long = 3L,
-        var closedIntervalSec: Long = 10L,
+        var closedIntervalSec: Long = DEFAULT_CLOSED_INTERVAL_SEC,
         var uiLanguage: String = UiLanguage.AUTO.name,
         var priceDisplayMode: String = PriceDisplayMode.MIXED.name,
         var domesticTradeVenueMode: String = DomesticTradeVenueMode.MIXED.name,
