@@ -4,6 +4,9 @@
 
 ## [Unreleased]
 
+### Added
+- Added drag-and-drop reordering for watchlist rows when the group filter is set to All.
+
 ## [0.0.3] - 2026-06-10
 
 ### Fixed
@@ -17,7 +20,6 @@
 - Added market-hours filtering for automatic price polling to skip closed regular stock markets while preserving manual refresh.
 - Added an initial startup price refresh and watchlist market-session indicator so closed-market stocks still show their latest fetched price.
 - Added a setting to show or hide the watchlist market-session indicator column.
-- Added drag-and-drop reordering for watchlist rows when the group filter is set to All.
 
 ## [0.0.2] - 2026-06-08
 ### Fixed
