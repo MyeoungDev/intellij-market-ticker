@@ -2,10 +2,11 @@ package com.github.myeoungdev.marketticker.application.repository
 
 import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
-import org.junit.Assert.assertEquals
-import org.junit.Assert.assertTrue
-import org.junit.Before
-import org.junit.Test
+import org.junit.jupiter.api.Assertions.assertEquals
+import org.junit.jupiter.api.Assertions.assertFalse
+import org.junit.jupiter.api.Assertions.assertTrue
+import org.junit.jupiter.api.BeforeEach
+import org.junit.jupiter.api.Test
 
 class WatchlistRepositoryTest {
 
@@ -20,7 +21,7 @@ class WatchlistRepositoryTest {
         "대한민국"
     )
 
-    @Before
+    @BeforeEach
     fun setUp() {
         service = WatchlistRepository()
     }
@@ -175,6 +176,110 @@ class WatchlistRepositoryTest {
         assertEquals(null, entry.quantity)
         assertEquals(null, entry.targetWeightPercentage)
         assertEquals(0.0, entry.realizedProfitLoss)
+    }
+
+    @Test
+    fun `종목을 위로 이동하면 저장 순서가 변경된다`() {
+        service.addTicker(DEFAULT_TICKER)
+        service.addTicker(ticker("000660", "SK하이닉스", MarketType.KOSPI))
+        service.addTicker(ticker("NVDA", "NVIDIA", MarketType.NASDAQ))
+
+        assertTrue(service.moveTicker("NVDA", MarketType.NASDAQ.name, 0))
+
+        assertEquals(
+            listOf("NVDA", "005930", "000660"),
+            service.getWatchlistEntries().map { it.symbol }
+        )
+    }
+
+    @Test
+    fun `종목을 아래로 이동하면 저장 순서가 변경된다`() {
+        service.addTicker(DEFAULT_TICKER)
+        service.addTicker(ticker("000660", "SK하이닉스", MarketType.KOSPI))
+        service.addTicker(ticker("NVDA", "NVIDIA", MarketType.NASDAQ))
+
+        assertTrue(service.moveTicker("005930", MarketType.KOSPI.name, 3))
+
+        assertEquals(
+            listOf("000660", "NVDA", "005930"),
+            service.getWatchlistEntries().map { it.symbol }
+        )
+    }
+
+    @Test
+    fun `같은 위치로 이동하면 순서를 변경하지 않는다`() {
+        service.addTicker(DEFAULT_TICKER)
+        service.addTicker(ticker("000660", "SK하이닉스", MarketType.KOSPI))
+
+        assertFalse(service.moveTicker("005930", MarketType.KOSPI.name, 1))
+
+        assertEquals(
+            listOf("005930", "000660"),
+            service.getWatchlistEntries().map { it.symbol }
+        )
+    }
+
+    @Test
+    fun `존재하지 않는 종목 이동은 순서를 변경하지 않는다`() {
+        service.addTicker(DEFAULT_TICKER)
+
+        assertFalse(service.moveTicker("MISSING", MarketType.KOSPI.name, 0))
+
+        assertEquals(listOf("005930"), service.getWatchlistEntries().map { it.symbol })
+    }
+
+    @Test
+    fun `같은 symbol 이라도 marketType 이 다른 종목은 구분해서 이동한다`() {
+        service.addTicker(ticker("ABC", "ABC Korea", MarketType.KOSPI))
+        service.addTicker(ticker("ABC", "ABC USA", MarketType.NASDAQ, tradingSymbol = "ABC.O"))
+        service.addTicker(ticker("NVDA", "NVIDIA", MarketType.NASDAQ))
+
+        assertTrue(service.moveTicker("ABC", MarketType.NASDAQ.name, 0))
+
+        assertEquals(
+            listOf(MarketType.NASDAQ.name, MarketType.KOSPI.name, MarketType.NASDAQ.name),
+            service.getWatchlistEntries().map { it.marketType }
+        )
+        assertEquals("ABC.O", service.getWatchlistEntries().first().tradingSymbol)
+    }
+
+    @Test
+    fun `종목 이동은 포트폴리오와 그룹 메타데이터를 유지한다`() {
+        service.addTicker(DEFAULT_TICKER)
+        service.addTicker(ticker("NVDA", "NVIDIA", MarketType.NASDAQ))
+        service.updateWatchlistEntryPortfolio(
+            service.getWatchlistEntries().first { it.symbol == "005930" }.copy(
+                purchasePrice = 70_000.0,
+                quantity = 2.0,
+                targetWeightPercentage = 30.0,
+                realizedProfitLoss = 1_000.0,
+                groupTag = "반도체"
+            )
+        )
+
+        assertTrue(service.moveTicker("005930", MarketType.KOSPI.name, 2))
+
+        val moved = service.getWatchlistEntries().last()
+        assertEquals("005930", moved.symbol)
+        assertEquals(70_000.0, moved.purchasePrice)
+        assertEquals(2.0, moved.quantity)
+        assertEquals(30.0, moved.targetWeightPercentage)
+        assertEquals(1_000.0, moved.realizedProfitLoss)
+        assertEquals("반도체", moved.groupTag)
+    }
+
+    private fun ticker(
+        symbol: String,
+        name: String,
+        marketType: MarketType,
+        tradingSymbol: String = symbol
+    ): Ticker {
+        return DEFAULT_TICKER.copy(
+            symbol = symbol,
+            tradingSymbol = tradingSymbol,
+            name = name,
+            marketType = marketType
+        )
     }
 
 }
