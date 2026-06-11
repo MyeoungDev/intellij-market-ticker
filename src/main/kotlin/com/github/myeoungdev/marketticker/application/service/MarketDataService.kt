@@ -191,6 +191,14 @@ class MarketDataService(
         forceRefresh()
     }
 
+    fun moveWatchlistEntry(symbol: String, marketType: MarketType, targetIndex: Int) {
+        val changed = watchlistRepository.moveTicker(symbol, marketType.name, targetIndex)
+        if (changed) {
+            ApplicationManager.getApplication().messageBus.syncPublisher(WatchlistEntryUpdateListener.TOPIC)
+                .onWatchlistEntryUpdated()
+        }
+    }
+
     /**
      * WatchlistEntry 의 포트폴리오 정보를 업데이트하는 메서드 입니다.
      *

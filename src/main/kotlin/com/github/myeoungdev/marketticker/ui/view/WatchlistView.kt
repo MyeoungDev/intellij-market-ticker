@@ -29,13 +29,19 @@ import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Component
 import java.awt.FlowLayout
+import java.awt.datatransfer.DataFlavor
+import java.awt.datatransfer.StringSelection
+import java.awt.datatransfer.Transferable
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.JComboBox
+import javax.swing.DropMode
+import javax.swing.JComponent
 import javax.swing.JMenuItem
 import javax.swing.JPanel
 import javax.swing.JPopupMenu
 import javax.swing.JTable
+import javax.swing.TransferHandler
 import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.DefaultTableModel
 import javax.swing.table.TableColumn
@@ -52,6 +58,7 @@ class WatchlistView(private val project: Project) {
     private var filteredEntries: List<WatchlistRepository.WatchlistEntry> = emptyList()
     private var currentPrices: List<TickerPrice> = emptyList()
     private var marketSessionColumn: TableColumn? = null
+    private var pendingSelection: WatchlistEntryKey? = null
 
     val panel = JPanel(BorderLayout())
 
@@ -97,6 +104,8 @@ class WatchlistView(private val project: Project) {
 
     private fun setupUI() {
         tickerTable.setDefaultRenderer(Object::class.java, PriceCellRenderer())
+        tickerTable.dropMode = DropMode.INSERT_ROWS
+        tickerTable.transferHandler = WatchlistRowTransferHandler()
 
         tickerTable.columnModel.getColumn(0).preferredWidth = 115
         tickerTable.columnModel.getColumn(1).preferredWidth = 95
@@ -227,13 +236,17 @@ class WatchlistView(private val project: Project) {
 
         val filterPanel = JPanel(FlowLayout(FlowLayout.LEFT, 8, 4))
         groupFilter.addItem(localizationService.text("전체", "All"))
-        groupFilter.addActionListener { updateTable() }
+        groupFilter.addActionListener {
+            updateReorderAvailability()
+            updateTable()
+        }
         filterPanel.add(groupFilter)
 
         panel.add(filterPanel, BorderLayout.NORTH)
         panel.add(JBScrollPane(tickerTable), BorderLayout.CENTER)
         panel.border = JBUI.Borders.empty(5)
         updateMarketSessionColumnVisibility()
+        updateReorderAvailability()
     }
 
     private fun subscribeToTickerUpdates() {
@@ -300,6 +313,7 @@ class WatchlistView(private val project: Project) {
         } else {
             groupFilter.selectedItem = all
         }
+        updateReorderAvailability()
     }
 
     private fun updateTable() {
@@ -339,6 +353,7 @@ class WatchlistView(private val project: Project) {
             }
 
             tickerTable.repaint()
+            selectPendingEntry()
         }
     }
 
@@ -357,6 +372,31 @@ class WatchlistView(private val project: Project) {
         if (selectedViewRow < 0) return null
         val modelRow = tickerTable.convertRowIndexToModel(selectedViewRow)
         return getWatchlistEntryAtRow(modelRow)
+    }
+
+    private fun isAllFilterSelected(): Boolean {
+        val all = localizationService.text("전체", "All")
+        val selectedFilter = (groupFilter.selectedItem as? String).orEmpty()
+        return selectedFilter == all || selectedFilter.isBlank()
+    }
+
+    private fun updateReorderAvailability() {
+        tickerTable.dragEnabled = isAllFilterSelected()
+    }
+
+    private fun selectPendingEntry() {
+        val key = pendingSelection ?: return
+        val modelRow = filteredEntries.indexOfFirst {
+            it.symbol == key.symbol && it.marketType == key.marketType
+        }
+        if (modelRow == -1) return
+
+        val viewRow = tickerTable.convertRowIndexToView(modelRow)
+        if (viewRow >= 0) {
+            tickerTable.setRowSelectionInterval(viewRow, viewRow)
+            tickerTable.scrollRectToVisible(tickerTable.getCellRect(viewRow, 0, true))
+            pendingSelection = null
+        }
     }
 
     private fun defaultGroup(entry: WatchlistRepository.WatchlistEntry): String {
@@ -383,6 +423,68 @@ class WatchlistView(private val project: Project) {
             ticker = entry.toTicker(),
             domesticVenueMode = appSettingsService.getDomesticTradeVenueMode()
         )
+    }
+
+    private data class WatchlistEntryKey(
+        val symbol: String,
+        val marketType: String
+    ) {
+        fun encode(): String = "$symbol\u0000$marketType"
+
+        companion object {
+            fun from(entry: WatchlistRepository.WatchlistEntry): WatchlistEntryKey {
+                return WatchlistEntryKey(entry.symbol, entry.marketType)
+            }
+
+            fun decode(value: String): WatchlistEntryKey? {
+                val parts = value.split('\u0000', limit = 2)
+                if (parts.size != 2) return null
+                return WatchlistEntryKey(parts[0], parts[1])
+            }
+        }
+    }
+
+    private inner class WatchlistRowTransferHandler : TransferHandler() {
+        override fun getSourceActions(c: JComponent?): Int {
+            return if (isAllFilterSelected()) MOVE else NONE
+        }
+
+        override fun createTransferable(c: JComponent?): Transferable? {
+            if (!isAllFilterSelected()) return null
+            val entry = getSelectedWatchlistEntry() ?: return null
+            return StringSelection(WatchlistEntryKey.from(entry).encode())
+        }
+
+        override fun canImport(support: TransferSupport): Boolean {
+            if (!isAllFilterSelected()) return false
+            if (!support.isDrop || !support.isDataFlavorSupported(DataFlavor.stringFlavor)) return false
+            return support.dropLocation is JTable.DropLocation
+        }
+
+        override fun importData(support: TransferSupport): Boolean {
+            if (!canImport(support)) return false
+
+            val dropLocation = support.dropLocation as? JTable.DropLocation ?: return false
+            val encoded = support.transferable.getTransferData(DataFlavor.stringFlavor) as? String ?: return false
+            val key = WatchlistEntryKey.decode(encoded) ?: return false
+            val marketType = MarketType.of(key.marketType)
+            if (marketType == MarketType.UNKNOWN) return false
+
+            val targetIndex = targetModelIndex(dropLocation.row)
+            if (targetIndex < 0) return false
+            pendingSelection = key
+            marketDataService.moveWatchlistEntry(key.symbol, marketType, targetIndex)
+            return true
+        }
+
+        private fun targetModelIndex(viewRow: Int): Int {
+            if (viewRow < 0) return -1
+            return if (viewRow >= tickerTable.rowCount) {
+                tableModel.rowCount
+            } else {
+                tickerTable.convertRowIndexToModel(viewRow)
+            }
+        }
     }
 
     inner class AlertIconRenderer : DefaultTableCellRenderer() {

@@ -94,6 +94,29 @@ class WatchlistRepository : PersistentStateComponent<WatchlistRepository.State> 
         }
     }
 
+    fun moveTicker(symbol: String, marketType: String, targetIndex: Int): Boolean {
+        val sourceIndex = marketTickerState.tickers.indexOfFirst {
+            it.symbol == symbol && it.marketType == marketType
+        }
+        if (sourceIndex == -1) {
+            return false
+        }
+
+        val boundedTargetIndex = targetIndex.coerceIn(0, marketTickerState.tickers.size)
+        val insertionIndex = if (sourceIndex < boundedTargetIndex) {
+            boundedTargetIndex - 1
+        } else {
+            boundedTargetIndex
+        }
+        if (sourceIndex == insertionIndex) {
+            return false
+        }
+
+        val entry = marketTickerState.tickers.removeAt(sourceIndex)
+        marketTickerState.tickers.add(insertionIndex, entry)
+        return true
+    }
+
     fun updateWatchlistEntryPortfolio(updatedEntry: WatchlistEntry) {
         val index = marketTickerState.tickers.indexOfFirst {
             it.symbol == updatedEntry.symbol && it.marketType == updatedEntry.marketType

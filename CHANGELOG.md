@@ -4,6 +4,9 @@
 
 ## [Unreleased]
 
+### Added
+- Added drag-and-drop reordering for watchlist rows when the group filter is set to All.
+
 ## [0.0.3] - 2026-06-10
 
 ### Fixed
