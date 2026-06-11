@@ -11,6 +11,11 @@
   <img alt="JDK" src="https://img.shields.io/badge/JDK-21-ED8B00?logo=openjdk&logoColor=white">
   <img alt="License" src="https://img.shields.io/badge/License-Apache_2.0-4D7A97.svg">
   <img alt="Tests" src="https://img.shields.io/badge/Tests-Gradle%20test-success">
+  <br/>
+  <a href="https://plugins.jetbrains.com/plugin/32107-market-ticker"><img alt="Install from JetBrains Marketplace" src="https://img.shields.io/badge/Install-JetBrains%20Marketplace-087CFA?logo=jetbrains&logoColor=white"></a>
+  <a href="https://plugins.jetbrains.com/plugin/32107-market-ticker"><img alt="JetBrains Plugin Version" src="https://img.shields.io/jetbrains/plugin/v/32107?label=version"></a>
+  <a href="https://plugins.jetbrains.com/plugin/32107-market-ticker"><img alt="JetBrains Plugin Downloads" src="https://img.shields.io/jetbrains/plugin/d/32107"></a>
+  <a href="https://plugins.jetbrains.com/plugin/32107-market-ticker/reviews"><img alt="JetBrains Plugin Rating" src="https://img.shields.io/jetbrains/plugin/r/rating/32107"></a>
 </p>
 
 > Track Korean stocks, global stocks, and crypto from inside JetBrains IDEs.
