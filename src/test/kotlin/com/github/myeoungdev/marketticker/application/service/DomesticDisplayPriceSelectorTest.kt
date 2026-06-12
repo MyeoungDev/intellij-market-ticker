@@ -55,7 +55,7 @@ class DomesticDisplayPriceSelectorTest {
     }
 
     @Test
-    fun `혼합 모드는 NXT 장 상태가 열려 있지 않으면 원본 KRX 가격을 유지한다`() {
+    fun `혼합 모드는 NXT 시간대면 대체 가격 상태가 흔들려도 NXT 표시가를 유지한다`() {
         val settings = AppSettingsService()
         settings.setDomesticTradeVenueMode(AppSettingsService.DomesticTradeVenueMode.MIXED)
         val selector = DomesticDisplayPriceSelector(settings) { DomesticTradeType.NXT }
@@ -65,6 +65,37 @@ class DomesticDisplayPriceSelectorTest {
                 currentPrice = 72500.0,
                 marketStatus = MarketStatus.CLOSED
             )
+        )
+
+        val selected = selector.select(krxPrice)
+
+        assertThat(selected.currentPrice).isEqualTo(72500.0)
+        assertThat(selected.marketStatus).isEqualTo(MarketStatus.CLOSED)
+    }
+
+    @Test
+    fun `NXT 선택 시 대체 거래소 가격이 없으면 원본 KRX 가격을 유지한다`() {
+        val settings = AppSettingsService()
+        settings.setDomesticTradeVenueMode(AppSettingsService.DomesticTradeVenueMode.NXT_ONLY)
+        val selector = DomesticDisplayPriceSelector(settings)
+        val krxPrice = TickerPriceFixtures.SAMSUNG_KRW.copy(
+            currentPrice = 72000.0,
+            overMarketPrice = null
+        )
+
+        val selected = selector.select(krxPrice)
+
+        assertThat(selected.currentPrice).isEqualTo(72000.0)
+    }
+
+    @Test
+    fun `NXT 선택 시 대체 거래소 가격이 0 이하면 원본 KRX 가격을 유지한다`() {
+        val settings = AppSettingsService()
+        settings.setDomesticTradeVenueMode(AppSettingsService.DomesticTradeVenueMode.NXT_ONLY)
+        val selector = DomesticDisplayPriceSelector(settings)
+        val krxPrice = TickerPriceFixtures.SAMSUNG_KRW.copy(
+            currentPrice = 72000.0,
+            overMarketPrice = DomesticAlternativePrice(currentPrice = 0.0)
         )
 
         val selected = selector.select(krxPrice)

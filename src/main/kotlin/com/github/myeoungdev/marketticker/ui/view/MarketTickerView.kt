@@ -87,6 +87,7 @@ class MarketTickerView(
 
     override fun dispose() {
         scope.cancel()
+        watchlistView.dispose()
         newsView.dispose()
         researchView.dispose()
         screenerView.dispose()

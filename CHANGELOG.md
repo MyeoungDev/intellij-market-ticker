@@ -4,6 +4,9 @@
 
 ## [Unreleased]
 
+### Fixed
+- Fixed watchlist price flickering between NXT and KRX by keeping watchlist price rendering on the display-price update path. (#47)
+
 ### Added
 - Added drag-and-drop reordering for watchlist rows when the group filter is set to All.
 - Extended closed-market polling interval options up to 1 hour and changed the default closed-market interval to 5 minutes.

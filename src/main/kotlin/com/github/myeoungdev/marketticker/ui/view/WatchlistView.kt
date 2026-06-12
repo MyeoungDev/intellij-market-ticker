@@ -1,7 +1,6 @@
 package com.github.myeoungdev.marketticker.ui.view
 
 import com.github.myeoungdev.marketticker.application.listener.SettingsUpdateListener
-import com.github.myeoungdev.marketticker.application.listener.TickerUpdateListener
 import com.github.myeoungdev.marketticker.application.listener.WatchlistEntryUpdateListener
 import com.github.myeoungdev.marketticker.application.repository.WatchlistRepository
 import com.github.myeoungdev.marketticker.application.service.AppSettingsService
@@ -17,6 +16,7 @@ import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.domain.model.TickerPrice
 import com.github.myeoungdev.marketticker.ui.alert.AlertSettingsDialog
 import com.intellij.icons.AllIcons
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -46,7 +46,7 @@ import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.DefaultTableModel
 import javax.swing.table.TableColumn
 
-class WatchlistView(private val project: Project) {
+class WatchlistView(private val project: Project) : Disposable {
 
     private val marketDataService = service<MarketDataService>()
     private val appSettingsService = service<AppSettingsService>()
@@ -90,9 +90,11 @@ class WatchlistView(private val project: Project) {
 
     init {
         setupUI()
-        subscribeToTickerUpdates()
+        subscribeToWatchlistUpdates()
         loadInitialData()
     }
+
+    override fun dispose() = Unit
 
     private fun loadInitialData() {
         currentWatchlistEntries = marketDataService.getWatchlistEntries()
@@ -249,17 +251,8 @@ class WatchlistView(private val project: Project) {
         updateReorderAvailability()
     }
 
-    private fun subscribeToTickerUpdates() {
-        val connection = project.messageBus.connect()
-
-        connection.subscribe(TickerUpdateListener.TOPIC, object : TickerUpdateListener {
-            override fun onTickerUpdated(prices: List<TickerPrice>) {
-                ApplicationManager.getApplication().invokeLater {
-                    currentPrices = prices
-                    updateTable()
-                }
-            }
-        })
+    private fun subscribeToWatchlistUpdates() {
+        val connection = project.messageBus.connect(this)
 
         connection.subscribe(WatchlistEntryUpdateListener.TOPIC, object : WatchlistEntryUpdateListener {
             override fun onWatchlistEntryUpdated() {

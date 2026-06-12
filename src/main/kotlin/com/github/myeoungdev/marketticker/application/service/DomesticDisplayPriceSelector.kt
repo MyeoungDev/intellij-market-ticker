@@ -2,7 +2,6 @@ package com.github.myeoungdev.marketticker.application.service
 
 import com.github.myeoungdev.marketticker.domain.model.DomesticAlternativePrice
 import com.github.myeoungdev.marketticker.domain.model.DomesticTradeType
-import com.github.myeoungdev.marketticker.domain.model.MarketStatus
 import com.github.myeoungdev.marketticker.domain.model.PriceStatus
 import com.github.myeoungdev.marketticker.domain.model.TickerPrice
 import com.intellij.openapi.components.service
@@ -24,15 +23,12 @@ class DomesticDisplayPriceSelector(
         val mode = settingsService.getDomesticTradeVenueMode()
         return when (domesticTradeTypeResolver(mode)) {
             DomesticTradeType.KRX -> price
-            DomesticTradeType.NXT -> price.withAlternativePrice(mode)
+            DomesticTradeType.NXT -> price.withAlternativePrice()
         }
     }
 
-    private fun TickerPrice.withAlternativePrice(mode: AppSettingsService.DomesticTradeVenueMode): TickerPrice {
+    private fun TickerPrice.withAlternativePrice(): TickerPrice {
         val alternative = overMarketPrice?.takeIf { it.currentPrice > 0.0 } ?: return this
-        if (mode == AppSettingsService.DomesticTradeVenueMode.MIXED && alternative.marketStatus != MarketStatus.OPEN) {
-            return this
-        }
         return copy(
             currentPrice = alternative.currentPrice,
             openPrice = alternative.openPrice.takeIfPositiveOr(openPrice),
