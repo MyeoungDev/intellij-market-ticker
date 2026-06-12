@@ -29,10 +29,10 @@ class AppSettingsServiceTest {
         val service = AppSettingsService()
 
         service.setOpenIntervalSec(1800)
-        service.setClosedIntervalSec(10)
+        service.setClosedIntervalSec(300)
 
         assertThat(service.getOpenIntervalSec()).isEqualTo(1800)
-        assertThat(service.getClosedIntervalSec()).isEqualTo(10)
+        assertThat(service.getClosedIntervalSec()).isEqualTo(300)
     }
 
     @Test
@@ -45,12 +45,12 @@ class AppSettingsServiceTest {
     }
 
     @Test
-    fun `비장중 주기는 기존 짧은 범위를 유지한다`() {
+    fun `비장중 주기는 1시간 최대 범위로 제한한다`() {
         val service = AppSettingsService()
 
-        service.setClosedIntervalSec(60)
+        service.setClosedIntervalSec(7200)
 
-        assertThat(service.getClosedIntervalSec()).isEqualTo(10)
+        assertThat(service.getClosedIntervalSec()).isEqualTo(3600)
     }
 
     @Test
@@ -70,6 +70,26 @@ class AppSettingsServiceTest {
             180L,
             900L
         )
+    }
+
+    @Test
+    fun `비장중 폴링 주기 옵션은 긴 대기 선택지를 포함한다`() {
+        assertThat(AppSettingsService.CLOSED_INTERVAL_OPTIONS).containsExactly(
+            30L,
+            60L,
+            180L,
+            300L,
+            600L,
+            1800L,
+            3600L
+        )
+    }
+
+    @Test
+    fun `비장중 폴링 주기 기본값은 5분이다`() {
+        val service = AppSettingsService()
+
+        assertThat(service.getClosedIntervalSec()).isEqualTo(AppSettingsService.DEFAULT_CLOSED_INTERVAL_SEC)
     }
 
     @Test

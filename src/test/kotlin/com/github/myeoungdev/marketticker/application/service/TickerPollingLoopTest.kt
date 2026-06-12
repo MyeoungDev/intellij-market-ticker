@@ -103,6 +103,30 @@ class TickerPollingLoopTest {
     }
 
     @Test
+    fun `자동 주기는 긴 비장중 주기 설정도 그대로 사용한다`() {
+        val firstRefresh = CountDownLatch(1)
+        val secondRefresh = CountDownLatch(1)
+        val refreshCount = AtomicInteger()
+        val loop = tickerPollingLoop(
+            refreshMode = { AppSettingsService.RefreshMode.AUTO },
+            closedIntervalSec = { 300L },
+            refreshPrices = {
+                when (refreshCount.incrementAndGet()) {
+                    1 -> firstRefresh.countDown()
+                    2 -> secondRefresh.countDown()
+                }
+                PriceRefreshResult(requested = false, fetchedCount = 0)
+            }
+        )
+
+        loop.restart()
+
+        assertThat(firstRefresh.await(1, TimeUnit.SECONDS)).isTrue()
+        assertThat(secondRefresh.await(150, TimeUnit.MILLISECONDS)).isFalse()
+        loop.cancel()
+    }
+
+    @Test
     fun `모드 변경은 이전 모드의 긴 대기를 취소하고 변경된 모드로 즉시 재평가한다`() {
         val refreshMode = AtomicReference(AppSettingsService.RefreshMode.FIXED)
         val fixedIntervalSec = AtomicLong(900L)
