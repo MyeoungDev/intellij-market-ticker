@@ -74,6 +74,36 @@ class DomesticDisplayPriceSelectorTest {
     }
 
     @Test
+    fun `NXT 선택 시 대체 거래소 가격이 없으면 원본 KRX 가격을 유지한다`() {
+        val settings = AppSettingsService()
+        settings.setDomesticTradeVenueMode(AppSettingsService.DomesticTradeVenueMode.NXT_ONLY)
+        val selector = DomesticDisplayPriceSelector(settings)
+        val krxPrice = TickerPriceFixtures.SAMSUNG_KRW.copy(
+            currentPrice = 72000.0,
+            overMarketPrice = null
+        )
+
+        val selected = selector.select(krxPrice)
+
+        assertThat(selected.currentPrice).isEqualTo(72000.0)
+    }
+
+    @Test
+    fun `NXT 선택 시 대체 거래소 가격이 0 이하면 원본 KRX 가격을 유지한다`() {
+        val settings = AppSettingsService()
+        settings.setDomesticTradeVenueMode(AppSettingsService.DomesticTradeVenueMode.NXT_ONLY)
+        val selector = DomesticDisplayPriceSelector(settings)
+        val krxPrice = TickerPriceFixtures.SAMSUNG_KRW.copy(
+            currentPrice = 72000.0,
+            overMarketPrice = DomesticAlternativePrice(currentPrice = 0.0)
+        )
+
+        val selected = selector.select(krxPrice)
+
+        assertThat(selected.currentPrice).isEqualTo(72000.0)
+    }
+
+    @Test
     fun `해외 종목은 NXT 고정 모드에서도 원본 가격을 유지한다`() {
         val settings = AppSettingsService()
         settings.setDomesticTradeVenueMode(AppSettingsService.DomesticTradeVenueMode.NXT_ONLY)
