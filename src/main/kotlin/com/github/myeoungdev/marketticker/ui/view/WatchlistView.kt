@@ -1,7 +1,6 @@
 package com.github.myeoungdev.marketticker.ui.view
 
 import com.github.myeoungdev.marketticker.application.listener.SettingsUpdateListener
-import com.github.myeoungdev.marketticker.application.listener.TickerUpdateListener
 import com.github.myeoungdev.marketticker.application.listener.WatchlistEntryUpdateListener
 import com.github.myeoungdev.marketticker.application.repository.WatchlistRepository
 import com.github.myeoungdev.marketticker.application.service.AppSettingsService
@@ -90,7 +89,7 @@ class WatchlistView(private val project: Project) {
 
     init {
         setupUI()
-        subscribeToTickerUpdates()
+        subscribeToWatchlistUpdates()
         loadInitialData()
     }
 
@@ -249,17 +248,8 @@ class WatchlistView(private val project: Project) {
         updateReorderAvailability()
     }
 
-    private fun subscribeToTickerUpdates() {
+    private fun subscribeToWatchlistUpdates() {
         val connection = project.messageBus.connect()
-
-        connection.subscribe(TickerUpdateListener.TOPIC, object : TickerUpdateListener {
-            override fun onTickerUpdated(prices: List<TickerPrice>) {
-                ApplicationManager.getApplication().invokeLater {
-                    currentPrices = prices
-                    updateTable()
-                }
-            }
-        })
 
         connection.subscribe(WatchlistEntryUpdateListener.TOPIC, object : WatchlistEntryUpdateListener {
             override fun onWatchlistEntryUpdated() {

@@ -55,7 +55,7 @@ class DomesticDisplayPriceSelectorTest {
     }
 
     @Test
-    fun `혼합 모드는 NXT 장 상태가 열려 있지 않으면 원본 KRX 가격을 유지한다`() {
+    fun `혼합 모드는 NXT 시간대면 대체 가격 상태가 흔들려도 NXT 표시가를 유지한다`() {
         val settings = AppSettingsService()
         settings.setDomesticTradeVenueMode(AppSettingsService.DomesticTradeVenueMode.MIXED)
         val selector = DomesticDisplayPriceSelector(settings) { DomesticTradeType.NXT }
@@ -69,7 +69,8 @@ class DomesticDisplayPriceSelectorTest {
 
         val selected = selector.select(krxPrice)
 
-        assertThat(selected.currentPrice).isEqualTo(72000.0)
+        assertThat(selected.currentPrice).isEqualTo(72500.0)
+        assertThat(selected.marketStatus).isEqualTo(MarketStatus.CLOSED)
     }
 
     @Test
