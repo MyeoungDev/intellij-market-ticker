@@ -185,6 +185,31 @@ class AppSettingsServiceTest {
     }
 
     @Test
+    fun `포트폴리오 요약 표시는 기본으로 활성화되어 있다`() {
+        val service = AppSettingsService()
+
+        assertThat(service.isPortfolioSummaryVisible()).isTrue()
+    }
+
+    @Test
+    fun `포트폴리오 요약 표시 여부를 저장하고 조회한다`() {
+        val service = AppSettingsService()
+
+        service.setPortfolioSummaryVisible(false)
+
+        assertThat(service.isPortfolioSummaryVisible()).isFalse()
+    }
+
+    @Test
+    fun `포트폴리오 요약 표시 여부는 저장 상태에서 복원된다`() {
+        val service = AppSettingsService()
+
+        service.loadState(AppSettingsService.State(showPortfolioSummary = false))
+
+        assertThat(service.isPortfolioSummaryVisible()).isFalse()
+    }
+
+    @Test
     fun `차트 탭과 히트맵 탭 표시 여부를 저장하고 조회한다`() {
         val service = AppSettingsService()
 

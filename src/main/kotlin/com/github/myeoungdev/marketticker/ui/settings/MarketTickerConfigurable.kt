@@ -45,6 +45,7 @@ class MarketTickerConfigurable : Configurable {
     ))
     private val marketPulseCheckBox = JCheckBox()
     private val marketSessionIndicatorCheckBox = JCheckBox()
+    private val portfolioSummaryCheckBox = JCheckBox()
     private val chartTabCheckBox = JCheckBox()
     private val heatmapTabCheckBox = JCheckBox()
 
@@ -134,6 +135,11 @@ class MarketTickerConfigurable : Configurable {
                 }
 
                 row {
+                    portfolioSummaryCheckBox.text = localizationService.text("포트폴리오 요약 표시", "Show portfolio summary")
+                    cell(portfolioSummaryCheckBox)
+                }
+
+                row {
                     chartTabCheckBox.text = localizationService.text("차트 탭 표시", "Show chart tab")
                     cell(chartTabCheckBox)
                 }
@@ -172,6 +178,7 @@ class MarketTickerConfigurable : Configurable {
                 baseCurrency != settingsService.getBaseCurrency() ||
                 marketPulseCheckBox.isSelected != settingsService.isMarketPulseVisible() ||
                 marketSessionIndicatorCheckBox.isSelected != settingsService.isMarketSessionIndicatorVisible() ||
+                portfolioSummaryCheckBox.isSelected != settingsService.isPortfolioSummaryVisible() ||
                 chartTabCheckBox.isSelected != settingsService.isChartTabVisible() ||
                 heatmapTabCheckBox.isSelected != settingsService.isHeatmapTabVisible()
     }
@@ -199,6 +206,7 @@ class MarketTickerConfigurable : Configurable {
         settingsService.setBaseCurrency(baseCurrency)
         settingsService.setMarketPulseVisible(marketPulseCheckBox.isSelected)
         settingsService.setMarketSessionIndicatorVisible(marketSessionIndicatorCheckBox.isSelected)
+        settingsService.setPortfolioSummaryVisible(portfolioSummaryCheckBox.isSelected)
         settingsService.setChartTabVisible(chartTabCheckBox.isSelected)
         settingsService.setHeatmapTabVisible(heatmapTabCheckBox.isSelected)
 
@@ -221,6 +229,7 @@ class MarketTickerConfigurable : Configurable {
         baseCurrencyCombo.selectedItem = settingsService.getBaseCurrency()
         marketPulseCheckBox.isSelected = settingsService.isMarketPulseVisible()
         marketSessionIndicatorCheckBox.isSelected = settingsService.isMarketSessionIndicatorVisible()
+        portfolioSummaryCheckBox.isSelected = settingsService.isPortfolioSummaryVisible()
         chartTabCheckBox.isSelected = settingsService.isChartTabVisible()
         heatmapTabCheckBox.isSelected = settingsService.isHeatmapTabVisible()
         updateIntervalControlAvailability()
