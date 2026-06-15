@@ -259,11 +259,17 @@ class MarketTickerView(
     }
 
     private fun rebuildWatchlistTabs() {
+        val selectedComponent = watchlistPortfolioTabbedPane.selectedComponent
         watchlistPortfolioTabbedPane.removeAll()
         watchlistPortfolioTabbedPane.addTab(localizationService.text("관심종목", "Watchlist"), watchlistView.panel)
         watchlistPortfolioTabbedPane.addTab(localizationService.text("포트폴리오", "Portfolio"), portfolioView.panel)
         if (appSettingsService.isHeatmapTabVisible()) {
             watchlistPortfolioTabbedPane.addTab(localizationService.text("관심종목 히트맵", "Watchlist Heatmap"), heatmapView)
+        }
+        val restoredIndex = (0 until watchlistPortfolioTabbedPane.tabCount)
+            .firstOrNull { watchlistPortfolioTabbedPane.getComponentAt(it) == selectedComponent }
+        if (restoredIndex != null) {
+            watchlistPortfolioTabbedPane.selectedIndex = restoredIndex
         }
     }
 

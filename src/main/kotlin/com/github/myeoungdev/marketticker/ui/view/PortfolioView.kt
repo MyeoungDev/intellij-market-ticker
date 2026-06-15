@@ -103,6 +103,7 @@ class PortfolioView : Disposable {
     private var portfolioEntries: List<WatchlistRepository.WatchlistEntry> = emptyList()
     private var portfolioSummary: PortfolioConvertedSummary? = null
     private var summaryExpanded = false
+    private var summaryDetailsDirty = true
     private val messageBusConnections = mutableListOf<MessageBusConnection>()
 
     var onTickerSelected: ((Ticker, TickerPrice?) -> Unit)? = null
@@ -259,6 +260,7 @@ class PortfolioView : Disposable {
                     moneyDisplayFormatter.convertToBaseCurrency(value, currency, baseCurrency)
                 }
             )
+            summaryDetailsDirty = true
             renderSummaryPanel()
 
             portfolioRows.forEach { position ->
@@ -294,18 +296,18 @@ class PortfolioView : Disposable {
     }
 
     private fun renderSummaryPanel() {
-        summaryDetailsPanel.removeAll()
         val summary = portfolioSummary
         val shouldShowSummary = appSettingsService.isPortfolioSummaryVisible() && summary != null && summary.holdingCount > 0
         summaryScrollPane.isVisible = shouldShowSummary
         if (!shouldShowSummary) {
+            summaryDetailsPanel.removeAll()
+            summaryDetailsDirty = true
             summaryScrollPane.revalidate()
             summaryScrollPane.repaint()
             return
         }
 
-        val dailyChangeAmount = summary.dailyChangeAmount
-        val summaryColor = signedColor(dailyChangeAmount) ?: summaryPanel.foreground
+        val summaryColor = signedColor(summary.totalProfit) ?: summaryPanel.foreground
         summaryCompactLabel.text = formatCompactSummary(summary)
         summaryCompactLabel.toolTipText = formatFullSummary(summary)
         summaryCompactLabel.foreground = summaryColor
@@ -317,90 +319,80 @@ class PortfolioView : Disposable {
         }
 
         summaryDetailsPanel.isVisible = summaryExpanded
-        if (summaryExpanded) {
-            addSummaryDetailRow(localizationService.text("총 수익금", "Total PnL"), formatSignedAmount(summary.totalProfit, summary.currency), summary.totalProfit)
-            addSummaryDetailRow(localizationService.text("총 수익률", "Total return"), formatSignedPercent(summary.totalReturnRate), summary.totalReturnRate)
-            addSummaryDetailRow(localizationService.text("총 매입금액", "Purchase amount"), moneyDisplayFormatter.formatNativeAmount(summary.totalPurchaseAmount, summary.currency), null)
+        if (summaryExpanded && summaryDetailsDirty) {
+            rebuildSummaryDetails(summary)
+            summaryDetailsDirty = false
         }
-        if (summary.excludedHoldingCount > 0) {
-            addSummaryDetailRow(
-                localizationService.text("환산 제외", "Excluded from conversion"),
-                formatHoldingCount(summary.excludedHoldingCount),
-                null
-            )
-        }
-        summaryScrollPane.preferredSize = Dimension(0, if (summaryExpanded) 150 else 44)
+        summaryScrollPane.preferredSize = Dimension(0, if (summaryExpanded) 126 else 44)
         summaryScrollPane.revalidate()
         summaryScrollPane.repaint()
         summaryDetailsPanel.revalidate()
         summaryDetailsPanel.repaint()
     }
 
-    private fun addSummaryDetailRow(label: String, value: String, numericValue: Double?) {
+    private fun rebuildSummaryDetails(summary: PortfolioConvertedSummary) {
+        summaryDetailsPanel.removeAll()
+        addSummaryDetailRow(localizationService.text("총 평가금액", "Market value"), moneyDisplayFormatter.formatNativeAmount(summary.totalMarketValue, summary.currency), null)
+        addSummaryDetailRow(localizationService.text("총 매입금액", "Purchase amount"), moneyDisplayFormatter.formatNativeAmount(summary.totalPurchaseAmount, summary.currency), null)
+        addSummaryDetailRow(
+            localizationService.text("평가손익", "Valuation PnL"),
+            "${formatSignedAmount(summary.totalProfit, summary.currency)} (${formatSignedPercent(summary.totalReturnRate)})",
+            summary.totalProfit
+        )
+        addSummaryDetailRow(
+            localizationService.text("일일 변동", "Daily change"),
+            "${formatSignedAmount(summary.dailyChangeAmount, summary.currency)} (${formatSignedPercent(summary.dailyChangeRate)})",
+            summary.dailyChangeAmount
+        )
+        if (summary.excludedHoldingCount > 0) {
+            addSummaryDetailRow(
+                localizationService.text("환산 제외", "Excluded from conversion"),
+                formatHoldingCount(summary.excludedHoldingCount),
+                null,
+                localizationService.text(
+                    "기준 통화로 환산할 수 없는 보유 종목은 요약 합산에서 제외됩니다. 환율 데이터가 아직 없거나 지원하지 않는 통화일 수 있습니다.",
+                    "Holdings that cannot be converted to the base currency are excluded from the summary totals. Exchange-rate data may be unavailable or the currency may not be supported."
+                )
+            )
+        }
+    }
+
+    private fun addSummaryDetailRow(label: String, value: String, numericValue: Double?, tooltip: String? = null) {
         summaryDetailsPanel.add(JPanel(BorderLayout()).apply {
             isOpaque = false
             border = JBUI.Borders.empty(2, 0)
-            add(JLabel(label), BorderLayout.WEST)
+            toolTipText = tooltip
+            add(JLabel(label).apply {
+                toolTipText = tooltip
+            }, BorderLayout.WEST)
             add(JLabel(value).apply {
                 horizontalAlignment = SwingConstants.RIGHT
                 foreground = signedColor(numericValue) ?: foreground
+                toolTipText = tooltip
             }, BorderLayout.EAST)
         })
     }
 
-    private fun formatDailySummary(summary: PortfolioConvertedSummary): String {
-        val dailyRate = formatSignedPercent(summary.dailyChangeRate)
-        val dailyAmount = formatSignedAmount(summary.dailyChangeAmount, summary.currency)
-        return localizationService.text("일일 $dailyRate ($dailyAmount)", "Daily $dailyRate ($dailyAmount)")
-    }
-
     private fun formatCompactSummary(summary: PortfolioConvertedSummary): String {
+        val marketValue = moneyDisplayFormatter.formatNativeAmount(summary.totalMarketValue, summary.currency)
+        val totalProfit = formatSignedAmount(summary.totalProfit, summary.currency)
+        val totalReturn = formatSignedPercent(summary.totalReturnRate)
         return localizationService.text(
-            "총 평가 ${formatCompactAmount(summary.totalMarketValue, summary.currency)}  일일 ${formatSignedPercent(summary.dailyChangeRate)} (${formatCompactSignedAmount(summary.dailyChangeAmount, summary.currency, includeCurrency = false)})",
-            "Value ${formatCompactAmount(summary.totalMarketValue, summary.currency)}  Daily ${formatSignedPercent(summary.dailyChangeRate)} (${formatCompactSignedAmount(summary.dailyChangeAmount, summary.currency, includeCurrency = false)})"
+            "<html><b>평가금액 $marketValue</b> ($totalProfit, $totalReturn)</html>",
+            "<html><b>Market value $marketValue</b> ($totalProfit, $totalReturn)</html>"
         )
     }
 
     private fun formatFullSummary(summary: PortfolioConvertedSummary): String {
-        return "${moneyDisplayFormatter.formatNativeAmount(summary.totalMarketValue, summary.currency)} / ${formatDailySummary(summary)}"
-    }
-
-    private fun formatCompactSignedAmount(value: Double?, currency: CurrencyType, includeCurrency: Boolean = true): String {
-        if (value == null || !value.isFinite()) return "-"
-        val formatted = formatCompactAmount(kotlin.math.abs(value), currency, includeCurrency)
-        return when {
-            value > 0 -> "+$formatted"
-            value < 0 -> "-$formatted"
-            else -> formatted
-        }
-    }
-
-    private fun formatCompactAmount(value: Double?, currency: CurrencyType, includeCurrency: Boolean = true): String {
-        if (value == null || !value.isFinite()) return "-"
-        val text = when (currency) {
-            CurrencyType.KRW -> formatKrwCompactAmount(value)
-            else -> formatInternationalCompactAmount(value)
-        }
-        return if (includeCurrency) "$text ${currency.code}" else text
-    }
-
-    private fun formatKrwCompactAmount(value: Double): String {
-        val absValue = kotlin.math.abs(value)
-        return when {
-            absValue >= 100_000_000.0 -> "${localizationService.formatDecimal(value / 100_000_000.0, 1)}억"
-            absValue >= 10_000.0 -> "${localizationService.formatDecimal(value / 10_000.0, 1)}만"
-            else -> localizationService.formatDecimal(value, 0)
-        }
-    }
-
-    private fun formatInternationalCompactAmount(value: Double): String {
-        val absValue = kotlin.math.abs(value)
-        return when {
-            absValue >= 1_000_000_000.0 -> "${localizationService.formatDecimal(value / 1_000_000_000.0, 1)}B"
-            absValue >= 1_000_000.0 -> "${localizationService.formatDecimal(value / 1_000_000.0, 1)}M"
-            absValue >= 1_000.0 -> "${localizationService.formatDecimal(value / 1_000.0, 1)}K"
-            else -> localizationService.formatDecimal(value, 1)
-        }
+        val marketValue = moneyDisplayFormatter.formatNativeAmount(summary.totalMarketValue, summary.currency)
+        val totalProfit = formatSignedAmount(summary.totalProfit, summary.currency)
+        val totalReturn = formatSignedPercent(summary.totalReturnRate)
+        val dailyChange = formatSignedAmount(summary.dailyChangeAmount, summary.currency)
+        val dailyRate = formatSignedPercent(summary.dailyChangeRate)
+        return localizationService.text(
+            "평가금액 $marketValue / 평가손익 $totalProfit ($totalReturn) / 일일 변동 $dailyChange ($dailyRate)",
+            "Market value $marketValue / Valuation PnL $totalProfit ($totalReturn) / Daily change $dailyChange ($dailyRate)"
+        )
     }
 
     private fun formatSignedAmount(value: Double?, currency: CurrencyType): String {

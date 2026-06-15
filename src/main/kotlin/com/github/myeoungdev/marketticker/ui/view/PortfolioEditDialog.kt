@@ -2,6 +2,7 @@ package com.github.myeoungdev.marketticker.ui.view
 
 import com.github.myeoungdev.marketticker.application.repository.WatchlistRepository
 import com.github.myeoungdev.marketticker.application.service.LocalizationService
+import com.github.myeoungdev.marketticker.application.service.PortfolioInputFormatter
 import com.intellij.openapi.components.service
 import com.intellij.openapi.ui.DialogWrapper
 import com.intellij.ui.components.JBLabel
@@ -27,8 +28,8 @@ class PortfolioEditDialog(private val entry: WatchlistRepository.WatchlistEntry)
 
     init {
         title = localizationService.text("${entry.name} 포트폴리오 편집", "${entry.name} Portfolio Edit")
-        purchasePriceField.text = entry.purchasePrice?.toString() ?: ""
-        quantityField.text = entry.quantity?.toString() ?: ""
+        purchasePriceField.text = PortfolioInputFormatter.format(entry.purchasePrice)
+        quantityField.text = PortfolioInputFormatter.format(entry.quantity)
         init()
         setSize(420, 180)
         isResizable = false
@@ -50,8 +51,8 @@ class PortfolioEditDialog(private val entry: WatchlistRepository.WatchlistEntry)
     }
 
     override fun doOKAction() {
-        purchasePrice = purchasePriceField.text.toDoubleOrNull()
-        quantity = quantityField.text.toDoubleOrNull()
+        purchasePrice = PortfolioInputFormatter.parse(purchasePriceField.text)
+        quantity = PortfolioInputFormatter.parse(quantityField.text)
         super.doOKAction()
     }
 
