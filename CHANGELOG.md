@@ -5,6 +5,12 @@
 ## [Unreleased]
 
 ### Fixed
+
+### Added
+
+## [0.0.4] - 2026-06-15
+
+### Fixed
 - Fixed watchlist price flickering between NXT and KRX by keeping watchlist price rendering on the display-price update path. (#47)
 - Fixed portfolio edit fields showing large saved numeric values in scientific notation. (#48)
 - Fixed top-level tab order changing visually when the tool window is narrow. (#50)
