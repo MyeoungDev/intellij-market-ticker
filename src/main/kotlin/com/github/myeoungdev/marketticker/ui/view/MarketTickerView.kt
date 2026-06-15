@@ -19,15 +19,17 @@ import com.intellij.openapi.project.Project
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
+import com.intellij.ui.tabs.TabInfo
+import com.intellij.ui.tabs.JBTabsFactory
 import com.intellij.util.ui.JBUI
 import kotlinx.coroutines.*
 import java.awt.BorderLayout
 import java.awt.Color
 import java.awt.Dimension
 import javax.swing.DefaultListModel
+import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JPanel
-import javax.swing.JTabbedPane
 import javax.swing.event.DocumentEvent
 import javax.swing.event.DocumentListener
 
@@ -61,8 +63,8 @@ class MarketTickerView(
     private val heatmapView = HeatmapView()
     private val chartView = ChartView()
     private val stockOverviewView = StockOverviewPanel()
-    private val newsView = NewsView()
-    private val researchView = ResearchView()
+    private val newsView = NewsView(project)
+    private val researchView = ResearchView(project)
     private val screenerView = ScreenerView()
     private val calendarView = CalendarView()
     private val marketIndicatorsView = MarketIndicatorsView()
@@ -71,15 +73,9 @@ class MarketTickerView(
 
     private val marketPulseTicker = MarketPulseTicker()
     private val marketPulseContainer = JPanel(BorderLayout())
-    private val watchlistPortfolioTabbedPane = JTabbedPane().apply {
-        tabLayoutPolicy = JTabbedPane.WRAP_TAB_LAYOUT
-    }
-    private val bottomTabbedPane = JTabbedPane().apply {
-        tabLayoutPolicy = JTabbedPane.WRAP_TAB_LAYOUT
-    }
-    private val mainTabbedPane = JTabbedPane().apply {
-        tabLayoutPolicy = JTabbedPane.WRAP_TAB_LAYOUT
-    }
+    private val watchlistPortfolioTabs = JBTabsFactory.createTabs(project, this)
+    private val bottomTabs = JBTabsFactory.createTabs(project, this)
+    private val mainTabs = JBTabsFactory.createTabs(project, this)
     private var latestIndicators: List<MarketIndicator> = emptyList()
     private var latestPrices: List<TickerPrice> = emptyList()
 
@@ -128,11 +124,11 @@ class MarketTickerView(
         }
 
         rebuildWatchlistTabs()
-        watchlistPortfolioTabbedPane.minimumSize = Dimension(0, 240)
+        watchlistPortfolioTabs.component.minimumSize = Dimension(0, 240)
 
         val topSplitter = com.intellij.ui.JBSplitter(true, 0.30f).apply {
             firstComponent = searchResultPanel
-            secondComponent = watchlistPortfolioTabbedPane
+            secondComponent = watchlistPortfolioTabs.component
             dividerWidth = 8
             firstComponent.minimumSize = Dimension(220, 100)
             secondComponent.minimumSize = Dimension(0, 140)
@@ -163,7 +159,7 @@ class MarketTickerView(
 
         val mainSplitter = com.intellij.ui.JBSplitter(true, 0.62f).apply {
             firstComponent = searchPanel
-            secondComponent = bottomTabbedPane
+            secondComponent = bottomTabs.component
             dividerWidth = 10
             firstComponent.minimumSize = Dimension(0, 240)
             secondComponent.minimumSize = Dimension(0, 120)
@@ -172,13 +168,13 @@ class MarketTickerView(
             add(mainSplitter, BorderLayout.CENTER)
             add(marketPulseContainer, BorderLayout.SOUTH)
         }
-        mainTabbedPane.addTab(localizationService.text("주식", "Stocks"), stockPanel)
-        mainTabbedPane.addTab(localizationService.text("스크리너", "Screener"), screenerView)
-        mainTabbedPane.addTab(localizationService.text("주요 지표", "Major Indicators"), marketIndicatorsView)
-        mainTabbedPane.addTab(localizationService.text("뉴스", "News"), newsView)
-        mainTabbedPane.addTab(localizationService.text("리서치", "Research"), researchView)
-        mainTabbedPane.addTab(localizationService.text("캘린더", "Calendar"), calendarView)
-        mainPanel.add(mainTabbedPane, BorderLayout.CENTER)
+        mainTabs.addTabInfo(localizationService.text("주식", "Stocks"), stockPanel)
+        mainTabs.addTabInfo(localizationService.text("스크리너", "Screener"), screenerView)
+        mainTabs.addTabInfo(localizationService.text("주요 지표", "Major Indicators"), marketIndicatorsView)
+        mainTabs.addTabInfo(localizationService.text("뉴스", "News"), newsView)
+        mainTabs.addTabInfo(localizationService.text("리서치", "Research"), researchView)
+        mainTabs.addTabInfo(localizationService.text("캘린더", "Calendar"), calendarView)
+        mainPanel.add(mainTabs.component, BorderLayout.CENTER)
 
         watchlistView.onTickerSelected = { ticker, _ ->
             showTickerDetails(ticker)
@@ -247,30 +243,38 @@ class MarketTickerView(
     }
 
     private fun rebuildBottomTabs() {
-        bottomTabbedPane.removeAll()
+        val selectedComponent = bottomTabs.selectedInfo?.component
+        bottomTabs.removeAllTabs()
 
-        bottomTabbedPane.addTab(localizationService.text("개요", "Overview"), stockOverviewView)
-        bottomTabbedPane.addTab(localizationService.text("뉴스", "News"), stockNewsView)
-        bottomTabbedPane.addTab(localizationService.text("리서치", "Research"), stockResearchView)
+        bottomTabs.addTabInfo(localizationService.text("개요", "Overview"), stockOverviewView)
+        bottomTabs.addTabInfo(localizationService.text("뉴스", "News"), stockNewsView)
+        bottomTabs.addTabInfo(localizationService.text("리서치", "Research"), stockResearchView)
 
         if (appSettingsService.isChartTabVisible()) {
-            bottomTabbedPane.addTab(localizationService.text("차트", "Chart"), chartView)
+            bottomTabs.addTabInfo(localizationService.text("차트", "Chart"), chartView)
+        }
+
+        bottomTabs.tabs.firstOrNull { it.component == selectedComponent }?.let {
+            bottomTabs.select(it, true)
         }
     }
 
     private fun rebuildWatchlistTabs() {
-        val selectedComponent = watchlistPortfolioTabbedPane.selectedComponent
-        watchlistPortfolioTabbedPane.removeAll()
-        watchlistPortfolioTabbedPane.addTab(localizationService.text("관심종목", "Watchlist"), watchlistView.panel)
-        watchlistPortfolioTabbedPane.addTab(localizationService.text("포트폴리오", "Portfolio"), portfolioView.panel)
+        val selectedComponent = watchlistPortfolioTabs.selectedInfo?.component
+        watchlistPortfolioTabs.removeAllTabs()
+        watchlistPortfolioTabs.addTabInfo(localizationService.text("관심종목", "Watchlist"), watchlistView.panel)
+        watchlistPortfolioTabs.addTabInfo(localizationService.text("포트폴리오", "Portfolio"), portfolioView.panel)
         if (appSettingsService.isHeatmapTabVisible()) {
-            watchlistPortfolioTabbedPane.addTab(localizationService.text("관심종목 히트맵", "Watchlist Heatmap"), heatmapView)
+            watchlistPortfolioTabs.addTabInfo(localizationService.text("관심종목 히트맵", "Watchlist Heatmap"), heatmapView)
         }
-        val restoredIndex = (0 until watchlistPortfolioTabbedPane.tabCount)
-            .firstOrNull { watchlistPortfolioTabbedPane.getComponentAt(it) == selectedComponent }
-        if (restoredIndex != null) {
-            watchlistPortfolioTabbedPane.selectedIndex = restoredIndex
+
+        watchlistPortfolioTabs.tabs.firstOrNull { it.component == selectedComponent }?.let {
+            watchlistPortfolioTabs.select(it, true)
         }
+    }
+
+    private fun com.intellij.ui.tabs.JBTabs.addTabInfo(title: String, component: JComponent) {
+        addTab(TabInfo(component).setText(title))
     }
 
     private fun subscribeSettingsUpdates() {

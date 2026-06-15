@@ -8,7 +8,10 @@ import com.github.myeoungdev.marketticker.domain.model.research.ResearchArticle
 import com.github.myeoungdev.marketticker.domain.model.research.ResearchCategory
 import com.github.myeoungdev.marketticker.domain.model.research.ResearchRankingType
 import com.intellij.ide.BrowserUtil
+import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
 import com.intellij.ui.CollectionListModel
 import com.intellij.ui.JBColor
 import com.intellij.ui.SimpleListCellRenderer
@@ -16,6 +19,9 @@ import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.components.panels.VerticalLayout
+import com.intellij.ui.tabs.JBTabsFactory
+import com.intellij.ui.tabs.TabInfo
+import com.intellij.ui.tabs.TabsListener
 import com.intellij.util.ui.JBUI
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -34,13 +40,15 @@ import javax.swing.BorderFactory
 import javax.swing.DefaultComboBoxModel
 import javax.swing.JButton
 import javax.swing.JComboBox
+import javax.swing.JComponent
 import javax.swing.JEditorPane
 import javax.swing.JLabel
 import javax.swing.JPanel
-import javax.swing.JTabbedPane
 import javax.swing.ListSelectionModel
 
-class ResearchView : JPanel(BorderLayout()) {
+class ResearchView(
+    private val project: Project
+) : JPanel(BorderLayout()), Disposable {
 
     private enum class SourceTab {
         CORE,
@@ -72,9 +80,7 @@ class ResearchView : JPanel(BorderLayout()) {
     private val rankingList = createResearchList(rankingModel)
     private val stockList = createResearchList(stockModel)
 
-    private val tabs = JTabbedPane().apply {
-        tabLayoutPolicy = JTabbedPane.WRAP_TAB_LAYOUT
-    }
+    private val tabs = JBTabsFactory.createTabs(project, this)
     private val detailTitleLabel = JLabel(localizationService.text("리서치를 선택하세요", "Select research"))
     private val detailMetaLabel = JLabel(" ")
     private val detailBodyPane = JEditorPane("text/html", "")
@@ -91,7 +97,7 @@ class ResearchView : JPanel(BorderLayout()) {
         refreshAll(forceRefresh = false)
     }
 
-    fun dispose() {
+    override fun dispose() {
         stockSearchJob.cancel()
         scope.cancel()
     }
@@ -176,9 +182,9 @@ class ResearchView : JPanel(BorderLayout()) {
             add(JBScrollPane(stockList), BorderLayout.CENTER)
         }
 
-        tabs.addTab(localizationService.text("핵심 리서치", "Core"), corePanel)
-        tabs.addTab(localizationService.text("랭킹 리서치", "Ranking"), rankingPanel)
-        tabs.addTab(localizationService.text("국내 종목 리서치", "Domestic Stock"), stockPanel)
+        tabs.addTabInfo(localizationService.text("핵심 리서치", "Core"), corePanel)
+        tabs.addTabInfo(localizationService.text("랭킹 리서치", "Ranking"), rankingPanel)
+        tabs.addTabInfo(localizationService.text("국내 종목 리서치", "Domestic Stock"), stockPanel)
 
         val detailPanel = JPanel(BorderLayout()).apply {
             border = BorderFactory.createCompoundBorder(
@@ -213,7 +219,7 @@ class ResearchView : JPanel(BorderLayout()) {
         detailBodyPane.border = JBUI.Borders.empty(10)
 
         return JPanel(BorderLayout(0, 10)).apply {
-            add(tabs, BorderLayout.CENTER)
+            add(tabs.component, BorderLayout.CENTER)
             add(detailPanel, BorderLayout.SOUTH)
         }
     }
@@ -222,13 +228,15 @@ class ResearchView : JPanel(BorderLayout()) {
         coreList.addListSelectionListener { if (!it.valueIsAdjusting) updateDetail(coreList.selectedValue) }
         rankingList.addListSelectionListener { if (!it.valueIsAdjusting) updateDetail(rankingList.selectedValue) }
         stockList.addListSelectionListener { if (!it.valueIsAdjusting) updateDetail(stockList.selectedValue) }
-        tabs.addChangeListener {
-            ensureSelection(currentList())
-            updateDetail(currentList().selectedValue)
-            if (currentSource() == SourceTab.RANKING) {
-                refreshRankingResearch(forceRefresh = false)
+        tabs.addListener(object : TabsListener {
+            override fun selectionChanged(oldSelection: TabInfo?, newSelection: TabInfo?) {
+                ensureSelection(currentList())
+                updateDetail(currentList().selectedValue)
+                if (currentSource() == SourceTab.RANKING) {
+                    refreshRankingResearch(forceRefresh = false)
+                }
             }
-        }
+        }, this)
 
         coreCategoryCombo.addActionListener { updateCoreList() }
         rankingTypeCombo.addActionListener { refreshRankingResearch(forceRefresh = false) }
@@ -282,9 +290,11 @@ class ResearchView : JPanel(BorderLayout()) {
         val normalizedQuery = query.trim()
         if (normalizedQuery.isBlank() && preferredItemCode.isNullOrBlank()) return
 
-        stockCodeField.text = preferredName?.takeIf { it.isNotBlank() } ?: preferredItemCode ?: normalizedQuery
-        tabs.selectedIndex = SourceTab.STOCK.ordinal
-        loadStockResearch(normalizedQuery.ifBlank { preferredItemCode.orEmpty() }, preferredItemCode, preferredName, false)
+        ApplicationManager.getApplication().invokeLater {
+            stockCodeField.text = preferredName?.takeIf { it.isNotBlank() } ?: preferredItemCode ?: normalizedQuery
+            selectSource(SourceTab.STOCK)
+            loadStockResearch(normalizedQuery.ifBlank { preferredItemCode.orEmpty() }, preferredItemCode, preferredName, false)
+        }
     }
 
     private fun refreshAll(forceRefresh: Boolean) {
@@ -520,11 +530,22 @@ class ResearchView : JPanel(BorderLayout()) {
     }
 
     private fun currentSource(): SourceTab {
-        return when (tabs.selectedIndex) {
+        val selectedIndex = tabs.selectedInfo?.let(tabs::getIndexOf) ?: 0
+        return when (selectedIndex) {
             1 -> SourceTab.RANKING
             2 -> SourceTab.STOCK
             else -> SourceTab.CORE
         }
+    }
+
+    private fun selectSource(source: SourceTab) {
+        if (tabs.tabCount > source.ordinal) {
+            tabs.select(tabs.getTabAt(source.ordinal), true)
+        }
+    }
+
+    private fun com.intellij.ui.tabs.JBTabs.addTabInfo(title: String, component: JComponent) {
+        addTab(TabInfo(component).setText(title))
     }
 
     private fun currentList(): JBList<ResearchArticle> {

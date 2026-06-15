@@ -7,9 +7,12 @@ import com.github.myeoungdev.marketticker.domain.model.news.NewsArticle
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
+import com.intellij.ui.tabs.JBTabsFactory
+import com.intellij.ui.tabs.TabInfo
 import com.intellij.util.ui.JBUI
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
@@ -29,10 +32,10 @@ import javax.swing.DefaultListCellRenderer
 import javax.swing.DefaultListModel
 import javax.swing.JButton
 import javax.swing.JComboBox
+import javax.swing.JComponent
 import javax.swing.JLabel
 import javax.swing.JList
 import javax.swing.JPanel
-import javax.swing.JTabbedPane
 import javax.swing.JTextArea
 import javax.swing.ListSelectionModel
 import javax.swing.SwingConstants
@@ -43,7 +46,9 @@ import javax.swing.SwingConstants
  * 카테고리별 긴 스크롤 패널 대신 단일 selector 기반으로
  * 네이버 뉴스 섹션을 빠르게 전환하도록 구성합니다.
  */
-class NewsView : JPanel(BorderLayout()), Disposable {
+class NewsView(
+    private val project: Project
+) : JPanel(BorderLayout()), Disposable {
 
     private val localizationService = service<LocalizationService>()
     private val newsFacadeService = service<NewsFacadeService>()
@@ -59,9 +64,7 @@ class NewsView : JPanel(BorderLayout()), Disposable {
     private val detailSummaryArea = JTextArea()
     private val detailLinkLabel = JLabel()
 
-    private val newsTabs = JTabbedPane().apply {
-        tabLayoutPolicy = JTabbedPane.WRAP_TAB_LAYOUT
-    }
+    private val newsTabs = JBTabsFactory.createTabs(project, this)
     private val categorySelector = JComboBox<String>()
     private val categoryKeys = mutableListOf<String>()
     private var selectedCategoryKey: String = "MAINNEWS"
@@ -160,13 +163,17 @@ class NewsView : JPanel(BorderLayout()), Disposable {
             preferredSize = Dimension(0, 240)
         }
 
-        newsTabs.addTab(localizationService.text("뉴스 필터", "News Filter"), buildCategoryTab())
-        newsTabs.addTab(localizationService.text("많이 본 뉴스", "Most Viewed"), buildRankingTab())
+        newsTabs.addTabInfo(localizationService.text("뉴스 필터", "News Filter"), buildCategoryTab())
+        newsTabs.addTabInfo(localizationService.text("많이 본 뉴스", "Most Viewed"), buildRankingTab())
 
         return JPanel(BorderLayout(0, 10)).apply {
-            add(newsTabs, BorderLayout.CENTER)
+            add(newsTabs.component, BorderLayout.CENTER)
             add(detailPanel, BorderLayout.SOUTH)
         }
+    }
+
+    private fun com.intellij.ui.tabs.JBTabs.addTabInfo(title: String, component: JComponent) {
+        addTab(TabInfo(component).setText(title))
     }
 
     private fun buildCategoryTab(): JPanel {
