@@ -49,6 +49,7 @@ class SettingsDialog(
     ))
     private val marketPulseCheckBox = JCheckBox()
     private val marketSessionIndicatorCheckBox = JCheckBox()
+    private val portfolioSummaryCheckBox = JCheckBox()
 
     init {
         title = localizationService.text("Market Ticker 설정", "Market Ticker Settings")
@@ -67,6 +68,7 @@ class SettingsDialog(
         baseCurrencyCombo.selectedItem = settingsService.getBaseCurrency()
         marketPulseCheckBox.isSelected = settingsService.isMarketPulseVisible()
         marketSessionIndicatorCheckBox.isSelected = settingsService.isMarketSessionIndicatorVisible()
+        portfolioSummaryCheckBox.isSelected = settingsService.isPortfolioSummaryVisible()
 
         automaticPollingCheckBox.addActionListener {
             updateIntervalControlAvailability()
@@ -84,10 +86,11 @@ class SettingsDialog(
         baseCurrencyCombo.addActionListener { persistSettings() }
         marketPulseCheckBox.addActionListener { persistSettings() }
         marketSessionIndicatorCheckBox.addActionListener { persistSettings() }
+        portfolioSummaryCheckBox.addActionListener { persistSettings() }
 
         updateIntervalControlAvailability()
         init()
-        setSize(560, 380)
+        setSize(560, 420)
     }
 
     override fun createCenterPanel(): JComponent {
@@ -136,12 +139,17 @@ class SettingsDialog(
             }
 
             row {
+                portfolioSummaryCheckBox.text = localizationService.text("포트폴리오 요약 표시", "Show portfolio summary")
+                cell(portfolioSummaryCheckBox)
+            }
+
+            row {
                 button(localizationService.text("지금 새로고침", "Refresh now")) {
                     marketDataService.forceRefresh()
                 }
             }
         }.apply {
-            preferredSize = Dimension(520, 300)
+            preferredSize = Dimension(520, 330)
         }
     }
 
@@ -171,6 +179,7 @@ class SettingsDialog(
         settingsService.setBaseCurrency(baseCurrency)
         settingsService.setMarketPulseVisible(marketPulseCheckBox.isSelected)
         settingsService.setMarketSessionIndicatorVisible(marketSessionIndicatorCheckBox.isSelected)
+        settingsService.setPortfolioSummaryVisible(portfolioSummaryCheckBox.isSelected)
 
         Locale.setDefault(localizationService.currentLocale())
         ApplicationManager.getApplication().messageBus

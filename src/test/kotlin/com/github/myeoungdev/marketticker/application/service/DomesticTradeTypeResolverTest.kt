@@ -12,6 +12,7 @@ class DomesticTradeTypeResolverTest {
     fun `KRX 고정은 모든 시간에 KRX를 반환한다`() {
         val result = DomesticTradeTypeResolver.resolve(
             AppSettingsService.DomesticTradeVenueMode.KRX_ONLY,
+            LocalDate.of(2026, 6, 10),
             LocalTime.of(8, 0)
         )
 
@@ -22,6 +23,7 @@ class DomesticTradeTypeResolverTest {
     fun `NXT 고정은 모든 시간에 NXT를 반환한다`() {
         val result = DomesticTradeTypeResolver.resolve(
             AppSettingsService.DomesticTradeVenueMode.NXT_ONLY,
+            LocalDate.of(2026, 6, 10),
             LocalTime.of(9, 30)
         )
 

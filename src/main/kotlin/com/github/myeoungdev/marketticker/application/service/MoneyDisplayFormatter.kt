@@ -59,13 +59,38 @@ class MoneyDisplayFormatter(
         }
     }
 
+    fun formatNativeAmount(value: Double?, currency: CurrencyType?, maxFractionDigits: Int = 2): String {
+        if (value == null || !value.isFinite()) {
+            return "-"
+        }
+
+        return formatNative(value, currency, maxFractionDigits)
+    }
+
+    fun formatNativeSignedAmount(value: Double?, currency: CurrencyType?, maxFractionDigits: Int = 2): String {
+        if (value == null || !value.isFinite()) {
+            return "-"
+        }
+
+        val formatted = formatNative(abs(value), currency, maxFractionDigits)
+        return when {
+            value > 0 -> "+$formatted"
+            value < 0 -> "-$formatted"
+            else -> formatted
+        }
+    }
+
     private fun formatNative(value: Double, currency: CurrencyType?, maxFractionDigits: Int): String {
         val formatted = formatDecimal(value, maxFractionDigits)
         return formatted.withCurrencyCode(currency)
     }
 
-    private fun convertToBaseCurrency(value: Double, currency: CurrencyType?, baseCurrency: CurrencyType): Double? {
-        if (currency == null || currency == CurrencyType.UNKNOWN) {
+    fun convertToBaseCurrency(
+        value: Double?,
+        currency: CurrencyType?,
+        baseCurrency: CurrencyType = settingsService.getBaseCurrency()
+    ): Double? {
+        if (value == null || !value.isFinite() || currency == null || currency == CurrencyType.UNKNOWN) {
             return null
         }
 

@@ -47,6 +47,20 @@ class MoneyDisplayFormatterTest {
     }
 
     @Test
+    fun `native amount 포맷은 환산 모드에서도 원문 통화로 표시한다`() {
+        val settings = AppSettingsService()
+        settings.setPriceDisplayMode(AppSettingsService.PriceDisplayMode.KRW_CONVERTED)
+        val formatter = MoneyDisplayFormatter(
+            settingsService = settings,
+            localeProvider = { Locale.US },
+            exchangeRateProvider = { listOf(fxIndicator("FX_USDKRW", 1_477.60)) }
+        )
+
+        assertThat(formatter.formatNativeAmount(195.12, CurrencyType.USD)).isEqualTo("195.12 USD")
+        assertThat(formatter.formatNativeSignedAmount(-12.34, CurrencyType.USD)).isEqualTo("-12.34 USD")
+    }
+
+    @Test
     fun `기준 통화가 달라도 같은 규칙으로 환산한다`() {
         val settings = AppSettingsService()
         settings.setPriceDisplayMode(AppSettingsService.PriceDisplayMode.KRW_CONVERTED)
@@ -80,6 +94,38 @@ class MoneyDisplayFormatterTest {
 
         assertThat(formatter.formatAmount(195.12, CurrencyType.USD)).isEqualTo("195.12 USD")
         assertThat(formatter.formatAmount(195.12, null)).isEqualTo("195.12")
+    }
+
+    @Test
+    fun `기준 통화 환산 API는 숫자 금액을 반환한다`() {
+        val formatter = MoneyDisplayFormatter(
+            settingsService = AppSettingsService(),
+            localeProvider = { Locale.US },
+            exchangeRateProvider = {
+                listOf(
+                    fxIndicator("FX_USDKRW", 1_400.0),
+                    fxIndicator("FX_JPYKRW", 900.0)
+                )
+            }
+        )
+
+        assertThat(formatter.convertToBaseCurrency(100.0, CurrencyType.KRW, CurrencyType.KRW)).isEqualTo(100.0)
+        assertThat(formatter.convertToBaseCurrency(10.0, CurrencyType.USD, CurrencyType.KRW)).isEqualTo(14_000.0)
+        assertThat(formatter.convertToBaseCurrency(1_000.0, CurrencyType.JPY, CurrencyType.KRW)).isEqualTo(9_000.0)
+        assertThat(formatter.convertToBaseCurrency(1_400.0, CurrencyType.KRW, CurrencyType.USD)).isEqualTo(1.0)
+    }
+
+    @Test
+    fun `기준 통화 환산 API는 환율이 없으면 null을 반환한다`() {
+        val formatter = MoneyDisplayFormatter(
+            settingsService = AppSettingsService(),
+            localeProvider = { Locale.US },
+            exchangeRateProvider = { emptyList() }
+        )
+
+        assertThat(formatter.convertToBaseCurrency(10.0, CurrencyType.USD, CurrencyType.KRW)).isNull()
+        assertThat(formatter.convertToBaseCurrency(10.0, CurrencyType.UNKNOWN, CurrencyType.KRW)).isNull()
+        assertThat(formatter.convertToBaseCurrency(null, CurrencyType.KRW, CurrencyType.KRW)).isNull()
     }
 
     @Test

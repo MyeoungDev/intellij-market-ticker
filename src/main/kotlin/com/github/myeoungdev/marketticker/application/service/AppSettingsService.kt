@@ -146,7 +146,8 @@ class AppSettingsService : PersistentStateComponent<AppSettingsService.State> {
         var showMarketPulse: Boolean = true,
         var showMarketSessionIndicator: Boolean = true,
         var showChartTab: Boolean = true,
-        var showHeatmapTab: Boolean = true
+        var showHeatmapTab: Boolean = true,
+        var showPortfolioSummary: Boolean = true
     )
 
     private var settingsState = State()
@@ -237,6 +238,12 @@ class AppSettingsService : PersistentStateComponent<AppSettingsService.State> {
 
     fun setMarketSessionIndicatorVisible(visible: Boolean) {
         settingsState.showMarketSessionIndicator = visible
+    }
+
+    fun isPortfolioSummaryVisible(): Boolean = settingsState.showPortfolioSummary
+
+    fun setPortfolioSummaryVisible(visible: Boolean) {
+        settingsState.showPortfolioSummary = visible
     }
 
     /**

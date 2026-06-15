@@ -16,7 +16,7 @@ class DomesticDisplayPriceSelectorTest {
     fun `NXT 고정 모드는 국내 종목 표시가를 대체 거래소 가격으로 바꾼다`() {
         val settings = AppSettingsService()
         settings.setDomesticTradeVenueMode(AppSettingsService.DomesticTradeVenueMode.NXT_ONLY)
-        val selector = DomesticDisplayPriceSelector(settings)
+        val selector = DomesticDisplayPriceSelector(settings) { DomesticTradeType.NXT }
         val krxPrice = TickerPriceFixtures.SAMSUNG_KRW.copy(
             currentPrice = 72000.0,
             changeAmount = 800.0,
