@@ -6,12 +6,12 @@
 
 ### Fixed
 - Fixed watchlist price flickering between NXT and KRX by keeping watchlist price rendering on the display-price update path. (#47)
-- Fixed portfolio edit fields showing large saved numeric values in scientific notation.
+- Fixed portfolio edit fields showing large saved numeric values in scientific notation. (#48)
 
 ### Added
-- Added drag-and-drop reordering for watchlist rows when the group filter is set to All.
-- Extended closed-market polling interval options up to 1 hour and changed the default closed-market interval to 5 minutes.
-- Added a toggleable portfolio summary panel for holdings valuation, return, and daily change metrics.
+- Added drag-and-drop reordering for watchlist rows when the group filter is set to All.(#43)
+- Extended closed-market polling interval options up to 1 hour and changed the default closed-market interval to 5 minutes. (#45)
+- Added a toggleable portfolio summary panel for holdings valuation, return, and daily change metrics. (#48)
 
 ## [0.0.3] - 2026-06-10
 
