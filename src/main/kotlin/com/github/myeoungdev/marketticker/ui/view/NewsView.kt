@@ -7,6 +7,7 @@ import com.github.myeoungdev.marketticker.domain.model.news.NewsArticle
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
@@ -45,7 +46,9 @@ import javax.swing.SwingConstants
  * 카테고리별 긴 스크롤 패널 대신 단일 selector 기반으로
  * 네이버 뉴스 섹션을 빠르게 전환하도록 구성합니다.
  */
-class NewsView : JPanel(BorderLayout()), Disposable {
+class NewsView(
+    private val project: Project
+) : JPanel(BorderLayout()), Disposable {
 
     private val localizationService = service<LocalizationService>()
     private val newsFacadeService = service<NewsFacadeService>()
@@ -61,7 +64,7 @@ class NewsView : JPanel(BorderLayout()), Disposable {
     private val detailSummaryArea = JTextArea()
     private val detailLinkLabel = JLabel()
 
-    private val newsTabs = JBTabsFactory.createTabs(null, this)
+    private val newsTabs = JBTabsFactory.createTabs(project, this)
     private val categorySelector = JComboBox<String>()
     private val categoryKeys = mutableListOf<String>()
     private var selectedCategoryKey: String = "MAINNEWS"

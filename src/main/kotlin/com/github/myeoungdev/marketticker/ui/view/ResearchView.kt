@@ -9,7 +9,9 @@ import com.github.myeoungdev.marketticker.domain.model.research.ResearchCategory
 import com.github.myeoungdev.marketticker.domain.model.research.ResearchRankingType
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
+import com.intellij.openapi.project.Project
 import com.intellij.ui.CollectionListModel
 import com.intellij.ui.JBColor
 import com.intellij.ui.SimpleListCellRenderer
@@ -44,7 +46,9 @@ import javax.swing.JLabel
 import javax.swing.JPanel
 import javax.swing.ListSelectionModel
 
-class ResearchView : JPanel(BorderLayout()), Disposable {
+class ResearchView(
+    private val project: Project
+) : JPanel(BorderLayout()), Disposable {
 
     private enum class SourceTab {
         CORE,
@@ -76,7 +80,7 @@ class ResearchView : JPanel(BorderLayout()), Disposable {
     private val rankingList = createResearchList(rankingModel)
     private val stockList = createResearchList(stockModel)
 
-    private val tabs = JBTabsFactory.createTabs(null, this)
+    private val tabs = JBTabsFactory.createTabs(project, this)
     private val detailTitleLabel = JLabel(localizationService.text("리서치를 선택하세요", "Select research"))
     private val detailMetaLabel = JLabel(" ")
     private val detailBodyPane = JEditorPane("text/html", "")
@@ -286,9 +290,11 @@ class ResearchView : JPanel(BorderLayout()), Disposable {
         val normalizedQuery = query.trim()
         if (normalizedQuery.isBlank() && preferredItemCode.isNullOrBlank()) return
 
-        stockCodeField.text = preferredName?.takeIf { it.isNotBlank() } ?: preferredItemCode ?: normalizedQuery
-        selectSource(SourceTab.STOCK)
-        loadStockResearch(normalizedQuery.ifBlank { preferredItemCode.orEmpty() }, preferredItemCode, preferredName, false)
+        ApplicationManager.getApplication().invokeLater {
+            stockCodeField.text = preferredName?.takeIf { it.isNotBlank() } ?: preferredItemCode ?: normalizedQuery
+            selectSource(SourceTab.STOCK)
+            loadStockResearch(normalizedQuery.ifBlank { preferredItemCode.orEmpty() }, preferredItemCode, preferredName, false)
+        }
     }
 
     private fun refreshAll(forceRefresh: Boolean) {
