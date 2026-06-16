@@ -7,6 +7,7 @@
 ### Fixed
 
 ### Added
+- Added IntelliJ IDEA 2022.3+ and Java 17 compatibility support. (#54)
 
 ## [0.0.4] - 2026-06-15
 
