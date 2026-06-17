@@ -6,9 +6,9 @@
 </p>
 
 <p align="center">
-  <img alt="JetBrains Platform" src="https://img.shields.io/badge/JetBrains-2024.3+-000000?logo=intellijidea&logoColor=white">
+  <img alt="JetBrains Platform" src="https://img.shields.io/badge/JetBrains-2022.3+-000000?logo=intellijidea&logoColor=white">
   <img alt="Kotlin" src="https://img.shields.io/badge/Kotlin-2.x-7F52FF?logo=kotlin&logoColor=white">
-  <img alt="JDK" src="https://img.shields.io/badge/JDK-21-ED8B00?logo=openjdk&logoColor=white">
+  <img alt="JDK" src="https://img.shields.io/badge/JDK-17-ED8B00?logo=openjdk&logoColor=white">
   <img alt="License" src="https://img.shields.io/badge/License-Apache_2.0-4D7A97.svg">
   <img alt="Tests" src="https://img.shields.io/badge/Tests-Gradle%20test-success">
   <br/>
@@ -115,8 +115,8 @@ Supported market scope:
 
 ## Quick Start
 
-1. Open the project in IntelliJ IDEA 2024.3+
-2. Use JDK 21
+1. Open the project in IntelliJ IDEA 2022.3+
+2. Use JDK 17
 3. Run the sandbox IDE:
 
 ```bash
@@ -130,15 +130,15 @@ Supported market scope:
 
 Requirements:
 
-- JDK 21
-- IntelliJ IDEA 2024.3+
+- JDK 17
+- IntelliJ IDEA 2022.3+
 - macOS / Linux / Windows
 
 SDKMAN example:
 
 ```bash
 source "$HOME/.sdkman/bin/sdkman-init.sh"
-sdk use java 21.0.9-tem
+sdk use java 17.0.17-tem
 ./gradlew test
 ```
 
@@ -150,7 +150,7 @@ Run tests:
 
 Current local verification:
 
-- Java 21
+- Java 17
 - `BUILD SUCCESSFUL`
 
 ## Tech Stack

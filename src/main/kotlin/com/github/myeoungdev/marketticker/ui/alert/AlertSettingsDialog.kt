@@ -16,6 +16,8 @@ import com.intellij.ui.dsl.builder.text
 import io.github.oshai.kotlinlogging.KotlinLogging
 import javax.swing.JComboBox
 import javax.swing.JComponent
+import javax.swing.event.DocumentEvent
+import javax.swing.event.DocumentListener
 
 private val logger = KotlinLogging.logger {}
 
@@ -77,12 +79,13 @@ class AlertSettingsDialog(
 
                 cell()
 
-                textField()
+                val targetPriceField = textField()
                     .bindText(model::targetPriceStr)
                     .columns(10)
-                    .onChanged {
-                        targetPriceCheckBox.isSelected = it.text.isNotEmpty()
-                    }
+                    .component
+                targetPriceField.document.addDocumentListener(simpleDocumentListener {
+                    targetPriceCheckBox.isSelected = targetPriceField.text.isNotEmpty()
+                })
             }
 
             row {
@@ -92,12 +95,13 @@ class AlertSettingsDialog(
 
                 cell()
 
-                textField()
+                val volatilityField = textField()
                     .bindText(model::volatilityStr)
                     .columns(10)
-                    .onChanged {
-                        volatilityCheckBox.isSelected = it.text.isNotEmpty()
-                    }
+                    .component
+                volatilityField.document.addDocumentListener(simpleDocumentListener {
+                    volatilityCheckBox.isSelected = volatilityField.text.isNotEmpty()
+                })
 
                 text("%")
             }
@@ -160,5 +164,11 @@ class AlertSettingsDialog(
 
     private fun isExistingAlert(): Boolean {
         return priceAlertService.getAlert(ticker.symbol) != null
+    }
+
+    private fun simpleDocumentListener(onChange: () -> Unit) = object : DocumentListener {
+        override fun insertUpdate(e: DocumentEvent) = onChange()
+        override fun removeUpdate(e: DocumentEvent) = onChange()
+        override fun changedUpdate(e: DocumentEvent) = onChange()
     }
 }
