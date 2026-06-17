@@ -1,13 +1,17 @@
 package com.github.myeoungdev.marketticker.application.service
 
 import com.github.myeoungdev.marketticker.application.listener.SettingsUpdateListener
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
@@ -22,9 +26,8 @@ private val logger = KotlinLogging.logger {}
  * @since : 2026-01-18
  */
 @Service(Service.Level.APP)
-class TickerSchedulerService(
-    private val cs: CoroutineScope
-) {
+class TickerSchedulerService : Disposable {
+    private val cs = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val marketDataService = service<MarketDataService>()
     private val appSettingsService = service<AppSettingsService>()
     private val pollingLoop = TickerPollingLoop(
@@ -51,13 +54,18 @@ class TickerSchedulerService(
     }
 
     private fun subscribeSettingsUpdates() {
-        ApplicationManager.getApplication().messageBus.connect()
+        ApplicationManager.getApplication().messageBus.connect(this)
             .subscribe(SettingsUpdateListener.TOPIC, object : SettingsUpdateListener {
                 override fun onSettingsUpdated() {
                     logger.info { "Settings updated. Restart polling loop." }
                     startPolling()
                 }
             })
+    }
+
+    override fun dispose() {
+        pollingLoop.cancel()
+        cs.cancel()
     }
 }
 
