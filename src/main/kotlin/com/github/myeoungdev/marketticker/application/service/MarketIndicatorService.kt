@@ -3,8 +3,12 @@ package com.github.myeoungdev.marketticker.application.service
 import com.github.myeoungdev.marketticker.domain.model.MarketIndicator
 import com.github.myeoungdev.marketticker.application.provider.DefaultDataSourceRegistry
 import com.github.myeoungdev.marketticker.application.provider.MarketIndicatorProvider
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.Service
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -16,13 +20,12 @@ import kotlinx.coroutines.launch
  * 주요 지수/원자재 지표를 주기적으로 조회해 제공하는 서비스입니다.
  */
 @Service(Service.Level.APP)
-class MarketIndicatorService(
-    private val cs: CoroutineScope
-) {
+class MarketIndicatorService : Disposable {
     private companion object {
         private const val POLLING_INTERVAL_MS = 300_000L
     }
 
+    private val cs = CoroutineScope(Dispatchers.Default + SupervisorJob())
     private val marketIndicatorProvider: MarketIndicatorProvider = DefaultDataSourceRegistry.marketIndicatorProvider()
 
     private val _indicators = MutableStateFlow<List<MarketIndicator>>(emptyList())
@@ -48,5 +51,9 @@ class MarketIndicatorService(
         cs.launch {
             _indicators.emit(marketIndicatorProvider.getIndicators())
         }
+    }
+
+    override fun dispose() {
+        cs.cancel()
     }
 }

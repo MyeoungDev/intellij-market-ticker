@@ -5,6 +5,7 @@
 ## [Unreleased]
 
 ### Fixed
+- Fixed IntelliJ IDEA 2022.3 runtime service creation failures for coroutine-based application services.
 
 ### Added
 - Added IntelliJ IDEA 2022.3+ and Java 17 compatibility support. (#54)

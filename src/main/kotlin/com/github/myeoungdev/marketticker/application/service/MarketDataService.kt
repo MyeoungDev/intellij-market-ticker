@@ -9,6 +9,7 @@ import com.github.myeoungdev.marketticker.application.repository.WatchlistReposi
 import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.domain.model.TickerPrice
+import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.Service
 import com.intellij.openapi.components.service
@@ -16,6 +17,8 @@ import com.intellij.openapi.project.ProjectManager
 import io.github.oshai.kotlinlogging.KotlinLogging
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.SupervisorJob
+import kotlinx.coroutines.cancel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -45,9 +48,9 @@ data class PriceRefreshResult(
  * @since : 2026-01-20
  */
 @Service(Service.Level.APP)
-class MarketDataService(
-    private val cs: CoroutineScope,
-) {
+class MarketDataService : Disposable {
+
+    private val cs = CoroutineScope(Dispatchers.Default + SupervisorJob())
 
     private data class SearchCacheEntry(
         val expiresAt: Long,
@@ -245,6 +248,10 @@ class MarketDataService(
         cs.launch(Dispatchers.IO) {
             refreshPrices(source)
         }
+    }
+
+    override fun dispose() {
+        cs.cancel()
     }
 
 }
