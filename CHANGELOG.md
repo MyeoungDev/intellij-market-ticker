@@ -5,6 +5,12 @@
 ## [Unreleased]
 
 ### Fixed
+
+### Added
+
+## [0.0.5] - 2026-06-18
+
+### Fixed
 - Fixed IntelliJ IDEA 2022.3 runtime service creation failures for coroutine-based application services.
 
 ### Added
