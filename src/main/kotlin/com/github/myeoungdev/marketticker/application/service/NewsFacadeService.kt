@@ -5,6 +5,7 @@ import com.github.myeoungdev.marketticker.application.model.news.TickerNewsSumma
 import com.github.myeoungdev.marketticker.application.provider.DefaultDataSourceRegistry
 import com.github.myeoungdev.marketticker.application.provider.NewsProvider
 import com.github.myeoungdev.marketticker.domain.model.Ticker
+import com.github.myeoungdev.marketticker.domain.model.news.NewsArticle
 import com.intellij.openapi.components.Service
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -29,12 +30,29 @@ class NewsFacadeService(
     private val mutex = Mutex()
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
-    suspend fun loadNewsHome(forceRefresh: Boolean = false): NewsHomeViewData {
-        return cached("news-home:v1", 60_000L, forceRefresh) {
+    suspend fun loadNewsHome(
+        pageSize: Int = AppSettingsService.DEFAULT_NEWS_PAGE_SIZE,
+        forceRefresh: Boolean = false
+    ): NewsHomeViewData {
+        val resolvedPageSize = pageSize.coerceIn(1, 50)
+        return cached("news-home:v2:ps$resolvedPageSize", 60_000L, forceRefresh) {
             NewsHomeViewData(
-                headlines = newsProvider.getHeadlineNews(),
+                headlines = newsProvider.getHeadlineNews(resolvedPageSize),
                 mostViewed = newsProvider.getMostViewedNews(limit = 15)
             )
+        }
+    }
+
+    suspend fun loadNewsCategory(
+        categoryKey: String,
+        page: Int,
+        pageSize: Int = AppSettingsService.DEFAULT_NEWS_PAGE_SIZE,
+        forceRefresh: Boolean = false
+    ): List<NewsArticle> {
+        val resolvedPageSize = pageSize.coerceIn(1, 50)
+        val cacheKey = "news-category:${categoryKey.uppercase()}:p$page:s$resolvedPageSize"
+        return cached(cacheKey, 60_000L, forceRefresh) {
+            newsProvider.getCategoryNews(categoryKey, page, resolvedPageSize)
         }
     }
 

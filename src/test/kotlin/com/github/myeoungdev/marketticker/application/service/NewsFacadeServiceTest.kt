@@ -31,6 +31,16 @@ class NewsFacadeServiceTest {
     }
 
     @Test
+    fun `뉴스 홈은 전달된 페이지 크기를 provider에 넘긴다`() = runBlocking {
+        val provider = FakeNewsProvider()
+        val service = NewsFacadeService(provider)
+
+        service.loadNewsHome(pageSize = 20, forceRefresh = true)
+
+        assertThat(provider.headlinePageSizes).containsExactly(20)
+    }
+
+    @Test
     fun `강제 새로고침은 캐시를 우회한다`() = runBlocking {
         val provider = FakeNewsProvider()
         val service = NewsFacadeService(provider)
@@ -62,11 +72,13 @@ class NewsFacadeServiceTest {
         private val delayMillis: Long = 0L
     ) : NewsProvider {
         val headlineCalls = AtomicInteger()
+        val headlinePageSizes = mutableListOf<Int>()
         val mostViewedCalls = AtomicInteger()
         val tickerCalls = AtomicInteger()
 
-        override fun getHeadlineNews(): HeadlineNewsBundle {
+        override fun getHeadlineNews(pageSize: Int): HeadlineNewsBundle {
             headlineCalls.incrementAndGet()
+            headlinePageSizes += pageSize
             return HeadlineNewsBundle(
                 headlines = mapOf("MAINNEWS" to listOf(sampleArticle("main-1", "메인 뉴스"))),
                 worldNews = listOf(sampleArticle("world-1", "해외 뉴스")),
@@ -77,6 +89,14 @@ class NewsFacadeServiceTest {
         override fun getMostViewedNews(limit: Int): List<NewsArticle> {
             mostViewedCalls.incrementAndGet()
             return listOf(sampleArticle("rank-1", "많이 본 뉴스")).take(limit)
+        }
+
+        override fun getCategoryNews(categoryKey: String, page: Int, pageSize: Int): List<NewsArticle> {
+            val pageLabel = "p$page"
+            return listOf(
+                sampleArticle("${categoryKey.lowercase()}-$pageLabel-1", "${categoryKey} ${page}"),
+                sampleArticle("${categoryKey.lowercase()}-$pageLabel-2", "${categoryKey} ${page} - 2")
+            ).take(pageSize)
         }
 
         override fun getTickerNews(ticker: Ticker): TickerNewsBundle {

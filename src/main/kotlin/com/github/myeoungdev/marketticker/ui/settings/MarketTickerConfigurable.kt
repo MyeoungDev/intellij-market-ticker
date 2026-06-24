@@ -1,6 +1,7 @@
 package com.github.myeoungdev.marketticker.ui.settings
 
 import com.github.myeoungdev.marketticker.application.listener.SettingsUpdateListener
+import com.github.myeoungdev.marketticker.application.listener.NewsRefreshListener
 import com.github.myeoungdev.marketticker.application.service.AppSettingsService
 import com.github.myeoungdev.marketticker.application.service.LocalizationService
 import com.github.myeoungdev.marketticker.domain.model.CurrencyType
@@ -43,6 +44,7 @@ class MarketTickerConfigurable : Configurable {
         CurrencyType.CNY,
         CurrencyType.EUR
     ))
+    private val newsPageSizeCombo = JComboBox(AppSettingsService.NEWS_PAGE_SIZE_OPTIONS)
     private val marketPulseCheckBox = JCheckBox()
     private val marketSessionIndicatorCheckBox = JCheckBox()
     private val portfolioSummaryCheckBox = JCheckBox()
@@ -124,6 +126,10 @@ class MarketTickerConfigurable : Configurable {
                     cell(baseCurrencyCombo).align(AlignX.FILL)
                 }
 
+                row(localizationService.text("뉴스 페이지 크기", "News page size")) {
+                    cell(newsPageSizeCombo).align(AlignX.FILL)
+                }
+
                 row {
                     marketPulseCheckBox.text = localizationService.text("한 줄 지표 표시", "Show market pulse ticker")
                     cell(marketPulseCheckBox)
@@ -148,6 +154,12 @@ class MarketTickerConfigurable : Configurable {
                     heatmapTabCheckBox.text = localizationService.text("히트맵 탭 표시", "Show heatmap tab")
                     cell(heatmapTabCheckBox)
                 }
+
+                row {
+                    button(localizationService.text("저장 후 뉴스 새로고침", "Save and refresh news")) {
+                        saveAndRefreshNews()
+                    }
+                }
             }
         }
 
@@ -166,6 +178,7 @@ class MarketTickerConfigurable : Configurable {
         val domesticTradeVenueMode = domesticTradeVenueModeCombo.selectedItem as? AppSettingsService.DomesticTradeVenueMode
             ?: AppSettingsService.DomesticTradeVenueMode.MIXED
         val baseCurrency = baseCurrencyCombo.selectedItem as? CurrencyType ?: CurrencyType.KRW
+        val newsPageSize = newsPageSizeCombo.selectedItem as? Int ?: AppSettingsService.DEFAULT_NEWS_PAGE_SIZE
 
         return automaticPollingCheckBox.isSelected != settingsService.isAutomaticPollingEnabled() ||
                 mode != settingsService.getRefreshMode() ||
@@ -176,6 +189,7 @@ class MarketTickerConfigurable : Configurable {
                 priceDisplayMode != settingsService.getPriceDisplayMode() ||
                 domesticTradeVenueMode != settingsService.getDomesticTradeVenueMode() ||
                 baseCurrency != settingsService.getBaseCurrency() ||
+                newsPageSize != settingsService.getNewsPageSize() ||
                 marketPulseCheckBox.isSelected != settingsService.isMarketPulseVisible() ||
                 marketSessionIndicatorCheckBox.isSelected != settingsService.isMarketSessionIndicatorVisible() ||
                 portfolioSummaryCheckBox.isSelected != settingsService.isPortfolioSummaryVisible() ||
@@ -184,6 +198,16 @@ class MarketTickerConfigurable : Configurable {
     }
 
     override fun apply() {
+        persistSettings()
+
+        Locale.setDefault(localizationService.currentLocale())
+
+        ApplicationManager.getApplication().messageBus
+            .syncPublisher(SettingsUpdateListener.TOPIC)
+            .onSettingsUpdated()
+    }
+
+    private fun persistSettings() {
         val mode = refreshModeCombo.selectedItem as? AppSettingsService.RefreshMode ?: AppSettingsService.RefreshMode.AUTO
         val fixed = fixedIntervalCombo.selectedItem as? Long ?: 6L
         val open = openIntervalCombo.selectedItem as? Long ?: 3L
@@ -194,6 +218,7 @@ class MarketTickerConfigurable : Configurable {
         val domesticTradeVenueMode = domesticTradeVenueModeCombo.selectedItem as? AppSettingsService.DomesticTradeVenueMode
             ?: AppSettingsService.DomesticTradeVenueMode.MIXED
         val baseCurrency = baseCurrencyCombo.selectedItem as? CurrencyType ?: CurrencyType.KRW
+        val newsPageSize = newsPageSizeCombo.selectedItem as? Int ?: AppSettingsService.DEFAULT_NEWS_PAGE_SIZE
 
         settingsService.setAutomaticPollingEnabled(automaticPollingCheckBox.isSelected)
         settingsService.setRefreshMode(mode)
@@ -204,17 +229,19 @@ class MarketTickerConfigurable : Configurable {
         settingsService.setPriceDisplayMode(priceDisplayMode)
         settingsService.setDomesticTradeVenueMode(domesticTradeVenueMode)
         settingsService.setBaseCurrency(baseCurrency)
+        settingsService.setNewsPageSize(newsPageSize)
         settingsService.setMarketPulseVisible(marketPulseCheckBox.isSelected)
         settingsService.setMarketSessionIndicatorVisible(marketSessionIndicatorCheckBox.isSelected)
         settingsService.setPortfolioSummaryVisible(portfolioSummaryCheckBox.isSelected)
         settingsService.setChartTabVisible(chartTabCheckBox.isSelected)
         settingsService.setHeatmapTabVisible(heatmapTabCheckBox.isSelected)
+    }
 
-        Locale.setDefault(localizationService.currentLocale())
-
+    private fun saveAndRefreshNews() {
+        persistSettings()
         ApplicationManager.getApplication().messageBus
-            .syncPublisher(SettingsUpdateListener.TOPIC)
-            .onSettingsUpdated()
+            .syncPublisher(NewsRefreshListener.TOPIC)
+            .onNewsRefreshRequested()
     }
 
     override fun reset() {
@@ -227,6 +254,7 @@ class MarketTickerConfigurable : Configurable {
         priceDisplayModeCombo.selectedItem = settingsService.getPriceDisplayMode()
         domesticTradeVenueModeCombo.selectedItem = settingsService.getDomesticTradeVenueMode()
         baseCurrencyCombo.selectedItem = settingsService.getBaseCurrency()
+        newsPageSizeCombo.selectedItem = settingsService.getNewsPageSize()
         marketPulseCheckBox.isSelected = settingsService.isMarketPulseVisible()
         marketSessionIndicatorCheckBox.isSelected = settingsService.isMarketSessionIndicatorVisible()
         portfolioSummaryCheckBox.isSelected = settingsService.isPortfolioSummaryVisible()

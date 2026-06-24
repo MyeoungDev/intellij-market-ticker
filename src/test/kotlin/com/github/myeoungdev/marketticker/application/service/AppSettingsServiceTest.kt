@@ -61,6 +61,31 @@ class AppSettingsServiceTest {
     }
 
     @Test
+    fun `뉴스 페이지 크기 기본값은 15다`() {
+        val service = AppSettingsService()
+
+        assertThat(service.getNewsPageSize()).isEqualTo(AppSettingsService.DEFAULT_NEWS_PAGE_SIZE)
+    }
+
+    @Test
+    fun `뉴스 페이지 크기를 저장하고 조회한다`() {
+        val service = AppSettingsService()
+
+        service.setNewsPageSize(20)
+
+        assertThat(service.getNewsPageSize()).isEqualTo(20)
+    }
+
+    @Test
+    fun `뉴스 페이지 크기는 저장 상태에서 복원된다`() {
+        val service = AppSettingsService()
+
+        service.loadState(AppSettingsService.State(newsPageSize = 30))
+
+        assertThat(service.getNewsPageSize()).isEqualTo(30)
+    }
+
+    @Test
     fun `장중 폴링 주기 옵션은 중간 초와 분 단위 선택지를 포함한다`() {
         assertThat(AppSettingsService.ACTIVE_INTERVAL_OPTIONS).contains(
             15L,

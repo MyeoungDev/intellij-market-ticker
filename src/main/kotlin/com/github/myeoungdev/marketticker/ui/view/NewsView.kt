@@ -1,13 +1,17 @@
 package com.github.myeoungdev.marketticker.ui.view
 
 import com.github.myeoungdev.marketticker.application.model.news.NewsHomeViewData
+import com.github.myeoungdev.marketticker.application.listener.NewsRefreshListener
+import com.github.myeoungdev.marketticker.application.listener.SettingsUpdateListener
 import com.github.myeoungdev.marketticker.application.service.LocalizationService
+import com.github.myeoungdev.marketticker.application.service.AppSettingsService
 import com.github.myeoungdev.marketticker.application.service.NewsFacadeService
 import com.github.myeoungdev.marketticker.domain.model.news.NewsArticle
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
+import com.intellij.ui.AnimatedIcon
 import com.intellij.ui.JBColor
 import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
@@ -18,6 +22,7 @@ import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
+import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.awt.BorderLayout
@@ -50,12 +55,19 @@ class NewsView(
     private val project: Project
 ) : JPanel(BorderLayout()), Disposable {
 
+    private companion object {
+        val PAGEABLE_CATEGORY_KEYS = setOf("FLASHNEWS", "MAINNEWS", "WORLDNEWS")
+    }
+
     private val localizationService = service<LocalizationService>()
+    private val appSettingsService = service<AppSettingsService>()
     private val newsFacadeService = service<NewsFacadeService>()
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private val refreshButton = JButton(localizationService.text("새로고침", "Refresh"))
     private val openButton = JButton(localizationService.text("원문 열기", "Open article"))
+    private val moreButton = JButton(localizationService.text("+ 더보기", "+ More"))
+    private val moreButtonLoadingIcon = AnimatedIcon.Default()
     private val statusLabel = JLabel(localizationService.text("뉴스를 불러오는 중...", "Loading news..."))
 
     private val detailBadgeLabel = JLabel()
@@ -70,6 +82,9 @@ class NewsView(
     private var selectedCategoryKey: String = "MAINNEWS"
     private var rebuildingCategories: Boolean = false
     private var categoryArticles: Map<String, List<NewsArticle>> = emptyMap()
+    private val categoryPageByKey = mutableMapOf<String, Int>()
+    private val categoryHasMoreByKey = mutableMapOf<String, Boolean>()
+    private val categoryLoadingByKey = mutableMapOf<String, Boolean>()
 
     private val categoryListModel = DefaultListModel<NewsArticle>()
     private val categoryList = createNewsList(categoryListModel, CompactNewsRenderer())
@@ -87,6 +102,10 @@ class NewsView(
 
         bindList(categoryList)
         bindList(rankingList)
+        moreButton.addActionListener { loadMoreForSelectedCategory() }
+        configureMoreButton()
+        subscribeToSettingsUpdates()
+        subscribeToNewsRefreshRequests()
 
         renderDetail(null)
         loadNews(forceRefresh = false)
@@ -102,8 +121,12 @@ class NewsView(
 
     private fun loadNews(forceRefresh: Boolean) {
         statusLabel.text = localizationService.text("뉴스를 불러오는 중...", "Loading news...")
+        val pageSize = appSettingsService.getNewsPageSize()
         scope.launch {
-            val homeData = newsFacadeService.loadNewsHome(forceRefresh = forceRefresh)
+            val homeData = newsFacadeService.loadNewsHome(
+                pageSize = pageSize,
+                forceRefresh = forceRefresh
+            )
             withContext(Dispatchers.Main) {
                 applyNewsHome(homeData)
             }
@@ -222,6 +245,14 @@ class NewsView(
                 ),
                 BorderLayout.CENTER
             )
+            add(
+                JPanel(BorderLayout()).apply {
+                    isOpaque = false
+                    border = JBUI.Borders.emptyTop(4)
+                    add(moreButton, BorderLayout.EAST)
+                },
+                BorderLayout.SOUTH
+            )
         }
     }
 
@@ -242,6 +273,7 @@ class NewsView(
         homeData.mostViewed.forEach(rankingListModel::addElement)
 
         categoryArticles = buildCategoryMap(homeData)
+        resetCategoryPaging()
         rebuildCategories()
         applyCategory(selectedCategoryKey)
 
@@ -249,11 +281,7 @@ class NewsView(
         if (firstSelectable != null) {
             renderDetail(firstSelectable)
         }
-
-        statusLabel.text = localizationService.text(
-            "${displayCategory(selectedCategoryKey)} ${categoryListModel.size()}건 · 많이 본 뉴스 ${rankingListModel.size()}건",
-            "${displayCategory(selectedCategoryKey)} ${categoryListModel.size()} items · most viewed ${rankingListModel.size()}"
-        )
+        updateStatusText()
         revalidate()
         repaint()
     }
@@ -270,13 +298,23 @@ class NewsView(
                 map["FOCUS_$index"] = section.articles
             }
         }
-        if (homeData.headlines.worldNews.isNotEmpty()) {
-            map["OVERSEAS"] = homeData.headlines.worldNews
-        }
         if (homeData.headlines.moneyStories.isNotEmpty()) {
             map["MONEY"] = homeData.headlines.moneyStories
         }
         return map
+    }
+
+    private fun resetCategoryPaging() {
+        val pageSize = appSettingsService.getNewsPageSize()
+        categoryPageByKey.clear()
+        categoryHasMoreByKey.clear()
+        categoryLoadingByKey.clear()
+
+        categoryArticles.forEach { (key, articles) ->
+            categoryPageByKey[key] = 1
+            categoryHasMoreByKey[key] = key in PAGEABLE_CATEGORY_KEYS && articles.size >= pageSize
+            categoryLoadingByKey[key] = false
+        }
     }
 
     private fun rebuildCategories() {
@@ -287,7 +325,7 @@ class NewsView(
 
             categoryArticles.keys.forEach { key ->
                 categoryKeys += key
-                categorySelector.addItem(displayCategory(key))
+                categorySelector.addItem(displayCategoryBase(key))
             }
 
             if (!categoryKeys.contains(selectedCategoryKey)) {
@@ -298,6 +336,8 @@ class NewsView(
             if (selectedIndex >= 0) {
                 categorySelector.selectedIndex = selectedIndex
             }
+
+            updateMoreButtonState()
         } finally {
             rebuildingCategories = false
         }
@@ -311,21 +351,143 @@ class NewsView(
         } else {
             renderDetail(null)
         }
+        updateMoreButtonState()
+        updateStatusText()
     }
 
     private fun displayCategory(categoryKey: String): String {
+        return displayCategoryBase(categoryKey)
+    }
+
+    private fun displayCategoryBase(categoryKey: String): String {
         return when {
             categoryKey == "FLASHNEWS" -> localizationService.text("속보", "Flash")
             categoryKey == "MAINNEWS" -> localizationService.text("주요 뉴스", "Main News")
-            categoryKey == "WORLDNEWS" || categoryKey == "OVERSEAS" ->
-                localizationService.text("해외증시", "Overseas")
+            categoryKey == "WORLDNEWS" -> localizationService.text("해외 뉴스", "World News")
             categoryKey == "MONEY" -> localizationService.text("머니스토리", "Money Story")
             categoryKey.startsWith("FOCUS_") -> {
                 categoryArticles[categoryKey]?.firstOrNull()?.sectionLabel?.takeIf { it.isNotBlank() }
-                    ?: localizationService.text("카테고리", "Category")
+                    ?: localizationService.text("시장 섹션", "Market Section")
             }
             else -> categoryKey
         }
+    }
+
+    private fun updateStatusText() {
+        statusLabel.text = localizationService.text(
+            "${displayCategory(selectedCategoryKey)} ${categoryListModel.size()}건 · 많이 본 뉴스 ${rankingListModel.size()}건",
+            "${displayCategory(selectedCategoryKey)} ${categoryListModel.size()} items · most viewed ${rankingListModel.size()}"
+        )
+    }
+
+    private fun updateMoreButtonState() {
+        val canLoadMore = selectedCategoryKey in PAGEABLE_CATEGORY_KEYS &&
+            categoryHasMoreByKey.getOrDefault(selectedCategoryKey, false)
+        val isLoading = categoryLoadingByKey.getOrDefault(selectedCategoryKey, false)
+
+        moreButton.isVisible = selectedCategoryKey in PAGEABLE_CATEGORY_KEYS
+        moreButton.isEnabled = canLoadMore && !isLoading
+        moreButton.text = if (isLoading) "" else localizationService.text("+ 더보기", "+ More")
+        moreButton.icon = if (isLoading) moreButtonLoadingIcon else null
+        moreButton.toolTipText = when {
+            isLoading -> localizationService.text("뉴스를 불러오는 중입니다.", "Loading more news...")
+            canLoadMore -> localizationService.text("추가 뉴스를 불러옵니다.", "Load more news...")
+            else -> localizationService.text("더 불러올 뉴스가 없습니다.", "No more news to load.")
+        }
+    }
+
+    private fun loadMoreForSelectedCategory() {
+        val categoryKey = selectedCategoryKey
+        if (categoryKey !in PAGEABLE_CATEGORY_KEYS) return
+        if (categoryLoadingByKey.getOrDefault(categoryKey, false)) return
+        if (!categoryHasMoreByKey.getOrDefault(categoryKey, false)) return
+
+        val pageSize = appSettingsService.getNewsPageSize()
+        val nextPage = categoryPageByKey.getOrDefault(categoryKey, 1) + 1
+        categoryLoadingByKey[categoryKey] = true
+        updateMoreButtonState()
+
+        scope.launch {
+            val moreArticles: List<NewsArticle> = newsFacadeService.loadNewsCategory(
+                categoryKey = categoryKey,
+                page = nextPage,
+                pageSize = pageSize
+            )
+            withContext(Dispatchers.Main) {
+                if (!isActive) return@withContext
+
+                categoryLoadingByKey[categoryKey] = false
+
+                val existingArticles = categoryArticles[categoryKey].orEmpty()
+                val pageUpdate = NewsPagingPolicy.merge(existingArticles, moreArticles, pageSize)
+
+                categoryArticles = categoryArticles.toMutableMap().apply {
+                    put(categoryKey, pageUpdate.mergedArticles)
+                }
+
+                if (selectedCategoryKey == categoryKey) {
+                    pageUpdate.appendedArticles.forEach(categoryListModel::addElement)
+                    if (categoryList.selectedIndex == -1 && !categoryListModel.isEmpty) {
+                        categoryList.selectedIndex = 0
+                    }
+                }
+
+                if (pageUpdate.shouldAdvancePage) {
+                    categoryPageByKey[categoryKey] = nextPage
+                }
+                categoryHasMoreByKey[categoryKey] = pageUpdate.hasMore
+
+                updateMoreButtonState()
+                updateStatusText()
+                revalidate()
+                repaint()
+            }
+        }
+    }
+
+    private fun configureMoreButton() {
+        moreButton.horizontalAlignment = SwingConstants.CENTER
+        moreButton.iconTextGap = 0
+        moreButton.isFocusPainted = false
+        moreButton.border = JBUI.Borders.empty(3, 12)
+        val normalSize = moreButton.preferredSize
+        moreButton.text = ""
+        moreButton.icon = moreButtonLoadingIcon
+        val loadingSize = moreButton.preferredSize
+        moreButton.text = localizationService.text("+ 더보기", "+ More")
+        moreButton.icon = null
+        val stableSize = Dimension(
+            maxOf(normalSize.width, loadingSize.width),
+            maxOf(normalSize.height, loadingSize.height)
+        )
+        moreButton.minimumSize = stableSize
+        moreButton.preferredSize = stableSize
+    }
+
+    private fun subscribeToSettingsUpdates() {
+        project.messageBus.connect(this).subscribe(SettingsUpdateListener.TOPIC, object : SettingsUpdateListener {
+            override fun onSettingsUpdated() {
+                refreshLocalizedTexts()
+            }
+        })
+    }
+
+    private fun subscribeToNewsRefreshRequests() {
+        project.messageBus.connect(this).subscribe(NewsRefreshListener.TOPIC, object : NewsRefreshListener {
+            override fun onNewsRefreshRequested() {
+                refreshNews()
+            }
+        })
+    }
+
+    private fun refreshLocalizedTexts() {
+        refreshButton.text = localizationService.text("새로고침", "Refresh")
+        openButton.text = localizationService.text("원문 열기", "Open article")
+        moreButton.text = localizationService.text("+ 더보기", "+ More")
+        rebuildCategories()
+        updateMoreButtonState()
+        updateStatusText()
+        renderDetail(currentDetailArticle)
     }
 
     private fun renderDetail(article: NewsArticle?) {

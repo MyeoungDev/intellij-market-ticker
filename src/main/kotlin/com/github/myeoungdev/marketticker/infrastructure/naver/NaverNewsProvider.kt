@@ -13,44 +13,49 @@ import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverForeignS
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverForeignStockOverview
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverNewsArticle
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverResearchArticle
+import java.time.Clock
+import java.time.Instant
 
 /**
  * Naver 기반 뉴스/종목 개요 provider 구현체입니다.
  */
 class NaverNewsProvider(
-    private val client: NaverClient = NaverClient()
+    private val client: NaverClient = NaverClient(),
+    private val clock: Clock = Clock.systemUTC()
 ) : NewsProvider {
 
-    override fun getHeadlineNews(): HeadlineNewsBundle {
+    fun getHeadlineNews(): HeadlineNewsBundle = getHeadlineNews(pageSize = 15)
+
+    override fun getHeadlineNews(pageSize: Int): HeadlineNewsBundle {
         val home = client.fetchNewsHome(
-            flashNewsSize = 4,
-            mainNewsSize = 6,
+            flashNewsSize = pageSize,
+            mainNewsSize = pageSize,
             rankingNewsSize = 10,
-            overseasNewsSize = 6,
+            overseasNewsSize = pageSize,
             focusSize = 6,
             moneyStorySize = 8,
             noticeSize = 8
         ) ?: return HeadlineNewsBundle()
 
-        val flashArticles = client.fetchNewsList(category = "FLASHNEWS", page = 1, pageSize = 15).map {
+        val flashArticles = client.fetchNewsList(category = "FLASHNEWS", page = 1, pageSize = pageSize).map {
             it.toAppNewsArticle(
                 badgeLabel = "Flash",
                 badgeColor = "red",
                 sectionLabel = "Flash"
             )
         }
-        val mainArticles = client.fetchNewsList(category = "MAINNEWS", page = 1, pageSize = 15).map {
+        val mainArticles = client.fetchNewsList(category = "MAINNEWS", page = 1, pageSize = pageSize).map {
             it.toAppNewsArticle(
                 badgeLabel = "Main",
                 badgeColor = "blue",
                 sectionLabel = "Main"
             )
         }
-        val worldArticles = client.fetchWorldNews(page = 1, pageSize = 15).map {
+        val worldArticles = client.fetchWorldNews(page = 1, pageSize = pageSize).map {
             it.toAppNewsArticle(
                 badgeLabel = "Global",
                 badgeColor = "gray",
-                sectionLabel = "World News"
+                sectionLabel = "해외 뉴스"
             )
         }
 
@@ -67,7 +72,7 @@ class NaverNewsProvider(
                 "MAINNEWS" to mainArticles,
                 "WORLDNEWS" to worldArticles
             ),
-            worldNews = home.overseasNews.map { it.toNewsArticle().toAppNewsArticle() }.take(6),
+            worldNews = worldArticles.take(6),
             moneyStories = home.moneyStory.map { it.toNewsArticle().toAppNewsArticle() }.take(6),
             focusSections = focusSections
         )
@@ -76,6 +81,18 @@ class NaverNewsProvider(
     override fun getMostViewedNews(limit: Int): List<NewsArticle> {
         return client.fetchNewsList(category = "RANKNEWS", page = 1, pageSize = limit.coerceIn(1, 30))
             .map { it.toAppNewsArticle() }
+    }
+
+    override fun getCategoryNews(categoryKey: String, page: Int, pageSize: Int): List<NewsArticle> {
+        return when (categoryKey.uppercase()) {
+            "FLASHNEWS" -> client.fetchNewsList(category = "FLASHNEWS", page = page, pageSize = pageSize)
+                .map { it.toAppNewsArticle(badgeLabel = "Flash", badgeColor = "red", sectionLabel = "Flash") }
+            "MAINNEWS" -> client.fetchNewsList(category = "MAINNEWS", page = page, pageSize = pageSize)
+                .map { it.toAppNewsArticle(badgeLabel = "Main", badgeColor = "blue", sectionLabel = "Main") }
+            "WORLDNEWS" -> client.fetchWorldNews(page = page, pageSize = pageSize)
+                .map { it.toAppNewsArticle(badgeLabel = "Global", badgeColor = "gray", sectionLabel = "해외 뉴스") }
+            else -> emptyList()
+        }
     }
 
     override fun getTickerNews(ticker: Ticker): TickerNewsBundle {
@@ -136,12 +153,14 @@ class NaverNewsProvider(
         sectionLabel: String? = this.sectionLabel
     ): NewsArticle {
         val resolvedUrl = articleUrl()
+        val normalizedTimestamp = NaverNewsTimestampNormalizer.normalize(datetime, clock)
         return NewsArticle(
             id = resolvedUrl ?: listOfNotNull(officeId, articleId, title).joinToString(":"),
             title = title,
             summary = subcontent.orEmpty(),
             source = officeHname.orEmpty(),
-            publishedAt = datetime.orEmpty(),
+            publishedAt = normalizedTimestamp.displayText,
+            publishedAtInstant = normalizedTimestamp.instant,
             url = resolvedUrl,
             thumbnailUrl = thumbUrl,
             sectionLabel = sectionLabel.orEmpty(),
@@ -158,7 +177,11 @@ class NaverNewsProvider(
     ): List<NewsArticle> {
         return (domesticArticles + foreignArticles)
             .distinctBy { article -> "${article.url}::${article.title}" }
-            .sortedByDescending { article -> article.publishedAt.filter(Char::isDigit) }
+            .sortedWith(
+                compareByDescending<NewsArticle> { article ->
+                    article.publishedAtInstant ?: Instant.EPOCH
+                }.thenByDescending { it.publishedAt }
+            )
             .take(limit)
     }
 

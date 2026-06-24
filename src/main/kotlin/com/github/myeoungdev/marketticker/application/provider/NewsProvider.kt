@@ -10,12 +10,13 @@ import com.github.myeoungdev.marketticker.domain.model.Ticker
  */
 interface NewsProvider {
 
-    fun getHeadlineNews(): HeadlineNewsBundle
+    fun getHeadlineNews(pageSize: Int = 15): HeadlineNewsBundle
 
     fun getMostViewedNews(limit: Int = 15): List<NewsArticle>
 
     fun getTickerNews(ticker: Ticker): TickerNewsBundle
 
+    fun getCategoryNews(categoryKey: String, page: Int = 1, pageSize: Int = 15): List<NewsArticle>
+
     fun searchNews(query: String, page: Int = 1, pageSize: Int = 7): List<NewsArticle>
 }
-
