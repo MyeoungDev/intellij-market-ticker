@@ -1,5 +1,7 @@
 package com.github.myeoungdev.marketticker.domain.model.news
 
+import java.time.Instant
+
 /**
  * 플러그인 내부에서 공통으로 사용하는 뉴스 도메인 모델입니다.
  */
@@ -9,6 +11,7 @@ data class NewsArticle(
     val summary: String = "",
     val source: String = "",
     val publishedAt: String = "",
+    val publishedAtInstant: Instant? = null,
     val url: String? = null,
     val thumbnailUrl: String? = null,
     val sectionLabel: String = "",

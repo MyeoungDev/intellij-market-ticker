@@ -1,6 +1,7 @@
 package com.github.myeoungdev.marketticker.ui.view
 
 import com.github.myeoungdev.marketticker.application.listener.SettingsUpdateListener
+import com.github.myeoungdev.marketticker.application.listener.NewsRefreshListener
 import com.github.myeoungdev.marketticker.application.service.AppSettingsService
 import com.github.myeoungdev.marketticker.application.service.LocalizationService
 import com.github.myeoungdev.marketticker.application.service.MarketDataService
@@ -47,6 +48,7 @@ class SettingsDialog(
         CurrencyType.CNY,
         CurrencyType.EUR
     ))
+    private val newsPageSizeCombo = JComboBox(AppSettingsService.NEWS_PAGE_SIZE_OPTIONS)
     private val marketPulseCheckBox = JCheckBox()
     private val marketSessionIndicatorCheckBox = JCheckBox()
     private val portfolioSummaryCheckBox = JCheckBox()
@@ -66,6 +68,7 @@ class SettingsDialog(
         languageCombo.selectedItem = settingsService.getUiLanguage()
         priceDisplayModeCombo.selectedItem = settingsService.getPriceDisplayMode()
         baseCurrencyCombo.selectedItem = settingsService.getBaseCurrency()
+        newsPageSizeCombo.selectedItem = settingsService.getNewsPageSize()
         marketPulseCheckBox.isSelected = settingsService.isMarketPulseVisible()
         marketSessionIndicatorCheckBox.isSelected = settingsService.isMarketSessionIndicatorVisible()
         portfolioSummaryCheckBox.isSelected = settingsService.isPortfolioSummaryVisible()
@@ -128,6 +131,10 @@ class SettingsDialog(
                 cell(baseCurrencyCombo).align(AlignX.FILL)
             }
 
+            row(localizationService.text("뉴스 페이지 크기", "News page size")) {
+                cell(newsPageSizeCombo).align(AlignX.FILL)
+            }
+
             row {
                 marketPulseCheckBox.text = localizationService.text("한 줄 지표 표시", "Show market pulse ticker")
                 cell(marketPulseCheckBox)
@@ -146,6 +153,12 @@ class SettingsDialog(
             row {
                 button(localizationService.text("지금 새로고침", "Refresh now")) {
                     marketDataService.forceRefresh()
+                }
+            }
+
+            row {
+                button(localizationService.text("저장 후 뉴스 새로고침", "Save and refresh news")) {
+                    saveAndRefreshNews()
                 }
             }
         }.apply {
@@ -168,6 +181,7 @@ class SettingsDialog(
         val priceDisplayMode = priceDisplayModeCombo.selectedItem as? AppSettingsService.PriceDisplayMode
             ?: AppSettingsService.PriceDisplayMode.MIXED
         val baseCurrency = baseCurrencyCombo.selectedItem as? CurrencyType ?: CurrencyType.KRW
+        val newsPageSize = newsPageSizeCombo.selectedItem as? Int ?: AppSettingsService.DEFAULT_NEWS_PAGE_SIZE
 
         settingsService.setAutomaticPollingEnabled(automaticPollingCheckBox.isSelected)
         settingsService.setRefreshMode(mode)
@@ -177,6 +191,7 @@ class SettingsDialog(
         settingsService.setUiLanguage(language)
         settingsService.setPriceDisplayMode(priceDisplayMode)
         settingsService.setBaseCurrency(baseCurrency)
+        settingsService.setNewsPageSize(newsPageSize)
         settingsService.setMarketPulseVisible(marketPulseCheckBox.isSelected)
         settingsService.setMarketSessionIndicatorVisible(marketSessionIndicatorCheckBox.isSelected)
         settingsService.setPortfolioSummaryVisible(portfolioSummaryCheckBox.isSelected)
@@ -185,6 +200,13 @@ class SettingsDialog(
         ApplicationManager.getApplication().messageBus
             .syncPublisher(SettingsUpdateListener.TOPIC)
             .onSettingsUpdated()
+    }
+
+    private fun saveAndRefreshNews() {
+        persistSettings()
+        ApplicationManager.getApplication().messageBus
+            .syncPublisher(NewsRefreshListener.TOPIC)
+            .onNewsRefreshRequested()
     }
 
     private fun updateIntervalControlAvailability() {

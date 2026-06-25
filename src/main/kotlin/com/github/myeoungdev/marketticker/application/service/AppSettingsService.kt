@@ -24,6 +24,7 @@ class AppSettingsService : PersistentStateComponent<AppSettingsService.State> {
         const val MAX_ACTIVE_INTERVAL_SEC: Long = 3600L
         const val DEFAULT_CLOSED_INTERVAL_SEC: Long = 300L
         const val MAX_CLOSED_INTERVAL_SEC: Long = 3600L
+        const val DEFAULT_NEWS_PAGE_SIZE: Int = 15
 
         val ACTIVE_INTERVAL_OPTIONS: Array<Long> = arrayOf(
             3L,
@@ -52,6 +53,7 @@ class AppSettingsService : PersistentStateComponent<AppSettingsService.State> {
             1800L,
             3600L
         )
+        val NEWS_PAGE_SIZE_OPTIONS: Array<Int> = arrayOf(10, 15, 20, 30)
 
         fun formatPollingInterval(seconds: Long): String {
             return when {
@@ -143,6 +145,7 @@ class AppSettingsService : PersistentStateComponent<AppSettingsService.State> {
         var priceDisplayMode: String = PriceDisplayMode.MIXED.name,
         var domesticTradeVenueMode: String = DomesticTradeVenueMode.MIXED.name,
         var baseCurrency: String = CurrencyType.KRW.code,
+        var newsPageSize: Int = DEFAULT_NEWS_PAGE_SIZE,
         var showMarketPulse: Boolean = true,
         var showMarketSessionIndicator: Boolean = true,
         var showChartTab: Boolean = true,
@@ -220,6 +223,18 @@ class AppSettingsService : PersistentStateComponent<AppSettingsService.State> {
      */
     fun setBaseCurrency(currency: CurrencyType) {
         settingsState.baseCurrency = if (currency == CurrencyType.UNKNOWN) CurrencyType.KRW.code else currency.code
+    }
+
+    /**
+     * 뉴스 탭과 기사 더보기의 기본 페이지 크기를 반환합니다.
+     */
+    fun getNewsPageSize(): Int = settingsState.newsPageSize.coerceIn(1, 50)
+
+    /**
+     * 뉴스 탭과 기사 더보기의 기본 페이지 크기를 저장합니다.
+     */
+    fun setNewsPageSize(value: Int) {
+        settingsState.newsPageSize = value.coerceIn(1, 50)
     }
 
     /**

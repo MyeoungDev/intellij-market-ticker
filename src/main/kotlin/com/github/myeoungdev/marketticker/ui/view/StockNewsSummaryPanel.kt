@@ -55,7 +55,7 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
             val meta = listOfNotNull(
                 article.badgeLabel.takeIf { it.isNotBlank() },
                 article.source.takeIf { it.isNotBlank() },
-                article.publishedAt.takeIf { it.isNotBlank() }?.let(::formatDate)
+                article.publishedAt.takeIf { it.isNotBlank() }
             ).joinToString(" · ")
             label.border = JBUI.Borders.empty(6, 6)
             label.text = """
@@ -139,16 +139,6 @@ class StockNewsSummaryPanel : JPanel(BorderLayout()), Disposable {
             list.selectedIndex = 0
         }
         statusLabel.text = localizationService.text(viewData.subtitle, viewData.subtitle)
-    }
-
-    private fun formatDate(raw: String): String {
-        return when {
-            raw.length >= 12 && raw.all(Char::isDigit) ->
-                "${raw.substring(0, 4)}-${raw.substring(4, 6)}-${raw.substring(6, 8)}"
-
-            raw.length >= 10 -> raw.substring(0, 10)
-            else -> raw
-        }
     }
 
     private fun escapeHtml(text: String): String {
