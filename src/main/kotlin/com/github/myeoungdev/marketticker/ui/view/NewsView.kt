@@ -8,6 +8,7 @@ import com.github.myeoungdev.marketticker.application.service.AppSettingsService
 import com.github.myeoungdev.marketticker.application.service.NewsFacadeService
 import com.github.myeoungdev.marketticker.domain.model.news.NewsArticle
 import com.intellij.ide.BrowserUtil
+import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.components.service
 import com.intellij.openapi.project.Project
@@ -413,8 +414,10 @@ class NewsView(
                 page = nextPage,
                 pageSize = pageSize
             )
-            withContext(Dispatchers.Main) {
-                if (!isActive) return@withContext
+            if (!isActive) return@launch
+
+            ApplicationManager.getApplication().invokeLater {
+                if (!isActive) return@invokeLater
 
                 categoryLoadingByKey[categoryKey] = false
 
