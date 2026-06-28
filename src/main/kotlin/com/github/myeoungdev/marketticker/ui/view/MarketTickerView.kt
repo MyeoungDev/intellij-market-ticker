@@ -367,6 +367,7 @@ class MarketTickerView(
         }
 
         val categoryOrder = listOf(
+            IndicatorCategory.SENTIMENT,
             IndicatorCategory.DOMESTIC_INDEX,
             IndicatorCategory.WORLD_INDEX,
             IndicatorCategory.EXCHANGE_RATE,
@@ -380,6 +381,7 @@ class MarketTickerView(
         }
         visibleCategories.forEachIndexed { index, category ->
             val title = when (category) {
+                IndicatorCategory.SENTIMENT -> localizationService.text("공포/탐욕", "Fear & Greed")
                 IndicatorCategory.DOMESTIC_INDEX -> localizationService.text("국내", "KR")
                 IndicatorCategory.WORLD_INDEX -> localizationService.text("해외", "US")
                 IndicatorCategory.EXCHANGE_RATE -> localizationService.text("환율", "FX")
@@ -391,12 +393,29 @@ class MarketTickerView(
             if (indicators.isNotEmpty()) {
                 chunks += MarketPulseTicker.Chunk("[$title] ", Color(140, 140, 140), true)
                 indicators.forEach { indicator ->
+                    val sentimentPresentation = if (indicator.category == IndicatorCategory.SENTIMENT) {
+                        presentSentimentIndicator(
+                            code = indicator.code,
+                            score = indicator.sentimentScore ?: indicator.currentPrice,
+                            label = indicator.sentimentLabel ?: indicator.displayHint,
+                            formatDecimal = localizationService::formatDecimal
+                        )
+                    } else {
+                        null
+                    }
                     val sign = if (indicator.changeRate > 0) "+" else ""
-                    val rateText = if (indicator.changeRate.isFinite()) {
+                    val rateText = if (sentimentPresentation != null) {
+                        sentimentPresentation.labelText
+                    } else if (indicator.changeRate.isFinite()) {
                         "${sign}${localizationService.formatPercentFixed(indicator.changeRate, 2)}"
                     } else localizationService.text("N/A", "N/A")
-                    val priceText = localizationService.formatDecimal(indicator.currentPrice, 2)
+                    val priceText = if (sentimentPresentation != null) {
+                        sentimentPresentation.scoreText
+                    } else {
+                        localizationService.formatDecimal(indicator.currentPrice, 2)
+                    }
                     val rateColor = when {
+                        sentimentPresentation != null -> sentimentPresentation.palette.accent
                         indicator.changeRate > 0 -> Color(217, 48, 37)
                         indicator.changeRate < 0 -> Color(26, 115, 232)
                         else -> Color(120, 120, 120)
@@ -431,10 +450,20 @@ class MarketTickerView(
     }
 
     private fun displayIndicatorName(indicator: MarketIndicator): String {
+        if (indicator.category == IndicatorCategory.SENTIMENT) {
+            return presentSentimentIndicator(
+                code = indicator.code,
+                score = indicator.sentimentScore ?: indicator.currentPrice,
+                label = indicator.sentimentLabel ?: indicator.displayHint,
+                formatDecimal = localizationService::formatDecimal
+            ).displayName
+        }
+
         return when (indicator.code.uppercase()) {
             ".INX", "SPX", "S&P500", "S&P 500" -> "S&P500"
             ".IXIC", "IXIC", "NASDAQ", "NASDAQ COMPOSITE" -> "NASDAQ"
             ".DJI", "DJI", "DJIA", "DOW JONES" -> "DOW"
+            ".SOX", "SOX", ".VIX", "VIX" -> indicator.code.uppercase().trimStart('.')
             else -> indicator.name
         }
     }

@@ -26,6 +26,7 @@ data class NaverMarketIndicatorItem(
     val symbolCode: String? = null,
     val reutersCode: String? = null,
     val stockName: String? = null,
+    val indexName: String? = null,
     val name: String? = null,
     val closePrice: String,
     val fluctuationsRatio: String,
@@ -37,7 +38,7 @@ data class NaverMarketIndicatorItem(
 
     fun toMarketIndicator(category: IndicatorCategory): MarketIndicator {
         val code = itemCode ?: symbolCode ?: reutersCode ?: "UNKNOWN"
-        val title = stockName ?: name ?: code
+        val title = stockName ?: indexName ?: name ?: code
         val close = closePrice.parseCommaToDouble()
         val ratio = parseChangeRate(close)
 

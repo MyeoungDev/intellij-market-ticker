@@ -5,8 +5,11 @@
 ## [Unreleased]
 
 ### Fixed
+- Normalized news timestamps across mixed news time formats and stabilized pagination behavior.
 
 ### Added
+- Added CNN Fear & Greed sentiment index support.
+- Added SOX and VIX world index support through the Naver world index API.
 
 ## [0.0.5] - 2026-06-18
 

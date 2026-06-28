@@ -10,13 +10,17 @@ data class MarketIndicator(
     val changeRate: Double,
     val marketStatus: MarketStatus,
     val category: IndicatorCategory,
-    val unit: String? = null
+    val unit: String? = null,
+    val sentimentScore: Double? = null,
+    val sentimentLabel: String? = null,
+    val displayHint: String? = null
 )
 
 /**
  * 시장 지표 카테고리입니다.
  */
 enum class IndicatorCategory {
+    SENTIMENT,
     DOMESTIC_INDEX,
     WORLD_INDEX,
     METAL,

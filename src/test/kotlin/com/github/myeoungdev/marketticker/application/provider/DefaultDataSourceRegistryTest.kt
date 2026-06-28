@@ -1,7 +1,6 @@
 package com.github.myeoungdev.marketticker.application.provider
 
 import com.github.myeoungdev.marketticker.infrastructure.finviz.FinvizCalendarProvider
-import com.github.myeoungdev.marketticker.infrastructure.naver.NaverMarketIndicatorProvider
 import com.github.myeoungdev.marketticker.infrastructure.naver.NaverNewsProvider
 import com.github.myeoungdev.marketticker.infrastructure.naver.NaverPriceProvider
 import com.github.myeoungdev.marketticker.infrastructure.naver.NaverResearchProvider
@@ -19,7 +18,7 @@ class DefaultDataSourceRegistryTest {
         assertThat(DefaultDataSourceRegistry.newsProvider()).isInstanceOf(NaverNewsProvider::class.java)
         assertThat(DefaultDataSourceRegistry.researchProvider()).isInstanceOf(NaverResearchProvider::class.java)
         assertThat(DefaultDataSourceRegistry.screenerProvider()).isInstanceOf(NaverScreenerProvider::class.java)
-        assertThat(DefaultDataSourceRegistry.marketIndicatorProvider()).isInstanceOf(NaverMarketIndicatorProvider::class.java)
+        assertThat(DefaultDataSourceRegistry.marketIndicatorProvider()).isInstanceOf(CompositeMarketIndicatorProvider::class.java)
         assertThat(DefaultDataSourceRegistry.calendarProvider()).isInstanceOf(FinvizCalendarProvider::class.java)
     }
 
