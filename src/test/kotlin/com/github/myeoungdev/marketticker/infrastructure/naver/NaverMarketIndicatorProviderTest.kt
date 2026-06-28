@@ -64,6 +64,10 @@ class NaverMarketIndicatorProviderTest {
 
         val energy = result.filter { it.category == IndicatorCategory.ENERGY }
         assertThat(energy.map { it.code }).containsExactly("CL", "NG", "HO", "RB")
+
+        val worldIndices = result.filter { it.category == IndicatorCategory.WORLD_INDEX }
+        assertThat(worldIndices.map { it.code }).containsExactly("DJI", "INX", "IXIC", "SOX", "VIX")
+        assertThat(worldIndices.first().name).isEqualTo("DOW")
     }
 
     @Test
@@ -79,7 +83,7 @@ class NaverMarketIndicatorProviderTest {
 
     private fun stubBaseIndicators() {
         stubIndicator("/domestic/index.*", NaverFixtures.JSON_DOMESTIC_INDEX_SUCCESS)
-        stubIndicator("/worldstock/index.*", NaverFixtures.JSON_DOMESTIC_INDEX_SUCCESS)
+        stubIndicator("/worldstock/index.*", worldIndicatorResponse())
         stubIndicator("/marketindex/metals/GCcv1.*", commodityResponse("GCcv1", "GC", "국제 금", "5,081.20", "-230.40", "-4.34", "USD/OZS"))
         stubIndicator("/marketindex/metals/SIcv1.*", commodityResponse("SIcv1", "SI", "은", "76.41", "0.91", "1.21", "USD/OZS"))
         stubIndicator("/marketindex/metals/HGcv1.*", commodityResponse("HGcv1", "HG", "구리(선물)", "6.0270", "-0.0545", "-0.90", "USD/LBS"))
@@ -99,8 +103,64 @@ class NaverMarketIndicatorProviderTest {
                         .withStatus(200)
                         .withHeader("Content-Type", "application/json")
                         .withBody(body)
-                )
+            )
         )
+    }
+
+    private fun worldIndicatorResponse(): String {
+        return """
+            {
+              "pollingInterval": 7000,
+              "datas": [
+                {
+                  "reutersCode": ".DJI",
+                  "symbolCode": "DJI",
+                  "indexName": "DOW",
+                  "closePrice": "43,821.39",
+                  "fluctuations": "120.10",
+                  "fluctuationsRatio": "0.27",
+                  "marketStatus": "OPEN"
+                },
+                {
+                  "reutersCode": ".INX",
+                  "symbolCode": "INX",
+                  "indexName": "S&P500",
+                  "closePrice": "6,102.12",
+                  "fluctuations": "-18.10",
+                  "fluctuationsRatio": "-0.30",
+                  "marketStatus": "OPEN"
+                },
+                {
+                  "reutersCode": ".IXIC",
+                  "symbolCode": "IXIC",
+                  "indexName": "NASDAQ",
+                  "closePrice": "20,045.33",
+                  "fluctuations": "98.44",
+                  "fluctuationsRatio": "0.49",
+                  "marketStatus": "OPEN"
+                },
+                {
+                  "reutersCode": ".SOX",
+                  "symbolCode": "SOX",
+                  "indexName": "필라델피아 반도체",
+                  "closePrice": "5,012.88",
+                  "fluctuations": "77.11",
+                  "fluctuationsRatio": "1.56",
+                  "marketStatus": "OPEN"
+                },
+                {
+                  "reutersCode": ".VIX",
+                  "symbolCode": "VIX",
+                  "indexName": "VIX",
+                  "closePrice": "14.11",
+                  "fluctuations": "-0.18",
+                  "fluctuationsRatio": "-1.26",
+                  "marketStatus": "OPEN"
+                }
+              ],
+              "time": "20260425185432"
+            }
+        """.trimIndent()
     }
 
     private fun stubExchangeRates(body: String, status: Int) {

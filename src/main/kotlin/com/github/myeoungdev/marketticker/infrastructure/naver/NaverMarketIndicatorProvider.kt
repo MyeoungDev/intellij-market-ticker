@@ -8,6 +8,7 @@ class NaverMarketIndicatorProvider(
     private val client: NaverClient = NaverClient()
 ) : MarketIndicatorProvider {
 
+    private val worldIndexCodes = listOf(".DJI", ".INX", ".IXIC", ".SOX", ".VIX")
     private val exchangeRateCodes = listOf("FX_USDKRW", "FX_JPYKRW", "FX_EURKRW", "FX_CNYKRW", "FX_HKDKRW")
     private val metalCodes = listOf(
         "GCcv1", // 국제 금
@@ -27,7 +28,7 @@ class NaverMarketIndicatorProvider(
         val domestic = client.fetchDomesticIndices(listOf("KOSPI", "KOSDAQ", "KPI200"))
             .datas.map { it.toMarketIndicator(IndicatorCategory.DOMESTIC_INDEX) }
 
-        val world = client.fetchWorldIndices(listOf(".DJI", ".INX", ".IXIC"))
+        val world = client.fetchWorldIndices(worldIndexCodes)
             .datas.map { it.toMarketIndicator(IndicatorCategory.WORLD_INDEX) }
 
         val exchangeRatesByCode = client.fetchExchangeRates()

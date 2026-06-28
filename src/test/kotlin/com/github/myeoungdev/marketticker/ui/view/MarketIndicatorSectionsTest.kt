@@ -9,9 +9,10 @@ import org.junit.jupiter.api.Test
 class MarketIndicatorSectionsTest {
 
     @Test
-    fun `지표는 환율부터 주요 지표 순서로 섹션화한다`() {
+    fun `지표는 감성 지수부터 주요 지표 순서로 섹션화한다`() {
         val sections = groupMarketIndicators(
             listOf(
+                indicator("FNG", IndicatorCategory.SENTIMENT),
                 indicator("GC", IndicatorCategory.METAL),
                 indicator("USD", IndicatorCategory.EXCHANGE_RATE),
                 indicator("KOSPI", IndicatorCategory.DOMESTIC_INDEX),
@@ -20,6 +21,7 @@ class MarketIndicatorSectionsTest {
         )
 
         assertThat(sections.map { it.category }).containsExactly(
+            IndicatorCategory.SENTIMENT,
             IndicatorCategory.EXCHANGE_RATE,
             IndicatorCategory.DOMESTIC_INDEX,
             IndicatorCategory.METAL,

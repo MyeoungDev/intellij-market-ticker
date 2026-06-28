@@ -185,25 +185,38 @@ class MarketIndicatorsView : JPanel(BorderLayout()), Disposable {
     }
 
     private fun createIndicatorCard(indicator: MarketIndicator): JPanel {
+        val isSentiment = indicator.category == IndicatorCategory.SENTIMENT
+        val sentimentPresentation = if (isSentiment) {
+            presentSentimentIndicator(
+                code = indicator.code,
+                score = indicator.sentimentScore ?: indicator.currentPrice,
+                label = indicator.sentimentLabel ?: indicator.displayHint,
+                formatDecimal = localizationService::formatDecimal
+            )
+        } else {
+            null
+        }
         val card = JPanel(BorderLayout(0, 8)).apply {
             isOpaque = true
-            background = rowBackground(indicator.changeRate)
+            background = sentimentPresentation?.palette?.background ?: rowBackground(indicator.changeRate)
             border = BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(borderColor(indicator.changeRate)),
+                BorderFactory.createLineBorder(sentimentPresentation?.palette?.border ?: borderColor(indicator.changeRate)),
                 JBUI.Borders.empty(7, 10)
             )
-            preferredSize = Dimension(144, 58)
+            preferredSize = if (isSentiment) Dimension(144, 68) else Dimension(144, 58)
         }
 
         val titleLabel = JLabel(displayIndicatorName(indicator)).apply {
             font = font.deriveFont(Font.BOLD, font.size2D)
         }
-        val priceLabel = JLabel(formatPrice(indicator)).apply {
+        val priceLabel = JLabel(
+            sentimentPresentation?.scoreText ?: formatPrice(indicator)
+        ).apply {
             font = font.deriveFont(Font.BOLD, font.size2D + 0.5f)
-            foreground = priceColor(indicator.changeRate)
+            foreground = sentimentPresentation?.palette?.accent ?: priceColor(indicator.changeRate)
         }
-        val changeLabel = JLabel(formatChange(indicator.changeRate)).apply {
-            foreground = priceColor(indicator.changeRate)
+        val changeLabel = JLabel(formatChange(indicator)).apply {
+            foreground = sentimentPresentation?.palette?.accent ?: priceColor(indicator.changeRate)
             font = font.deriveFont(font.size2D - 1f)
         }
 
@@ -226,6 +239,7 @@ class MarketIndicatorsView : JPanel(BorderLayout()), Disposable {
 
     private fun sectionTitle(category: IndicatorCategory): String {
         return when (category) {
+            IndicatorCategory.SENTIMENT -> localizationService.text("공포/탐욕", "Fear & Greed")
             IndicatorCategory.EXCHANGE_RATE -> localizationService.text("환율", "FX")
             IndicatorCategory.DOMESTIC_INDEX -> localizationService.text("국내 지수", "Domestic")
             IndicatorCategory.WORLD_INDEX -> localizationService.text("해외 지수", "Global")
@@ -235,10 +249,20 @@ class MarketIndicatorsView : JPanel(BorderLayout()), Disposable {
     }
 
     private fun displayIndicatorName(indicator: MarketIndicator): String {
+        if (indicator.category == IndicatorCategory.SENTIMENT) {
+            return presentSentimentIndicator(
+                code = indicator.code,
+                score = indicator.sentimentScore ?: indicator.currentPrice,
+                label = indicator.sentimentLabel ?: indicator.displayHint,
+                formatDecimal = localizationService::formatDecimal
+            ).displayName
+        }
+
         return when (indicator.code.uppercase()) {
             ".INX", "SPX", "S&P500", "S&P 500" -> "S&P500"
             ".IXIC", "IXIC", "NASDAQ", "NASDAQ COMPOSITE" -> "NASDAQ"
             ".DJI", "DJI", "DJIA", "DOW JONES" -> "DOW"
+            ".SOX", "SOX", ".VIX", "VIX" -> indicator.code.uppercase().trimStart('.')
             else -> indicator.name
         }
     }
@@ -252,7 +276,14 @@ class MarketIndicatorsView : JPanel(BorderLayout()), Disposable {
         )
     }
 
-    private fun formatChange(changeRate: Double): String {
+    private fun formatChange(indicator: MarketIndicator): String {
+        if (indicator.category == IndicatorCategory.SENTIMENT) {
+            return indicator.sentimentLabel?.takeIf { it.isNotBlank() }
+                ?: indicator.displayHint?.takeIf { it.isNotBlank() }
+                ?: localizationService.text("N/A", "N/A")
+        }
+
+        val changeRate = indicator.changeRate
         val prefix = when {
             changeRate > 0 -> "+"
             changeRate < 0 -> "-"

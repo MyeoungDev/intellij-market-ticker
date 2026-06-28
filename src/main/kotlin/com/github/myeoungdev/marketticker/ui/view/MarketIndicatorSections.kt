@@ -10,6 +10,7 @@ internal data class MarketIndicatorSection(
 
 internal fun groupMarketIndicators(indicators: List<MarketIndicator>): List<MarketIndicatorSection> {
     val orderedCategories = listOf(
+        IndicatorCategory.SENTIMENT,
         IndicatorCategory.EXCHANGE_RATE,
         IndicatorCategory.DOMESTIC_INDEX,
         IndicatorCategory.WORLD_INDEX,
