@@ -5,6 +5,7 @@ import com.github.myeoungdev.marketticker.domain.model.MarketIndicator
 import com.github.myeoungdev.marketticker.domain.model.MarketStatus
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.Test
+import java.time.Duration
 import java.util.concurrent.CountDownLatch
 import java.util.concurrent.Executors
 import java.util.concurrent.TimeUnit
@@ -58,6 +59,39 @@ class CompositeMarketIndicatorProviderTest {
         val result = provider.getIndicators()
 
         assertThat(result.map { it.code }).containsExactly("B")
+    }
+
+    @Test
+    fun `느린 provider 는 timeout 으로 복구된다`() {
+        val started = CountDownLatch(1)
+        val executor = Executors.newSingleThreadExecutor()
+        val provider = CompositeMarketIndicatorProvider(
+            listOf(
+                object : MarketIndicatorProvider {
+                    override fun getIndicators(): List<MarketIndicator> {
+                        started.countDown()
+                        Thread.sleep(1_000)
+                        return listOf(indicator("SLOW"))
+                    }
+                },
+                object : MarketIndicatorProvider {
+                    override fun getIndicators(): List<MarketIndicator> {
+                        return listOf(indicator("FAST"))
+                    }
+                }
+            ),
+            providerTimeout = Duration.ofMillis(100)
+        )
+
+        try {
+            val future = executor.submit<List<MarketIndicator>> { provider.getIndicators() }
+            assertThat(started.await(1, TimeUnit.SECONDS)).isTrue()
+
+            val result = future.get(1, TimeUnit.SECONDS)
+            assertThat(result.map { it.code }).containsExactly("FAST")
+        } finally {
+            executor.shutdownNow()
+        }
     }
 
     private fun blockingProvider(

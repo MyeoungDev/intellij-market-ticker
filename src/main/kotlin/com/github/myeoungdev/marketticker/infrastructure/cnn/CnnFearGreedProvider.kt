@@ -47,6 +47,9 @@ class CnnFearGreedProvider(
 
             val payload: CnnFearGreedResponse = objectMapper.readValue(response.body())
             payload.fearAndGreed?.toMarketIndicator()?.let(::listOf) ?: emptyList()
+        } catch (e: InterruptedException) {
+            Thread.currentThread().interrupt()
+            emptyList()
         } catch (e: Exception) {
             logger.error(e) { "Failed to fetch CNN fear & greed index" }
             emptyList()

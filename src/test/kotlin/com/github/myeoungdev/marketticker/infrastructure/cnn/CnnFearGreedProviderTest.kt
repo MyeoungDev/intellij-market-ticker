@@ -11,7 +11,20 @@ import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.AfterEach
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
+import java.net.Authenticator
+import java.net.CookieHandler
+import java.net.ProxySelector
+import java.net.http.HttpHeaders
+import java.net.http.HttpRequest
+import java.net.http.HttpResponse
+import java.net.http.HttpClient.Version
 import java.net.http.HttpClient
+import java.time.Duration
+import java.util.Optional
+import java.util.concurrent.CompletableFuture
+import java.util.concurrent.Executor
+import javax.net.ssl.SSLContext
+import javax.net.ssl.SSLParameters
 
 class CnnFearGreedProviderTest {
 
@@ -117,5 +130,53 @@ class CnnFearGreedProviderTest {
         )
 
         assertThat(provider.getIndicators()).isEmpty()
+    }
+
+    @Test
+    fun `인터럽트면 플래그를 복구하고 빈 목록을 반환한다`() {
+        val interruptedProvider = CnnFearGreedProvider(client = interruptedHttpClient())
+
+        try {
+            assertThat(interruptedProvider.getIndicators()).isEmpty()
+            assertThat(Thread.currentThread().isInterrupted()).isTrue()
+        } finally {
+            Thread.interrupted()
+        }
+    }
+
+    private fun interruptedHttpClient(): HttpClient {
+        return object : HttpClient() {
+            override fun <T : Any?> send(
+                request: HttpRequest,
+                responseBodyHandler: HttpResponse.BodyHandler<T>
+            ): HttpResponse<T> {
+                throw InterruptedException("interrupted")
+            }
+
+            override fun <T : Any?> sendAsync(
+                request: HttpRequest,
+                responseBodyHandler: HttpResponse.BodyHandler<T>
+            ): CompletableFuture<HttpResponse<T>> {
+                throw UnsupportedOperationException()
+            }
+
+            override fun <T : Any?> sendAsync(
+                request: HttpRequest,
+                responseBodyHandler: HttpResponse.BodyHandler<T>,
+                pushPromiseHandler: HttpResponse.PushPromiseHandler<T>?
+            ): CompletableFuture<HttpResponse<T>> {
+                throw UnsupportedOperationException()
+            }
+
+            override fun cookieHandler(): Optional<CookieHandler> = Optional.empty()
+            override fun connectTimeout(): Optional<Duration> = Optional.empty()
+            override fun followRedirects(): HttpClient.Redirect = HttpClient.Redirect.NEVER
+            override fun proxy(): Optional<ProxySelector> = Optional.empty()
+            override fun authenticator(): Optional<Authenticator> = Optional.empty()
+            override fun version(): Version = Version.HTTP_1_1
+            override fun sslContext(): SSLContext = SSLContext.getDefault()
+            override fun sslParameters(): SSLParameters = SSLParameters()
+            override fun executor(): Optional<Executor> = Optional.empty()
+        }
     }
 }

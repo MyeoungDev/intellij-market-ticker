@@ -278,7 +278,9 @@ class MarketIndicatorsView : JPanel(BorderLayout()), Disposable {
 
     private fun formatChange(indicator: MarketIndicator): String {
         if (indicator.category == IndicatorCategory.SENTIMENT) {
-            return indicator.sentimentLabel ?: indicator.displayHint ?: localizationService.text("N/A", "N/A")
+            return indicator.sentimentLabel?.takeIf { it.isNotBlank() }
+                ?: indicator.displayHint?.takeIf { it.isNotBlank() }
+                ?: localizationService.text("N/A", "N/A")
         }
 
         val changeRate = indicator.changeRate
