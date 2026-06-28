@@ -5,6 +5,12 @@
 ## [Unreleased]
 
 ### Fixed
+
+### Added
+
+## [1.0.0] - 2026-06-28
+
+### Fixed
 - Normalized news timestamps across mixed news time formats and stabilized pagination behavior.
 
 ### Added
