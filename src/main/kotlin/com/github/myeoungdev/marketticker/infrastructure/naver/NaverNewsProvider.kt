@@ -2,7 +2,9 @@ package com.github.myeoungdev.marketticker.infrastructure.naver
 
 import com.github.myeoungdev.marketticker.domain.model.news.HeadlineNewsBundle
 import com.github.myeoungdev.marketticker.domain.model.news.NewsArticle
-import com.github.myeoungdev.marketticker.domain.model.news.NewsSection
+import com.github.myeoungdev.marketticker.domain.model.news.NewsCategoryLoadState
+import com.github.myeoungdev.marketticker.domain.model.news.NewsCategoryPage
+import com.github.myeoungdev.marketticker.domain.model.news.NewsLoadStatus
 import com.github.myeoungdev.marketticker.domain.model.news.TickerNewsBundle
 import com.github.myeoungdev.marketticker.domain.model.news.TickerOverviewCard
 import com.github.myeoungdev.marketticker.application.provider.NewsProvider
@@ -12,7 +14,9 @@ import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverDomestic
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverForeignStockBasic
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverForeignStockOverview
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverNewsArticle
-import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverResearchArticle
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverNewsFocusResponse
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverNoticePage
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverMoneyStoryResponse
 import java.time.Clock
 import java.time.Instant
 
@@ -27,72 +31,98 @@ class NaverNewsProvider(
     fun getHeadlineNews(): HeadlineNewsBundle = getHeadlineNews(pageSize = 15)
 
     override fun getHeadlineNews(pageSize: Int): HeadlineNewsBundle {
-        val home = client.fetchNewsHome(
-            flashNewsSize = pageSize,
-            mainNewsSize = pageSize,
-            rankingNewsSize = 10,
-            overseasNewsSize = pageSize,
-            focusSize = 6,
-            moneyStorySize = 8,
-            noticeSize = 8
-        ) ?: return HeadlineNewsBundle()
-
-        val flashArticles = client.fetchNewsList(category = "FLASHNEWS", page = 1, pageSize = pageSize).map {
-            it.toAppNewsArticle(
-                badgeLabel = "Flash",
+        val flash = loadCategoryPage("FLASHNEWS", page = 1, pageSize = pageSize)
+        val main = loadCategoryPage("MAINNEWS", page = 1, pageSize = pageSize)
+        val world = loadCategoryPage("WORLDNEWS", page = 1, pageSize = pageSize)
+        val focusSpecs = listOf(
+            401 to "시장전망",
+            402 to "기업분석",
+            403 to "글로벌시장",
+            404 to "채권/선물",
+            406 to "공시메모",
+            429 to "환율"
+        )
+        val focusLoads = focusSpecs.map { (sid, label) ->
+            val result = runCatching { client.fetchNewsFocusResult(sid = sid, page = 1, pageSize = 5) }
+            val response = result.getOrDefault(NaverNewsFocusResponse())
+            val state = when {
+                result.isFailure -> NewsCategoryLoadState(NewsLoadStatus.FAILED)
+                response.articles.isEmpty() -> NewsCategoryLoadState(NewsLoadStatus.EMPTY)
+                else -> NewsCategoryLoadState(NewsLoadStatus.SUCCESS)
+            }
+            Triple(sid, label, response to state)
+        }
+        val focusSections = focusLoads.mapNotNull { (sid, label, loaded) ->
+            val (response, _) = loaded
+            response.articles.takeIf { it.isNotEmpty() }?.let { articles ->
+                com.github.myeoungdev.marketticker.domain.model.news.NewsSection(
+                    title = label,
+                    key = sid.toString(),
+                    articles = articles.map {
+                        it.toNewsArticle(label).toAppNewsArticle(
+                            badgeLabel = label,
+                            badgeColor = "gray",
+                            sectionLabel = label
+                        )
+                    }
+                )
+            }
+        }
+        val moneyResponse = runCatching { client.fetchMoneyStory(mainCategoryIdList = 1, size = 20) }
+            .getOrDefault(NaverMoneyStoryResponse())
+        val moneyStories = moneyResponse.moneyContentList.map {
+            it.toNewsArticle().toAppNewsArticle(
+                badgeLabel = "머니스토리",
+                badgeColor = "green",
+                sectionLabel = "머니스토리"
+            )
+        }
+        val noticeResponse = runCatching { client.fetchNoticePage(page = 1, pageSize = 10) }
+            .getOrDefault(NaverNoticePage())
+        val notices = noticeResponse.content.map {
+            it.toNewsArticle().toAppNewsArticle(
+                badgeLabel = it.category ?: "공지",
                 badgeColor = "red",
-                sectionLabel = "Flash"
-            )
-        }
-        val mainArticles = client.fetchNewsList(category = "MAINNEWS", page = 1, pageSize = pageSize).map {
-            it.toAppNewsArticle(
-                badgeLabel = "Main",
-                badgeColor = "blue",
-                sectionLabel = "Main"
-            )
-        }
-        val worldArticles = client.fetchWorldNews(page = 1, pageSize = pageSize).map {
-            it.toAppNewsArticle(
-                badgeLabel = "Global",
-                badgeColor = "gray",
-                sectionLabel = "해외 뉴스"
-            )
-        }
-
-        val focusSections = home.newsFocus.map { section ->
-            NewsSection(
-                title = section.category,
-                articles = section.news.map { it.toNewsArticle(section.category).toAppNewsArticle() }
+                sectionLabel = "공지"
             )
         }
 
         return HeadlineNewsBundle(
             headlines = linkedMapOf(
-                "FLASHNEWS" to flashArticles,
-                "MAINNEWS" to mainArticles,
-                "WORLDNEWS" to worldArticles
+                "FLASHNEWS" to flash.articles,
+                "MAINNEWS" to main.articles,
+                "WORLDNEWS" to world.articles
             ),
-            worldNews = worldArticles.take(6),
-            moneyStories = home.moneyStory.map { it.toNewsArticle().toAppNewsArticle() }.take(6),
-            focusSections = focusSections
+            worldNews = world.articles.take(6),
+            moneyStories = moneyStories,
+            focusSections = focusSections,
+            notices = notices,
+            categoryStates = linkedMapOf(
+                "FLASHNEWS" to flash.state,
+                "MAINNEWS" to main.state,
+                "WORLDNEWS" to world.state
+            ).apply {
+                focusLoads.forEach { (sid, _, loaded) -> put("FOCUS_$sid", loaded.second) }
+                put("MONEY", NewsCategoryLoadState(if (moneyStories.isEmpty()) NewsLoadStatus.EMPTY else NewsLoadStatus.SUCCESS))
+                put("NOTICE", NewsCategoryLoadState(if (notices.isEmpty()) NewsLoadStatus.EMPTY else NewsLoadStatus.SUCCESS))
+            }
         )
     }
 
     override fun getMostViewedNews(limit: Int): List<NewsArticle> {
-        return client.fetchNewsList(category = "RANKNEWS", page = 1, pageSize = limit.coerceIn(1, 30))
-            .map { it.toAppNewsArticle() }
+        return getMostViewedNewsPage(limit).articles
+    }
+
+    override fun getMostViewedNewsPage(limit: Int): NewsCategoryPage {
+        return loadCategoryPage("RANKNEWS", page = 1, pageSize = limit.coerceIn(1, 30))
     }
 
     override fun getCategoryNews(categoryKey: String, page: Int, pageSize: Int): List<NewsArticle> {
-        return when (categoryKey.uppercase()) {
-            "FLASHNEWS" -> client.fetchNewsList(category = "FLASHNEWS", page = page, pageSize = pageSize)
-                .map { it.toAppNewsArticle(badgeLabel = "Flash", badgeColor = "red", sectionLabel = "Flash") }
-            "MAINNEWS" -> client.fetchNewsList(category = "MAINNEWS", page = page, pageSize = pageSize)
-                .map { it.toAppNewsArticle(badgeLabel = "Main", badgeColor = "blue", sectionLabel = "Main") }
-            "WORLDNEWS" -> client.fetchWorldNews(page = page, pageSize = pageSize)
-                .map { it.toAppNewsArticle(badgeLabel = "Global", badgeColor = "gray", sectionLabel = "해외 뉴스") }
-            else -> emptyList()
-        }
+        return getCategoryNewsPage(categoryKey, page, pageSize).articles
+    }
+
+    override fun getCategoryNewsPage(categoryKey: String, page: Int, pageSize: Int): NewsCategoryPage {
+        return loadCategoryPage(categoryKey, page, pageSize)
     }
 
     override fun getTickerNews(ticker: Ticker): TickerNewsBundle {
@@ -103,11 +133,6 @@ class NaverNewsProvider(
         }
         val basic = if (!ticker.marketType.isKoreanMarket() && !ticker.marketType.isCryptoMarket()) {
             client.fetchForeignStockBasic(ticker.tradingSymbol)
-        } else {
-            null
-        }
-        val research = if (ticker.marketType.isKoreanMarket()) {
-            client.fetchStockResearch(ticker.symbol, size = 1).firstOrNull()
         } else {
             null
         }
@@ -138,7 +163,7 @@ class NaverNewsProvider(
         }
 
         return TickerNewsBundle(
-            overviewCard = buildOverviewCard(ticker, overview, basic, coinOverview, domesticDetail, research),
+            overviewCard = buildOverviewCard(ticker, overview, basic, coinOverview, domesticDetail),
             articles = articles
         )
     }
@@ -185,6 +210,43 @@ class NaverNewsProvider(
             .take(limit)
     }
 
+    private fun loadCategoryPage(categoryKey: String, page: Int, pageSize: Int): NewsCategoryPage {
+        val normalizedKey = categoryKey.uppercase()
+        val result = when (normalizedKey) {
+            "FLASHNEWS", "MAINNEWS", "RANKNEWS" -> client.fetchNewsListResult(
+                category = normalizedKey,
+                page = page,
+                pageSize = pageSize
+            )
+            "WORLDNEWS" -> client.fetchWorldNewsResult(page = page, pageSize = pageSize)
+            else -> return NewsCategoryPage()
+        }
+
+        return NewsCategoryPage(
+            articles = result.articles.map {
+                when (normalizedKey) {
+                    "FLASHNEWS" -> it.toAppNewsArticle(
+                        badgeLabel = "Flash",
+                        badgeColor = "red",
+                        sectionLabel = "Flash"
+                    )
+                    "MAINNEWS" -> it.toAppNewsArticle(
+                        badgeLabel = "Main",
+                        badgeColor = "blue",
+                        sectionLabel = "Main"
+                    )
+                    "WORLDNEWS" -> it.toAppNewsArticle(
+                        badgeLabel = "Global",
+                        badgeColor = "gray",
+                        sectionLabel = "해외 뉴스"
+                    )
+                    else -> it.toAppNewsArticle()
+                }
+            },
+            state = NewsCategoryLoadState(result.status, result.message)
+        )
+    }
+
     private fun buildCryptoNewsQuery(
         ticker: Ticker,
         coinOverview: NaverCoinOverview?
@@ -209,15 +271,14 @@ class NaverNewsProvider(
         overview: NaverForeignStockOverview?,
         basic: NaverForeignStockBasic?,
         coinOverview: NaverCoinOverview?,
-        domesticDetail: NaverDomesticStockDetail?,
-        research: NaverResearchArticle?
+        domesticDetail: NaverDomesticStockDetail?
     ): TickerOverviewCard? {
         if (ticker.marketType.isCryptoMarket()) {
             return buildCryptoOverviewCard(ticker, coinOverview)
         }
 
         if (ticker.marketType.isKoreanMarket()) {
-            return buildDomesticOverviewCard(ticker, domesticDetail, research)
+            return buildDomesticOverviewCard(ticker, domesticDetail)
         }
 
         if (overview == null && basic == null) return null
@@ -309,8 +370,7 @@ class NaverNewsProvider(
 
     private fun buildDomesticOverviewCard(
         ticker: Ticker,
-        domesticDetail: NaverDomesticStockDetail?,
-        research: NaverResearchArticle?
+        domesticDetail: NaverDomesticStockDetail?
     ): TickerOverviewCard? {
         domesticDetail?.let { detail ->
             return TickerOverviewCard(
@@ -339,7 +399,7 @@ class NaverNewsProvider(
             )
         }
 
-        val article = research ?: return TickerOverviewCard(
+        return TickerOverviewCard(
             title = ticker.name,
             metaPrimary = listOfNotNull(ticker.nationName, ticker.marketType.name).joinToString(" · "),
             metaSecondary = "",
@@ -347,24 +407,6 @@ class NaverNewsProvider(
             secondaryMetrics = "",
             summary = "국내 종목 개요 정보가 제한되어 있습니다.",
             siteUrl = null
-        )
-
-        return TickerOverviewCard(
-            title = ticker.name,
-            metaPrimary = listOfNotNull(ticker.nationName, ticker.marketType.name).joinToString(" · "),
-            metaSecondary = listOfNotNull(
-                article.brokerName.takeIf { it.isNotBlank() },
-                article.writeDate.takeIf { it.isNotBlank() }
-            ).joinToString(" · "),
-            primaryMetrics = listOfNotNull(
-                article.opinion?.takeIf { it.isNotBlank() }?.let { "의견 $it" },
-                article.goalPrice?.takeIf { it.isNotBlank() }?.let { "목표가 $it" }
-            ).joinToString(" · "),
-            secondaryMetrics = listOfNotNull(
-                article.prevGoalPrice?.takeIf { it.isNotBlank() }?.let { "이전 $it" }
-            ).joinToString(" · "),
-            summary = clipSummary(plainText(article.content)),
-            siteUrl = article.endUrl.takeIf { it.isNotBlank() }
         )
     }
 

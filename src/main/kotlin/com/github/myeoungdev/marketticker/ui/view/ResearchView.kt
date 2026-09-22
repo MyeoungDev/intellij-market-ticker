@@ -7,6 +7,7 @@ import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.domain.model.research.ResearchArticle
 import com.github.myeoungdev.marketticker.domain.model.research.ResearchCategory
 import com.github.myeoungdev.marketticker.domain.model.research.ResearchRankingType
+import com.github.myeoungdev.marketticker.application.provider.ResearchLoadStatus
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.Disposable
 import com.intellij.openapi.application.ApplicationManager
@@ -301,11 +302,47 @@ class ResearchView(
         setLoadingState()
 
         scope.launch {
-            val homeData = researchFacadeService.loadResearchHome(forceRefresh = forceRefresh)
-            withContext(Dispatchers.Main) {
-                applyHomeData(homeData)
-            }
+            runCatching { researchFacadeService.loadResearchHome(forceRefresh = forceRefresh) }
+                .onSuccess { homeData ->
+                    withContext(Dispatchers.Main) {
+                        applyHomeData(homeData)
+                    }
+                }
+                .onFailure { error ->
+                    withContext(Dispatchers.Main) {
+                        latestData = emptyMap()
+                        rankingData = emptyList()
+                        updateCoreList()
+                        updateRankingList()
+                        statusLabel.text = localizationService.text(
+                            "리서치를 불러오지 못했습니다. 다시 시도하세요.",
+                            "Failed to load research. Try again."
+                        )
+                    }
+                }
+
         }
+    }
+
+    private fun buildHomeStatus(homeData: ResearchHomeViewData): String {
+        val latestStatus = when (homeData.latestStatus) {
+            ResearchLoadStatus.SUCCESS -> ""
+            ResearchLoadStatus.EMPTY -> localizationService.text("핵심 없음", "Core empty")
+            ResearchLoadStatus.FAILED -> localizationService.text("핵심 조회 실패", "Core failed")
+        }
+        val rankingStatus = when (homeData.rankingStatus) {
+            ResearchLoadStatus.SUCCESS -> ""
+            ResearchLoadStatus.EMPTY -> localizationService.text("랭킹 없음", "Ranking empty")
+            ResearchLoadStatus.FAILED -> localizationService.text("랭킹 조회 실패", "Ranking failed")
+        }
+        return listOfNotNull(
+            localizationService.text(
+                "핵심 ${coreModel.size}건 · 랭킹 ${rankingModel.size}건 · 국내 종목 ${stockModel.size}건",
+                "Core ${coreModel.size} · Ranking ${rankingModel.size} · Domestic stock ${stockModel.size}"
+            ),
+            latestStatus.takeIf { it.isNotBlank() },
+            rankingStatus.takeIf { it.isNotBlank() }
+        ).joinToString(" · ")
     }
 
     private fun applyHomeData(homeData: ResearchHomeViewData) {
@@ -318,10 +355,7 @@ class ResearchView(
         updateRankingList()
         updateStockList()
 
-        statusLabel.text = localizationService.text(
-            "핵심 ${coreModel.size}건 · 랭킹 ${rankingModel.size}건 · 국내 종목 ${stockModel.size}건",
-            "Core ${coreModel.size} · Ranking ${rankingModel.size} · Domestic stock ${stockModel.size}"
-        )
+        statusLabel.text = buildHomeStatus(homeData)
 
         if (currentSource() == SourceTab.RANKING) {
             refreshRankingResearch(forceRefresh = false)
@@ -432,6 +466,24 @@ class ResearchView(
 
                 val resolved = result.resolvedTicker
                 val stockResearch = result.articles
+                if (result.loadStatus == ResearchLoadStatus.FAILED) {
+                    stockData = listOf(
+                        ResearchArticle(
+                            title = localizationService.text(
+                                "리서치를 불러오지 못했습니다. 다시 시도하세요.",
+                                "Failed to load research. Try again."
+                            ),
+                            itemCode = resolved.symbol,
+                            itemName = resolved.name
+                        )
+                    )
+                    updateStockList()
+                    statusLabel.text = localizationService.text(
+                        "${resolved.name} 리서치 조회 실패",
+                        "${resolved.name} research load failed"
+                    )
+                    return@withContext
+                }
                 stockData = stockResearch.ifEmpty {
                     listOf(
                         ResearchArticle(

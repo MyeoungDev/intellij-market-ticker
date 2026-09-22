@@ -31,4 +31,16 @@ class MarketIndicatorPriceFormatterTest {
 
         assertThat(result).isEqualTo("1477 USD")
     }
+
+    @Test
+    fun `국채 수익률은 퍼센트로 표시한다`() {
+        val result = formatIndicatorPrice(
+            value = 3.8,
+            unit = "%",
+            formatDecimal = { value, _ -> value.toString() },
+            formatAmount = { _, _, _ -> error("should not be called") }
+        )
+
+        assertThat(result).isEqualTo("3.8%")
+    }
 }

@@ -9,7 +9,9 @@ internal fun formatIndicatorPrice(
     formatAmount: (Double, CurrencyType?, Int) -> String
 ): String {
     val normalizedUnit = unit?.trim().orEmpty()
-    return if (normalizedUnit.contains('/')) {
+    return if (normalizedUnit == "%") {
+        "${formatDecimal(value, 2)}%"
+    } else if (normalizedUnit.contains('/')) {
         "${formatDecimal(value, 2)} $normalizedUnit"
     } else {
         formatAmount(value, CurrencyType.of(normalizedUnit), 2)

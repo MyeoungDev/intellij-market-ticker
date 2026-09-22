@@ -4,6 +4,7 @@ import com.github.myeoungdev.marketticker.domain.model.news.HeadlineNewsBundle
 import com.github.myeoungdev.marketticker.domain.model.news.NewsArticle
 import com.github.myeoungdev.marketticker.domain.model.news.TickerNewsBundle
 import com.github.myeoungdev.marketticker.domain.model.news.TickerOverviewCard
+import com.github.myeoungdev.marketticker.domain.model.news.NewsLoadStatus
 import com.github.myeoungdev.marketticker.application.provider.NewsProvider
 import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
@@ -28,6 +29,7 @@ class NewsFacadeServiceTest {
         assertThat(first).isEqualTo(second)
         assertThat(provider.headlineCalls.get()).isEqualTo(1)
         assertThat(provider.mostViewedCalls.get()).isEqualTo(1)
+        assertThat(first.mostViewedState.status).isEqualTo(NewsLoadStatus.SUCCESS)
     }
 
     @Test
@@ -53,6 +55,19 @@ class NewsFacadeServiceTest {
     }
 
     @Test
+    fun `카테고리 페이지는 페이지별로 캐시되고 결과 상태를 전달한다`() = runBlocking {
+        val provider = FakeNewsProvider()
+        val service = NewsFacadeService(provider)
+
+        val first = service.loadNewsCategoryPage("MAINNEWS", page = 2, pageSize = 15)
+        val second = service.loadNewsCategoryPage("MAINNEWS", page = 2, pageSize = 15)
+
+        assertThat(first).isEqualTo(second)
+        assertThat(first.state.status).isEqualTo(NewsLoadStatus.SUCCESS)
+        assertThat(provider.categoryCalls.get()).isEqualTo(1)
+    }
+
+    @Test
     fun `같은 종목에 대한 동시 요청은 하나의 provider 호출로 병합된다`() = runBlocking {
         val provider = FakeNewsProvider(delayMillis = 150)
         val service = NewsFacadeService(provider)
@@ -75,6 +90,7 @@ class NewsFacadeServiceTest {
         val headlinePageSizes = mutableListOf<Int>()
         val mostViewedCalls = AtomicInteger()
         val tickerCalls = AtomicInteger()
+        val categoryCalls = AtomicInteger()
 
         override fun getHeadlineNews(pageSize: Int): HeadlineNewsBundle {
             headlineCalls.incrementAndGet()
@@ -92,6 +108,7 @@ class NewsFacadeServiceTest {
         }
 
         override fun getCategoryNews(categoryKey: String, page: Int, pageSize: Int): List<NewsArticle> {
+            categoryCalls.incrementAndGet()
             val pageLabel = "p$page"
             return listOf(
                 sampleArticle("${categoryKey.lowercase()}-$pageLabel-1", "${categoryKey} ${page}"),

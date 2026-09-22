@@ -1,6 +1,8 @@
 package com.github.myeoungdev.marketticker.infrastructure.naver
 
 import com.github.myeoungdev.marketticker.application.provider.ResearchProvider
+import com.github.myeoungdev.marketticker.application.provider.ResearchLoadResult
+import com.github.myeoungdev.marketticker.application.provider.ResearchLoadStatus
 import com.github.myeoungdev.marketticker.domain.model.research.ResearchArticle
 import com.github.myeoungdev.marketticker.domain.model.research.ResearchCategory
 import com.github.myeoungdev.marketticker.domain.model.research.ResearchRankingBundle
@@ -15,6 +17,11 @@ class NaverResearchProvider(
 
     override fun getCategoryLatestResearch(): Map<ResearchCategory, List<ResearchArticle>> {
         return client.fetchCategoryLatestResearch().toDomainMap()
+    }
+
+    override fun getCategoryLatestResearchResult(): ResearchLoadResult<Map<ResearchCategory, List<ResearchArticle>>> {
+        val result = client.fetchCategoryLatestResearchResult()
+        return ResearchLoadResult(result.value.toDomainMap(), result.status.toDomainStatus(), result.message)
     }
 
     override fun getResearchRanking(rankingType: ResearchRankingType, selectedRank: Int): ResearchRankingBundle {
@@ -40,8 +47,43 @@ class NaverResearchProvider(
         )
     }
 
+    override fun getResearchRankingResult(rankingType: ResearchRankingType, selectedRank: Int): ResearchLoadResult<ResearchRankingBundle> {
+        val response = client.fetchResearchRankingResult(
+            rankingType = rankingType.toNaverRankingType(),
+            selectedRank = selectedRank
+        )
+        val value = ResearchRankingBundle(
+            ranking = response.value.ranking.map {
+                ResearchRankingItem(
+                    itemName = it.itemName,
+                    itemCode = it.itemCode,
+                    marketStatus = it.marketStatus,
+                    nowVal = it.nowVal.orEmpty(),
+                    changeRate = it.changeRate.orEmpty(),
+                    per = it.per.orEmpty(),
+                    pbr = it.pbr.orEmpty(),
+                    dividendRate = it.dividendRate.orEmpty(),
+                    marketSum = it.marketSum.orEmpty()
+                )
+            },
+            latestResearch = response.value.latestResearch.map { it.toDomain() }
+        )
+        return ResearchLoadResult(value, response.status.toDomainStatus(), response.message)
+    }
+
     override fun getStockResearch(itemCode: String, size: Int): List<ResearchArticle> {
         return client.fetchStockResearch(itemCode = itemCode, size = size).map { it.toDomain() }
+    }
+
+    override fun getStockResearchResult(itemCode: String, size: Int): ResearchLoadResult<List<ResearchArticle>> {
+        val result = client.fetchStockResearchResult(itemCode = itemCode, size = size)
+        return ResearchLoadResult(result.value.map { it.toDomain() }, result.status.toDomainStatus(), result.message)
+    }
+
+    private fun NaverFetchStatus.toDomainStatus(): ResearchLoadStatus = when (this) {
+        NaverFetchStatus.SUCCESS -> ResearchLoadStatus.SUCCESS
+        NaverFetchStatus.EMPTY -> ResearchLoadStatus.EMPTY
+        NaverFetchStatus.FAILED -> ResearchLoadStatus.FAILED
     }
 
     private fun NaverResearchLatestResponse.toDomainMap(): Map<ResearchCategory, List<ResearchArticle>> {

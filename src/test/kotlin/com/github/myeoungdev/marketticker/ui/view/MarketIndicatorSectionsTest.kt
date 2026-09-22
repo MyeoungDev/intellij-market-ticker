@@ -16,6 +16,7 @@ class MarketIndicatorSectionsTest {
                 indicator("GC", IndicatorCategory.METAL),
                 indicator("USD", IndicatorCategory.EXCHANGE_RATE),
                 indicator("KOSPI", IndicatorCategory.DOMESTIC_INDEX),
+                indicator("US10YT=RR", IndicatorCategory.BOND),
                 indicator("CL", IndicatorCategory.ENERGY)
             )
         )
@@ -24,6 +25,7 @@ class MarketIndicatorSectionsTest {
             IndicatorCategory.SENTIMENT,
             IndicatorCategory.EXCHANGE_RATE,
             IndicatorCategory.DOMESTIC_INDEX,
+            IndicatorCategory.BOND,
             IndicatorCategory.METAL,
             IndicatorCategory.ENERGY
         )

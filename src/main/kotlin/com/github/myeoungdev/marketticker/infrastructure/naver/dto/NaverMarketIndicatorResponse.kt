@@ -32,7 +32,7 @@ data class NaverMarketIndicatorItem(
     val fluctuationsRatio: String,
     val compareToPreviousClosePrice: String? = null,
     val fluctuations: String? = null,
-    val marketStatus: String,
+    val marketStatus: String? = null,
     val unit: String? = null
 ) {
 
@@ -47,7 +47,7 @@ data class NaverMarketIndicatorItem(
             name = title,
             currentPrice = close,
             changeRate = ratio,
-            marketStatus = MarketStatus.of(marketStatus),
+            marketStatus = MarketStatus.of(marketStatus.orEmpty()),
             category = category,
             unit = unit
         )
@@ -83,15 +83,16 @@ data class NaverExchangeRateItem(
     val name: String? = null,
     val fullName: String? = null,
     val symbol: String? = null,
-    val saleBaseRate: String,
-    val changeRate: String,
+    val saleBaseRate: String = "0",
+    val changeRate: String = "0",
     val changeVal: String? = null,
-    val marketStatus: String,
+    val marketStatus: String = "",
+    val currencyInfo: NaverCurrencyInfo? = null,
 ) {
 
     fun toMarketIndicator(): MarketIndicator {
-        val code = marketIndexCd ?: symbol ?: "UNKNOWN"
-        val title = symbol ?: name ?: code
+        val code = marketIndexCd ?: symbol ?: currencyInfo?.currencyCode ?: "UNKNOWN"
+        val title = symbol ?: name ?: currencyInfo?.currencyKoreanName ?: code
 
         return MarketIndicator(
             code = code,
@@ -104,3 +105,11 @@ data class NaverExchangeRateItem(
         )
     }
 }
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class NaverCurrencyInfo(
+    val currencyCode: String? = null,
+    val nationKoreanName: String? = null,
+    val currencyKoreanName: String? = null,
+    val currencyBasis: Double? = null
+)

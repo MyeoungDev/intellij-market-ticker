@@ -33,7 +33,8 @@ class NaverResearchProviderTest {
     @Test
     fun `카테고리 최신 리서치를 domain 모델로 변환한다`() {
         wireMockServer.stubFor(
-            get(urlPathEqualTo("/research/category-latest"))
+            get(urlPathEqualTo("/research/latestResearch"))
+                .withQueryParam("size", equalTo("10"))
                 .willReturn(okJson(NaverFixtures.JSON_RESEARCH_CATEGORY_LATEST_SUCCESS))
         )
 
@@ -52,10 +53,11 @@ class NaverResearchProviderTest {
                 .willReturn(okJson(NaverFixtures.JSON_RESEARCH_RANKING_SEARCH_TOP_SUCCESS))
         )
         wireMockServer.stubFor(
-            get(urlPathEqualTo("/research/005930/research"))
-                .withQueryParam("page", equalTo("0"))
+            get(urlPathEqualTo("/research/company/by-items"))
+                .withQueryParam("itemCodes", equalTo("005930"))
                 .withQueryParam("size", equalTo("10"))
-                .willReturn(okJson(NaverFixtures.JSON_STOCK_RESEARCH_SUCCESS))
+                .withQueryParam("index", equalTo("0"))
+                .willReturn(okJson("""{"005930":${NaverFixtures.JSON_STOCK_RESEARCH_SUCCESS}}"""))
         )
 
         val ranking = provider.getResearchRanking(ResearchRankingType.SEARCH_TOP, 1)
@@ -84,11 +86,11 @@ class NaverResearchProviderTest {
             foreignChartUrl = "$baseUrl/chart/foreign/item",
             researchAggregateUrl = "$baseUrl/research/aggregate",
             researchRecentPopularUrl = "$baseUrl/research/recent-popular",
-            researchCategoryLatestUrl = "$baseUrl/research/category-latest",
+            researchLatestV2Url = "$baseUrl/research/latestResearch",
+            researchCompanyV2Url = "$baseUrl/research/company/by-items",
             industryResearchUrl = "$baseUrl/research/industry-research",
             discussionRankingUrl = "$baseUrl/community/discussion/rankings",
             researchRankingUrl = "$baseUrl/research/ranking",
-            stockResearchBaseUrl = "$baseUrl/research",
             newsListUrl = "$baseUrl/news/list",
             worldNewsUrl = "$baseUrl/foreign/news/worldNews",
             domesticDetailNewsUrl = "$baseUrl/domestic/detail/news",
@@ -96,8 +98,7 @@ class NaverResearchProviderTest {
             foreignStockNewsUrl = "$baseUrl/foreign/worldStock/list",
             foreignStockOverviewUrl = "$baseUrl/securityService/stock",
             foreignStockBasicUrl = "$baseUrl/securityService/stock",
-            newsAggregateUrl = "$baseUrl/news/aggregate/home",
-            noticeListUrl = "$baseUrl/home/noticeList",
+            noticeListUrl = "$baseUrl/news/noticeList",
             newsSearchUrl = "$baseUrl/news/search"
         )
     }

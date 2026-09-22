@@ -5,6 +5,8 @@ import com.github.myeoungdev.marketticker.application.model.research.ResearchSum
 import com.github.myeoungdev.marketticker.application.model.research.StockResearchViewData
 import com.github.myeoungdev.marketticker.application.provider.DefaultDataSourceRegistry
 import com.github.myeoungdev.marketticker.application.provider.ResearchProvider
+import com.github.myeoungdev.marketticker.application.provider.ResearchLoadResult
+import com.github.myeoungdev.marketticker.application.provider.ResearchLoadStatus
 import com.github.myeoungdev.marketticker.application.provider.SearchProvider
 import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
@@ -34,13 +36,21 @@ class ResearchFacadeService(
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     suspend fun loadResearchHome(forceRefresh: Boolean = false): ResearchHomeViewData {
-        val latest = cached("research-home:latest", 300_000L, forceRefresh) {
-            researchProvider.getCategoryLatestResearch()
+        val latestResult = cached("research-home:latest", 300_000L, forceRefresh) {
+            researchProvider.getCategoryLatestResearchResult()
         }
-        val ranking = loadRankingBundle(ResearchRankingType.SEARCH_TOP, 1, forceRefresh)
+        val rankingResult = cached("research-ranking:SEARCH_TOP:1", 300_000L, forceRefresh) {
+            researchProvider.getResearchRankingResult(ResearchRankingType.SEARCH_TOP, 1)
+        }
+        val latest = latestResult.value
+        val ranking = rankingResult.value
         return ResearchHomeViewData(
             latestByCategory = latest,
-            rankingArticles = ranking.latestResearch.map { it.withAnalyst(buildRankingMeta(ranking, 1)) }
+            rankingArticles = ranking.latestResearch.map { it.withAnalyst(buildRankingMeta(ranking, 1)) },
+            latestStatus = latestResult.status,
+            rankingStatus = rankingResult.status,
+            latestMessage = latestResult.message,
+            rankingMessage = rankingResult.message
         )
     }
 
@@ -67,18 +77,24 @@ class ResearchFacadeService(
                 statusMessage = "NO_MATCH"
             )
 
-        val articles = cached(
+        val researchResult = cached(
             key = "research-stock:${resolved.marketType.name}:${resolved.symbol}",
             ttlMillis = 600_000L,
             forceRefresh = forceRefresh
         ) {
-            researchProvider.getStockResearch(resolved.symbol)
+            researchProvider.getStockResearchResult(resolved.symbol)
         }
 
         return StockResearchViewData(
             resolvedTicker = resolved,
-            articles = articles,
-            statusMessage = if (articles.isEmpty()) "EMPTY" else "OK"
+            articles = researchResult.value,
+            statusMessage = when (researchResult.status) {
+                ResearchLoadStatus.SUCCESS -> "OK"
+                ResearchLoadStatus.EMPTY -> "EMPTY"
+                ResearchLoadStatus.FAILED -> "FAILED"
+            },
+            loadStatus = researchResult.status,
+            errorMessage = researchResult.message
         )
     }
 
@@ -209,7 +225,10 @@ class ResearchFacadeService(
         return try {
             val value = deferred.await()
             mutex.withLock {
-                cache[key] = CacheEntry(System.currentTimeMillis() + ttlMillis, value)
+                // Upstream failures are transient; never pin a failed fetch for the normal TTL.
+                if (value !is ResearchLoadResult<*> || value.status != ResearchLoadStatus.FAILED) {
+                    cache[key] = CacheEntry(System.currentTimeMillis() + ttlMillis, value)
+                }
                 inFlight.remove(key)
             }
             value as T

@@ -370,6 +370,7 @@ class MarketTickerView(
             IndicatorCategory.SENTIMENT,
             IndicatorCategory.DOMESTIC_INDEX,
             IndicatorCategory.WORLD_INDEX,
+            IndicatorCategory.BOND,
             IndicatorCategory.EXCHANGE_RATE,
             IndicatorCategory.METAL,
             IndicatorCategory.ENERGY
@@ -384,6 +385,7 @@ class MarketTickerView(
                 IndicatorCategory.SENTIMENT -> localizationService.text("공포/탐욕", "Fear & Greed")
                 IndicatorCategory.DOMESTIC_INDEX -> localizationService.text("국내", "KR")
                 IndicatorCategory.WORLD_INDEX -> localizationService.text("해외", "US")
+                IndicatorCategory.BOND -> localizationService.text("국채", "Bonds")
                 IndicatorCategory.EXCHANGE_RATE -> localizationService.text("환율", "FX")
                 IndicatorCategory.METAL -> localizationService.text("금속", "Metal")
                 IndicatorCategory.ENERGY -> localizationService.text("에너지", "Energy")

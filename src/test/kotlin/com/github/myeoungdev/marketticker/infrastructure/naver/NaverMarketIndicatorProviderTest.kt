@@ -1,11 +1,13 @@
 package com.github.myeoungdev.marketticker.infrastructure.naver
 
 import com.github.myeoungdev.marketticker.domain.model.IndicatorCategory
+import com.github.myeoungdev.marketticker.domain.model.MarketStatus
 import com.github.myeoungdev.marketticker.fixtures.naver.NaverFixtures
 import com.github.tomakehurst.wiremock.WireMockServer
 import com.github.tomakehurst.wiremock.client.WireMock.aResponse
 import com.github.tomakehurst.wiremock.client.WireMock.get
 import com.github.tomakehurst.wiremock.client.WireMock.urlEqualTo
+import com.github.tomakehurst.wiremock.client.WireMock.urlPathEqualTo
 import com.github.tomakehurst.wiremock.client.WireMock.urlPathMatching
 import com.github.tomakehurst.wiremock.core.WireMockConfiguration
 import org.assertj.core.api.Assertions.assertThat
@@ -36,6 +38,7 @@ class NaverMarketIndicatorProviderTest {
             marketMetalUrl = "$baseUrl/marketindex/metals",
             marketEnergyUrl = "$baseUrl/marketindex/energy",
             exchangeRateUrl = "$baseUrl/domestic/exchange/List",
+            treasuryBaseUrl = "$baseUrl/marketindex/bond/nation"
         )
         provider = NaverMarketIndicatorProvider(client)
     }
@@ -63,11 +66,22 @@ class NaverMarketIndicatorProviderTest {
         assertThat(metals.map { it.code }).containsExactly("GC", "SI", "HG", "PL", "PA")
 
         val energy = result.filter { it.category == IndicatorCategory.ENERGY }
-        assertThat(energy.map { it.code }).containsExactly("CL", "NG", "HO", "RB")
+        assertThat(energy.map { it.code }).containsExactly("CL", "NG", "HO", "RB", "LCO")
+        assertThat(energy.first { it.code == "NG" }.marketStatus).isEqualTo(MarketStatus.UNKNOWN)
 
         val worldIndices = result.filter { it.category == IndicatorCategory.WORLD_INDEX }
         assertThat(worldIndices.map { it.code }).containsExactly("DJI", "INX", "IXIC", "SOX", "VIX")
         assertThat(worldIndices.first().name).isEqualTo("DOW")
+
+        val bonds = result.filter { it.category == IndicatorCategory.BOND }
+        assertThat(bonds.map { it.code }).containsExactly(
+            "US2YT=RR", "US5YT=RR", "US10YT=RR", "US30YT=RR",
+            "KR2YT=RR", "KR3YT=RR", "KR5YT=RR", "KR10YT=RR", "KR30YT=RR"
+        )
+        assertThat(bonds.map { it.name }).containsExactly(
+            "미국 국채 2년", "미국 국채 5년", "미국 국채 10년", "미국 국채 30년",
+            "한국 국채 2년", "한국 국채 3년", "한국 국채 5년", "한국 국채 10년", "한국 국채 30년"
+        )
     }
 
     @Test
@@ -81,6 +95,23 @@ class NaverMarketIndicatorProviderTest {
         assertThat(result.none { it.category == IndicatorCategory.EXCHANGE_RATE }).isTrue()
     }
 
+    @Test
+    fun `한국 국채 API 실패 시 미국 국채와 다른 지표는 유지한다`() {
+        stubBaseIndicators()
+        stubExchangeRates(NaverFixtures.JSON_EXCHANGE_RATE_SUCCESS, status = 200)
+        wireMockServer.stubFor(
+            get(urlPathEqualTo("/marketindex/bond/nation/KOR"))
+                .willReturn(aResponse().withStatus(503))
+        )
+
+        val result = provider.getIndicators()
+
+        assertThat(result.filter { it.category == IndicatorCategory.BOND }.map { it.code })
+            .containsExactly("US2YT=RR", "US5YT=RR", "US10YT=RR", "US30YT=RR")
+        assertThat(result.any { it.category == IndicatorCategory.ENERGY && it.code == "LCO" }).isTrue()
+        assertThat(result.any { it.category == IndicatorCategory.DOMESTIC_INDEX }).isTrue()
+    }
+
     private fun stubBaseIndicators() {
         stubIndicator("/domestic/index.*", NaverFixtures.JSON_DOMESTIC_INDEX_SUCCESS)
         stubIndicator("/worldstock/index.*", worldIndicatorResponse())
@@ -90,10 +121,23 @@ class NaverMarketIndicatorProviderTest {
         stubIndicator("/marketindex/metals/PLcv1.*", commodityResponse("PLcv1", "PL", "백금", "2,030.40", "-8.00", "-0.39", "USD/OZS"))
         stubIndicator("/marketindex/metals/PAcv1.*", commodityResponse("PAcv1", "PA", "팔라듐", "1,509.90", "16.30", "1.09", "USD/OZS"))
         stubIndicator("/marketindex/energy/CLcv1.*", commodityResponse("CLcv1", "CL", "WTI", "94.40", "-1.45", "-1.51", "USD/BBL"))
-        stubIndicator("/marketindex/energy/NGcv1.*", commodityResponse("NGcv1", "NG", "천연가스", "2.68", "-0.08", "-2.79", "USD/MMBTU"))
+        stubIndicator("/marketindex/energy/NGcv1.*", commodityResponse("NGcv1", "NG", "천연가스", "2.68", "-0.08", "-2.79", "USD/MMBTU", marketStatus = null))
         stubIndicator("/marketindex/energy/HOcv1.*", commodityResponse("HOcv1", "HO", "난방유", "3.7943", "-0.0734", "-1.90", "USD/U GAL"))
         stubIndicator("/marketindex/energy/RBcv1.*", commodityResponse("RBcv1", "RB", "RBOB 가솔린", "3.3277", "-0.0065", "-0.19", "USD/U GAL"))
+        stubIndicator("/marketindex/energy/LCOcv1.*", commodityResponse("LCOcv1", "LCO", "브렌트유", "98.40", "-1.05", "-1.06", "USD/BBL"))
+        stubIndicator("/marketindex/bond/nation/USA", bondResponse("US"))
+        stubIndicator("/marketindex/bond/nation/KOR", bondResponse("KR"))
     }
+
+    private fun bondResponse(prefix: String): String = """
+        [
+          {"reutersCode":"${prefix}2YT=RR","name":"국채 2년","closePrice":"3.10","fluctuationsRatio":"-0.10","marketStatus":"OPEN"},
+          {"reutersCode":"${prefix}3YT=RR","name":"국채 3년","closePrice":"3.20","fluctuationsRatio":"-0.09","marketStatus":"OPEN"},
+          {"reutersCode":"${prefix}5YT=RR","name":"국채 5년","closePrice":"3.30","fluctuationsRatio":"-0.08","marketStatus":"OPEN"},
+          {"reutersCode":"${prefix}10YT=RR","name":"국채 10년","closePrice":"3.80","fluctuationsRatio":"-0.05","marketStatus":"OPEN"},
+          {"reutersCode":"${prefix}30YT=RR","name":"국채 30년","closePrice":"4.40","fluctuationsRatio":"0.02","marketStatus":"OPEN"}
+        ]
+    """.trimIndent()
 
     private fun stubIndicator(path: String, body: String) {
         wireMockServer.stubFor(
@@ -182,7 +226,8 @@ class NaverMarketIndicatorProviderTest {
         closePrice: String,
         fluctuations: String,
         fluctuationsRatio: String,
-        unit: String
+        unit: String,
+        marketStatus: String? = "OPEN"
     ): String {
         return """
             {
@@ -199,7 +244,7 @@ class NaverMarketIndicatorProviderTest {
                   "highPrice": "$closePrice",
                   "lowPrice": "$closePrice",
                   "accumulatedTradingVolume": "1",
-                  "marketStatus": "OPEN",
+                  ${marketStatus?.let { "\"marketStatus\": \"$it\"," }.orEmpty()}
                   "unit": "$unit"
                 }
               ],

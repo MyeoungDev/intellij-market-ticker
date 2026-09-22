@@ -7,7 +7,7 @@ import org.junit.jupiter.api.Test
 class NewsPagingPolicyTest {
 
     @Test
-    fun `중복만 있는 꽉 찬 페이지도 다음 페이지가 있을 수 있다고 유지한다`() {
+    fun `중복만 있는 꽉 찬 페이지는 더보기를 종료한다`() {
         val existing = listOf(sampleArticle("a", "같은 기사"))
         val incoming = List(15) { sampleArticle("a", "같은 기사") }
 
@@ -16,7 +16,7 @@ class NewsPagingPolicyTest {
         assertThat(result.appendedArticles).isEmpty()
         assertThat(result.mergedArticles).hasSize(1)
         assertThat(result.shouldAdvancePage).isTrue()
-        assertThat(result.hasMore).isTrue()
+        assertThat(result.hasMore).isFalse()
     }
 
     @Test
@@ -47,6 +47,20 @@ class NewsPagingPolicyTest {
         assertThat(result.mergedArticles).hasSize(2)
         assertThat(result.shouldAdvancePage).isTrue()
         assertThat(result.hasMore).isFalse()
+    }
+
+    @Test
+    fun `새 기사가 포함된 꽉 찬 페이지는 새 기사만 추가하고 더보기를 유지한다`() {
+        val existing = listOf(sampleArticle("a", "기존 기사"))
+        val incoming = listOf(sampleArticle("a", "기존 기사")) +
+            List(14) { index -> sampleArticle("n$index", "새 기사 $index") }
+
+        val result = NewsPagingPolicy.merge(existing, incoming, pageSize = 15)
+
+        assertThat(result.appendedArticles).hasSize(14)
+        assertThat(result.mergedArticles).hasSize(15)
+        assertThat(result.shouldAdvancePage).isTrue()
+        assertThat(result.hasMore).isTrue()
     }
 
     private fun sampleArticle(id: String, title: String): NewsArticle {

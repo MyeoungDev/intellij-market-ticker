@@ -16,6 +16,65 @@ data class NaverRealTimeStockPriceResponse(
     val datas: List<NaverStockPrice> = emptyList()
 )
 
+/** 최신 국내 v2 실시간 시세 응답입니다. */
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class NaverDomesticV2StockResponse(
+    val pollingInterval: Long = 0,
+    val time: String? = null,
+    val datas: List<NaverDomesticV2StockItem> = emptyList()
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class NaverDomesticV2StockItem(
+    val itemCode: String = "",
+    val itemName: String = "",
+    val marketCode: String = "",
+    val nationCode: String = "KOR",
+    val krx: NaverDomesticV2Session? = null,
+    val nxt: NaverDomesticV2Session? = null,
+    val isinCode: String? = null,
+    val currencyCode: String = "KRW",
+    val symbolCode: String? = null
+) {
+    fun toLegacyPrice(): NaverStockPrice? {
+        val session = krx ?: nxt ?: return null
+        val exchange = when (marketCode.uppercase()) {
+            "KOSDAQ" -> StockExchangeType("KQ", "Asia/Seoul", nationCode, 0, "0900", "1530", "1630", "코스닥", "KOSDAQ", nationCode, "대한민국", "domestic", "KOSDAQ")
+            else -> StockExchangeType("KS", "Asia/Seoul", nationCode, 0, "0900", "1530", "1630", "코스피", "KOSPI", nationCode, "대한민국", "domestic", "KOSPI")
+        }
+        return NaverStockPrice(
+            itemCode = itemCode.ifBlank { symbolCode.orEmpty() },
+            stockName = itemName,
+            reutersCode = null,
+            stockExchangeType = exchange,
+            openPrice = session.openingPrice.orEmpty(),
+            highPrice = session.highPrice.orEmpty(),
+            lowPrice = session.lowPrice.orEmpty(),
+            closePrice = session.currentPrice.orEmpty(),
+            fluctuationsRatio = session.changeRate.orEmpty(),
+            compareToPreviousClosePrice = session.changePrice.orEmpty(),
+            accumulatedTradingVolume = session.tradingVolume.orEmpty(),
+            accumulatedTradingValue = session.tradingValue.orEmpty(),
+            marketStatus = session.marketState.orEmpty(),
+            isinCode = isinCode,
+            currencyType = CurrencyResponse(code = currencyCode, text = currencyCode, name = currencyCode)
+        )
+    }
+}
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class NaverDomesticV2Session(
+    val currentPrice: String? = null,
+    val changePrice: String? = null,
+    val changeRate: String? = null,
+    val openingPrice: String? = null,
+    val highPrice: String? = null,
+    val lowPrice: String? = null,
+    val tradingVolume: String? = null,
+    val tradingValue: String? = null,
+    val marketState: String? = null
+)
+
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class NaverStockPrice(
 
