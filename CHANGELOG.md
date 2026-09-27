@@ -5,8 +5,13 @@
 ## [Unreleased]
 
 ### Fixed
+- Stabilized Naver news and research failure handling so transient API errors are not cached as empty results.
+- Fixed research home and ranking cache collisions, including ticker research summary failure handling.
+- Fixed domestic price selection to follow the active KRX/NXT session and prevented missing exchange rates from becoming zero-valued indicators. (#64)
 
 ### Added
+- Added explicit success, empty, and failed load states for Naver news and research flows with retry-safe pagination. (#64)
+- Added treasury yield indicators with localized names and percentage formatting. (#64)
 
 ## [1.0.0] - 2026-06-28
 
