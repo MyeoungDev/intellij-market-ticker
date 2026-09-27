@@ -442,7 +442,7 @@ class NaverClient(
         date: LocalDate = LocalDate.now(ZoneId.of("Asia/Seoul")),
         enableFallback: Boolean = true,
         maxDays: Int = 7
-    ): NaverNewsFocusResponse {
+    ): NaverFetchResult<NaverNewsFocusResponse> {
         checkBackgroundThread()
         return try {
             val fullUrl = "$newsFocusUrl?sid=${sid.coerceAtLeast(1)}&page=${page.coerceAtLeast(1)}" +
@@ -459,17 +459,21 @@ class NaverClient(
             val response = client.send(request, HttpResponse.BodyHandlers.ofString())
             if (response.statusCode() != 200) {
                 logger.error { "Naver news focus API Error [${response.statusCode()}]: $fullUrl" }
-                return NaverNewsFocusResponse()
+                return NaverFetchResult(NaverNewsFocusResponse(), NaverFetchStatus.FAILED, "HTTP ${response.statusCode()}")
             }
-            objectMapper.readValue(response.body())
+            val value: NaverNewsFocusResponse = objectMapper.readValue(response.body())
+            NaverFetchResult(
+                value = value,
+                status = if (value.articles.isEmpty()) NaverFetchStatus.EMPTY else NaverFetchStatus.SUCCESS
+            )
         } catch (e: Exception) {
             logger.error(e) { "Failed to fetch news focus: sid=$sid" }
-            NaverNewsFocusResponse()
+            NaverFetchResult(NaverNewsFocusResponse(), NaverFetchStatus.FAILED, e.message.orEmpty())
         }
     }
 
     /** 뉴스 홈 머니스토리 목록을 조회합니다. */
-    fun fetchMoneyStory(mainCategoryIdList: Int = 1, size: Int = 20): NaverMoneyStoryResponse {
+    fun fetchMoneyStory(mainCategoryIdList: Int = 1, size: Int = 20): NaverFetchResult<NaverMoneyStoryResponse> {
         checkBackgroundThread()
         return try {
             val fullUrl = "$moneyStoryUrl?mainCategoryIdList=${mainCategoryIdList.coerceAtLeast(1)}" +
@@ -485,12 +489,16 @@ class NaverClient(
             val response = client.send(request, HttpResponse.BodyHandlers.ofString())
             if (response.statusCode() != 200) {
                 logger.error { "Naver money story API Error [${response.statusCode()}]: $fullUrl" }
-                return NaverMoneyStoryResponse()
+                return NaverFetchResult(NaverMoneyStoryResponse(), NaverFetchStatus.FAILED, "HTTP ${response.statusCode()}")
             }
-            objectMapper.readValue(response.body())
+            val value: NaverMoneyStoryResponse = objectMapper.readValue(response.body())
+            NaverFetchResult(
+                value = value,
+                status = if (value.moneyContentList.isEmpty()) NaverFetchStatus.EMPTY else NaverFetchStatus.SUCCESS
+            )
         } catch (e: Exception) {
             logger.error(e) { "Failed to fetch money story" }
-            NaverMoneyStoryResponse()
+            NaverFetchResult(NaverMoneyStoryResponse(), NaverFetchStatus.FAILED, e.message.orEmpty())
         }
     }
 
@@ -771,7 +779,7 @@ class NaverClient(
      * 상단 공지 요약 목록을 조회합니다.
      */
     fun fetchNoticeList(page: Int = 1, pageSize: Int = 10): List<NaverNoticeSummary> =
-        fetchNoticePage(page, pageSize).content
+        fetchNoticePage(page, pageSize).value.content
 
     fun fetchNoticePage(
         page: Int = 1,
@@ -782,7 +790,7 @@ class NaverClient(
         typeIdx: List<String> = emptyList(),
         enableFallback: Boolean = true,
         maxDays: Int = 3
-    ): NaverNoticePage {
+    ): NaverFetchResult<NaverNoticePage> {
         checkBackgroundThread()
         return try {
             val query = buildList {
@@ -809,11 +817,11 @@ class NaverClient(
             val response = client.send(request, HttpResponse.BodyHandlers.ofString())
             if (response.statusCode() != 200) {
                 logger.error { "Naver notice list API Error [${response.statusCode()}]: $fullUrl" }
-                return NaverNoticePage()
+                return NaverFetchResult(NaverNoticePage(), NaverFetchStatus.FAILED, "HTTP ${response.statusCode()}")
             }
 
             val root = objectMapper.readTree(response.body())
-            if (root.isArray) {
+            val value = if (root.isArray) {
                 NaverNoticePage(
                     content = objectMapper.readValue(root.toString()),
                     totalElements = root.size().toLong(),
@@ -825,9 +833,13 @@ class NaverClient(
             } else {
                 objectMapper.readValue(root.toString())
             }
+            NaverFetchResult(
+                value = value,
+                status = if (value.content.isEmpty()) NaverFetchStatus.EMPTY else NaverFetchStatus.SUCCESS
+            )
         } catch (e: Exception) {
             logger.error(e) { "Failed to fetch notice list" }
-            NaverNoticePage()
+            NaverFetchResult(NaverNoticePage(), NaverFetchStatus.FAILED, e.message.orEmpty())
         }
     }
 

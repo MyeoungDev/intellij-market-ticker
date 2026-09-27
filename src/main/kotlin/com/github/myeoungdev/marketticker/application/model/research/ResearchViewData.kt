@@ -25,5 +25,7 @@ data class StockResearchViewData(
 data class ResearchSummaryViewData(
     val title: String,
     val statusMessage: String,
-    val articles: List<ResearchArticle>
+    val articles: List<ResearchArticle>,
+    val loadStatus: ResearchLoadStatus = ResearchLoadStatus.SUCCESS,
+    val errorMessage: String = ""
 )

@@ -37,7 +37,7 @@ data class NaverDomesticV2StockItem(
     val symbolCode: String? = null
 ) {
     fun toLegacyPrice(): NaverStockPrice? {
-        val session = krx ?: nxt ?: return null
+        val session = activeSession() ?: return null
         val exchange = when (marketCode.uppercase()) {
             "KOSDAQ" -> StockExchangeType("KQ", "Asia/Seoul", nationCode, 0, "0900", "1530", "1630", "코스닥", "KOSDAQ", nationCode, "대한민국", "domestic", "KOSDAQ")
             else -> StockExchangeType("KS", "Asia/Seoul", nationCode, 0, "0900", "1530", "1630", "코스피", "KOSPI", nationCode, "대한민국", "domestic", "KOSPI")
@@ -59,6 +59,16 @@ data class NaverDomesticV2StockItem(
             isinCode = isinCode,
             currencyType = CurrencyResponse(code = currencyCode, text = currencyCode, name = currencyCode)
         )
+    }
+
+    private fun activeSession(): NaverDomesticV2Session? {
+        return listOfNotNull(nxt, krx).firstOrNull { it.marketState.isActiveSession() }
+            ?: krx
+            ?: nxt
+    }
+
+    private fun String?.isActiveSession(): Boolean {
+        return this?.uppercase() in setOf("OPEN", "TRADING", "ACTIVE")
     }
 }
 

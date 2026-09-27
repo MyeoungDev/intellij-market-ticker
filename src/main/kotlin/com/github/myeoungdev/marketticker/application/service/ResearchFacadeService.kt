@@ -39,7 +39,7 @@ class ResearchFacadeService(
         val latestResult = cached("research-home:latest", 300_000L, forceRefresh) {
             researchProvider.getCategoryLatestResearchResult()
         }
-        val rankingResult = cached("research-ranking:SEARCH_TOP:1", 300_000L, forceRefresh) {
+        val rankingResult = cached("research-home-ranking:SEARCH_TOP:1", 300_000L, forceRefresh) {
             researchProvider.getResearchRankingResult(ResearchRankingType.SEARCH_TOP, 1)
         }
         val latest = latestResult.value
@@ -110,15 +110,15 @@ class ResearchFacadeService(
     }
 
     suspend fun loadTickerResearchSummary(ticker: Ticker, forceRefresh: Boolean = false): ResearchSummaryViewData {
-        val articles = cached(
+        val researchResult = cached(
             key = "research-summary:${ticker.marketType.name}:${ticker.symbol}",
             ttlMillis = 600_000L,
             forceRefresh = forceRefresh
         ) {
             if (!ticker.marketType.isKoreanMarket()) {
-                emptyList()
+                ResearchLoadResult(emptyList(), ResearchLoadStatus.EMPTY)
             } else {
-                researchProvider.getStockResearch(ticker.symbol, size = 3).take(3)
+                researchProvider.getStockResearchResult(ticker.symbol, size = 3)
             }
         }
 
@@ -126,10 +126,13 @@ class ResearchFacadeService(
             title = "${ticker.name} 리서치",
             statusMessage = when {
                 !ticker.marketType.isKoreanMarket() -> "국내 종목 리서치만 지원합니다."
-                articles.isEmpty() -> "최근 리서치 없음"
-                else -> "최근 리서치 ${articles.size}건"
+                researchResult.status == ResearchLoadStatus.FAILED -> "리서치를 불러오지 못했습니다."
+                researchResult.status == ResearchLoadStatus.EMPTY -> "최근 리서치 없음"
+                else -> "최근 리서치 ${researchResult.value.size}건"
             },
-            articles = articles
+            articles = researchResult.value,
+            loadStatus = researchResult.status,
+            errorMessage = researchResult.message
         )
     }
 
@@ -197,6 +200,9 @@ class ResearchFacadeService(
         key: String,
         ttlMillis: Long,
         forceRefresh: Boolean,
+        shouldCache: (T) -> Boolean = { value ->
+            value !is ResearchLoadResult<*> || value.status != ResearchLoadStatus.FAILED
+        },
         loader: () -> T
     ): T {
         val now = System.currentTimeMillis()
@@ -225,8 +231,7 @@ class ResearchFacadeService(
         return try {
             val value = deferred.await()
             mutex.withLock {
-                // Upstream failures are transient; never pin a failed fetch for the normal TTL.
-                if (value !is ResearchLoadResult<*> || value.status != ResearchLoadStatus.FAILED) {
+                if (shouldCache(value as T)) {
                     cache[key] = CacheEntry(System.currentTimeMillis() + ttlMillis, value)
                 }
                 inFlight.remove(key)

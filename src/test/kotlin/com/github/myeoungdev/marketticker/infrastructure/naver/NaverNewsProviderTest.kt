@@ -110,8 +110,26 @@ class NaverNewsProviderTest {
 
         assertThat(result.headlines["MAINNEWS"]).isNotEmpty
         assertThat(result.focusSections).hasSize(5)
-        assertThat(result.categoryStates["FOCUS_401"]?.status).isEqualTo(NewsLoadStatus.EMPTY)
+        assertThat(result.categoryStates["FOCUS_401"]?.status).isEqualTo(NewsLoadStatus.FAILED)
         assertThat(result.categoryStates["FOCUS_402"]?.status).isEqualTo(NewsLoadStatus.SUCCESS)
+    }
+
+    @Test
+    fun `머니스토리와 공지 API 실패는 FAILED 상태로 전달한다`() {
+        stubCoreNews()
+        wireMockServer.stubFor(
+            get(urlPathEqualTo("/content/moneyStory"))
+                .willReturn(serverError())
+        )
+        wireMockServer.stubFor(
+            get(urlPathEqualTo("/news/noticeList"))
+                .willReturn(serverError())
+        )
+
+        val result = provider.getHeadlineNews(pageSize = 15)
+
+        assertThat(result.categoryStates["MONEY"]?.status).isEqualTo(NewsLoadStatus.FAILED)
+        assertThat(result.categoryStates["NOTICE"]?.status).isEqualTo(NewsLoadStatus.FAILED)
     }
 
     @Test

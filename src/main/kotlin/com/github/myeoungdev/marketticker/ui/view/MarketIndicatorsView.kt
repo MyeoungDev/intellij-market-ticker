@@ -258,6 +258,9 @@ class MarketIndicatorsView : JPanel(BorderLayout()), Disposable {
                 formatDecimal = localizationService::formatDecimal
             ).displayName
         }
+        if (indicator.category == IndicatorCategory.BOND) {
+            return localizationService.text(indicator.name, indicator.englishName ?: indicator.name)
+        }
 
         return when (indicator.code.uppercase()) {
             ".INX", "SPX", "S&P500", "S&P 500" -> "S&P500"

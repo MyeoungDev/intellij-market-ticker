@@ -18,6 +18,8 @@ import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverResearch
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCoinOverview
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCryptoChartResponse
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverRealTimeStockPriceResponse
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverDomesticV2Session
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverDomesticV2StockItem
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverSearchResponse
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.ResearchCategoryKey
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.ResearchRankingType
@@ -266,6 +268,19 @@ class NaverClientTest {
             assertThat(tickerPrice.overMarketPrice?.currentPrice).isEqualTo(306500.0)
             assertThat(tickerPrice.overMarketPrice?.highPrice).isEqualTo(315000.0)
             assertThat(tickerPrice.integratedPrice?.tradeVolume).isEqualTo(18239890L)
+        }
+
+        @Test
+        fun `NXT가 활성 상태면 레거시 가격 변환도 NXT 세션을 선택한다`() {
+            val item = NaverDomesticV2StockItem(
+                itemCode = "005930",
+                itemName = "삼성전자",
+                marketCode = "KOSPI",
+                krx = NaverDomesticV2Session(currentPrice = "100", marketState = "CLOSED"),
+                nxt = NaverDomesticV2Session(currentPrice = "110", marketState = "OPEN")
+            )
+
+            assertThat(item.toLegacyPrice()?.closePrice).isEqualTo("110")
         }
 
         @Test
@@ -935,11 +950,14 @@ class NaverClientTest {
                 typeIdx = listOf("ST")
             )
 
-            assertThat(focus.articles).hasSize(1)
-            assertThat(focus.articles.first().toNewsArticle("시장").articleUrl()).isEqualTo("https://example.com/focus")
-            assertThat(money.moneyContentList).hasSize(1)
-            assertThat(notice.content).hasSize(1)
-            assertThat(notice.totalElements).isEqualTo(1)
+            assertThat(focus.status).isEqualTo(NaverFetchStatus.SUCCESS)
+            assertThat(focus.value.articles).hasSize(1)
+            assertThat(focus.value.articles.first().toNewsArticle("시장").articleUrl()).isEqualTo("https://example.com/focus")
+            assertThat(money.status).isEqualTo(NaverFetchStatus.SUCCESS)
+            assertThat(money.value.moneyContentList).hasSize(1)
+            assertThat(notice.status).isEqualTo(NaverFetchStatus.SUCCESS)
+            assertThat(notice.value.content).hasSize(1)
+            assertThat(notice.value.totalElements).isEqualTo(1)
         }
 
         @Test

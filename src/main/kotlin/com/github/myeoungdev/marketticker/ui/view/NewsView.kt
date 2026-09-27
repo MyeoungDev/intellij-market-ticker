@@ -22,12 +22,14 @@ import com.intellij.ui.tabs.JBTabsFactory
 import com.intellij.ui.tabs.TabInfo
 import com.intellij.util.ui.JBUI
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Dimension
@@ -47,6 +49,8 @@ import javax.swing.JPanel
 import javax.swing.JTextArea
 import javax.swing.ListSelectionModel
 import javax.swing.SwingConstants
+
+private val logger = KotlinLogging.logger {}
 
 /**
  * 뉴스 탭입니다.
@@ -136,7 +140,10 @@ class NewsView(
                 withContext(Dispatchers.Main) {
                     applyNewsHome(homeData)
                 }
+            } catch (e: CancellationException) {
+                throw e
             } catch (t: Throwable) {
+                logger.warn(t) { "Failed to load news home" }
                 withContext(Dispatchers.Main) {
                     applyNewsLoadFailure()
                 }

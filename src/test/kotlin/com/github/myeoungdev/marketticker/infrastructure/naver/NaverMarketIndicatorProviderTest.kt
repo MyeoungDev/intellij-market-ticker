@@ -82,6 +82,10 @@ class NaverMarketIndicatorProviderTest {
             "미국 국채 2년", "미국 국채 5년", "미국 국채 10년", "미국 국채 30년",
             "한국 국채 2년", "한국 국채 3년", "한국 국채 5년", "한국 국채 10년", "한국 국채 30년"
         )
+        assertThat(bonds.map { it.englishName }).containsExactly(
+            "US Treasury 2Y", "US Treasury 5Y", "US Treasury 10Y", "US Treasury 30Y",
+            "Korea Treasury 2Y", "Korea Treasury 3Y", "Korea Treasury 5Y", "Korea Treasury 10Y", "Korea Treasury 30Y"
+        )
     }
 
     @Test
@@ -92,6 +96,37 @@ class NaverMarketIndicatorProviderTest {
         val result = provider.getIndicators()
 
         assertThat(result).isNotEmpty
+        assertThat(result.none { it.category == IndicatorCategory.EXCHANGE_RATE }).isTrue()
+    }
+
+    @Test
+    fun `currencyInfo fallback code로 환율을 연결한다`() {
+        stubBaseIndicators()
+        stubExchangeRates(
+            """
+            [{"currencyInfo":{"currencyCode":"USD","currencyKoreanName":"달러"},"saleBaseRate":"1358.6","changeRate":"-1.19"}]
+            """.trimIndent(),
+            status = 200
+        )
+
+        val result = provider.getIndicators()
+
+        assertThat(result.filter { it.category == IndicatorCategory.EXCHANGE_RATE }.map { it.code })
+            .containsExactly("FX_USDKRW")
+    }
+
+    @Test
+    fun `saleBaseRate가 없으면 환율 지표를 만들지 않는다`() {
+        stubBaseIndicators()
+        stubExchangeRates(
+            """
+            [{"marketIndexCd":"FX_USDKRW","currencyInfo":{"currencyCode":"USD"},"changeRate":"0"}]
+            """.trimIndent(),
+            status = 200
+        )
+
+        val result = provider.getIndicators()
+
         assertThat(result.none { it.category == IndicatorCategory.EXCHANGE_RATE }).isTrue()
     }
 

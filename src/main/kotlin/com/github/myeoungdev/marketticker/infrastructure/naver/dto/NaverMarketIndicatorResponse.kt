@@ -83,7 +83,7 @@ data class NaverExchangeRateItem(
     val name: String? = null,
     val fullName: String? = null,
     val symbol: String? = null,
-    val saleBaseRate: String = "0",
+    val saleBaseRate: String? = null,
     val changeRate: String = "0",
     val changeVal: String? = null,
     val marketStatus: String = "",
@@ -91,18 +91,33 @@ data class NaverExchangeRateItem(
 ) {
 
     fun toMarketIndicator(): MarketIndicator {
-        val code = marketIndexCd ?: symbol ?: currencyInfo?.currencyCode ?: "UNKNOWN"
+        val code = normalizedMarketIndexCode() ?: symbol ?: currencyInfo?.currencyCode ?: "UNKNOWN"
         val title = symbol ?: name ?: currencyInfo?.currencyKoreanName ?: code
 
         return MarketIndicator(
             code = code,
             name = title,
-            currentPrice = saleBaseRate.parseCommaToDouble(),
+            currentPrice = requireNotNull(saleBaseRate).parseCommaToDouble(),
             changeRate = changeRate.parseCommaToDouble(),
             marketStatus = MarketStatus.of(marketStatus),
             category = IndicatorCategory.EXCHANGE_RATE,
             unit = "KRW"
         )
+    }
+
+    fun normalizedMarketIndexCode(): String? {
+        return marketIndexCd?.takeIf { it.isNotBlank() }?.let(::toFxCode)
+            ?: currencyInfo?.currencyCode?.takeIf { it.isNotBlank() }?.let(::toFxCode)
+            ?: symbol?.takeIf { it.isNotBlank() }?.let(::toFxCode)
+    }
+
+    private fun toFxCode(value: String): String {
+        val normalized = value.trim().uppercase()
+        return when {
+            normalized.startsWith("FX_") -> normalized
+            normalized.endsWith("KRW") -> "FX_$normalized"
+            else -> "FX_${normalized}KRW"
+        }
     }
 }
 

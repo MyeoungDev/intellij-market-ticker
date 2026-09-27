@@ -28,15 +28,15 @@ class NaverMarketIndicatorProvider(
         "LCOcv1" // 브렌트 원유
     )
     private val treasurySpecs = listOf(
-        TreasurySpec(TreasuryNation.USA, "US2YT=RR", "미국 국채 2년"),
-        TreasurySpec(TreasuryNation.USA, "US5YT=RR", "미국 국채 5년"),
-        TreasurySpec(TreasuryNation.USA, "US10YT=RR", "미국 국채 10년"),
-        TreasurySpec(TreasuryNation.USA, "US30YT=RR", "미국 국채 30년"),
-        TreasurySpec(TreasuryNation.KOR, "KR2YT=RR", "한국 국채 2년"),
-        TreasurySpec(TreasuryNation.KOR, "KR3YT=RR", "한국 국채 3년"),
-        TreasurySpec(TreasuryNation.KOR, "KR5YT=RR", "한국 국채 5년"),
-        TreasurySpec(TreasuryNation.KOR, "KR10YT=RR", "한국 국채 10년"),
-        TreasurySpec(TreasuryNation.KOR, "KR30YT=RR", "한국 국채 30년")
+        TreasurySpec(TreasuryNation.USA, "US2YT=RR", "미국 국채 2년", "US Treasury 2Y"),
+        TreasurySpec(TreasuryNation.USA, "US5YT=RR", "미국 국채 5년", "US Treasury 5Y"),
+        TreasurySpec(TreasuryNation.USA, "US10YT=RR", "미국 국채 10년", "US Treasury 10Y"),
+        TreasurySpec(TreasuryNation.USA, "US30YT=RR", "미국 국채 30년", "US Treasury 30Y"),
+        TreasurySpec(TreasuryNation.KOR, "KR2YT=RR", "한국 국채 2년", "Korea Treasury 2Y"),
+        TreasurySpec(TreasuryNation.KOR, "KR3YT=RR", "한국 국채 3년", "Korea Treasury 3Y"),
+        TreasurySpec(TreasuryNation.KOR, "KR5YT=RR", "한국 국채 5년", "Korea Treasury 5Y"),
+        TreasurySpec(TreasuryNation.KOR, "KR10YT=RR", "한국 국채 10년", "Korea Treasury 10Y"),
+        TreasurySpec(TreasuryNation.KOR, "KR30YT=RR", "한국 국채 30년", "Korea Treasury 30Y")
     )
 
     override fun getIndicators(): List<MarketIndicator> {
@@ -51,7 +51,9 @@ class NaverMarketIndicatorProvider(
         }
 
         val exchangeRates = safeGroup("exchange rates") {
-            val exchangeRatesByCode = client.fetchExchangeRates().associateBy { it.marketIndexCd }
+            val exchangeRatesByCode = client.fetchExchangeRates().mapNotNull { item ->
+                item.normalizedMarketIndexCode()?.let { it to item }
+            }.toMap()
             exchangeRateCodes.mapNotNull { code ->
                 exchangeRatesByCode[code]?.let { item ->
                     runCatching { item.toMarketIndicator() }.onFailure { error ->
@@ -84,6 +86,7 @@ class NaverMarketIndicatorProvider(
                         runCatching {
                             item.toMarketIndicator(IndicatorCategory.BOND).copy(
                                 name = spec.displayName,
+                                englishName = spec.englishName,
                                 unit = "%"
                             )
                         }.onFailure { error ->
@@ -112,6 +115,7 @@ class NaverMarketIndicatorProvider(
     private data class TreasurySpec(
         val nation: TreasuryNation,
         val code: String,
-        val displayName: String
+        val displayName: String,
+        val englishName: String
     )
 }

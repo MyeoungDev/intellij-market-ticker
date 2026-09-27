@@ -414,7 +414,12 @@ class MarketTickerView(
                     val priceText = if (sentimentPresentation != null) {
                         sentimentPresentation.scoreText
                     } else {
-                        localizationService.formatDecimal(indicator.currentPrice, 2)
+                        formatIndicatorPrice(
+                            value = indicator.currentPrice,
+                            unit = indicator.unit,
+                            formatDecimal = localizationService::formatDecimal,
+                            formatAmount = moneyDisplayFormatter::formatAmount
+                        )
                     }
                     val rateColor = when {
                         sentimentPresentation != null -> sentimentPresentation.palette.accent
@@ -459,6 +464,9 @@ class MarketTickerView(
                 label = indicator.sentimentLabel ?: indicator.displayHint,
                 formatDecimal = localizationService::formatDecimal
             ).displayName
+        }
+        if (indicator.category == IndicatorCategory.BOND) {
+            return localizationService.text(indicator.name, indicator.englishName ?: indicator.name)
         }
 
         return when (indicator.code.uppercase()) {

@@ -14,9 +14,6 @@ import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverDomestic
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverForeignStockBasic
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverForeignStockOverview
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverNewsArticle
-import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverNewsFocusResponse
-import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverNoticePage
-import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverMoneyStoryResponse
 import java.time.Clock
 import java.time.Instant
 
@@ -43,18 +40,11 @@ class NaverNewsProvider(
             429 to "환율"
         )
         val focusLoads = focusSpecs.map { (sid, label) ->
-            val result = runCatching { client.fetchNewsFocusResult(sid = sid, page = 1, pageSize = 5) }
-            val response = result.getOrDefault(NaverNewsFocusResponse())
-            val state = when {
-                result.isFailure -> NewsCategoryLoadState(NewsLoadStatus.FAILED)
-                response.articles.isEmpty() -> NewsCategoryLoadState(NewsLoadStatus.EMPTY)
-                else -> NewsCategoryLoadState(NewsLoadStatus.SUCCESS)
-            }
-            Triple(sid, label, response to state)
+            val result = client.fetchNewsFocusResult(sid = sid, page = 1, pageSize = 5)
+            Triple(sid, label, result)
         }
         val focusSections = focusLoads.mapNotNull { (sid, label, loaded) ->
-            val (response, _) = loaded
-            response.articles.takeIf { it.isNotEmpty() }?.let { articles ->
+            loaded.value.articles.takeIf { it.isNotEmpty() }?.let { articles ->
                 com.github.myeoungdev.marketticker.domain.model.news.NewsSection(
                     title = label,
                     key = sid.toString(),
@@ -68,18 +58,16 @@ class NaverNewsProvider(
                 )
             }
         }
-        val moneyResponse = runCatching { client.fetchMoneyStory(mainCategoryIdList = 1, size = 20) }
-            .getOrDefault(NaverMoneyStoryResponse())
-        val moneyStories = moneyResponse.moneyContentList.map {
+        val moneyResult = client.fetchMoneyStory(mainCategoryIdList = 1, size = 20)
+        val moneyStories = moneyResult.value.moneyContentList.map {
             it.toNewsArticle().toAppNewsArticle(
                 badgeLabel = "머니스토리",
                 badgeColor = "green",
                 sectionLabel = "머니스토리"
             )
         }
-        val noticeResponse = runCatching { client.fetchNoticePage(page = 1, pageSize = 10) }
-            .getOrDefault(NaverNoticePage())
-        val notices = noticeResponse.content.map {
+        val noticeResult = client.fetchNoticePage(page = 1, pageSize = 10)
+        val notices = noticeResult.value.content.map {
             it.toNewsArticle().toAppNewsArticle(
                 badgeLabel = it.category ?: "공지",
                 badgeColor = "red",
@@ -102,11 +90,19 @@ class NaverNewsProvider(
                 "MAINNEWS" to main.state,
                 "WORLDNEWS" to world.state
             ).apply {
-                focusLoads.forEach { (sid, _, loaded) -> put("FOCUS_$sid", loaded.second) }
-                put("MONEY", NewsCategoryLoadState(if (moneyStories.isEmpty()) NewsLoadStatus.EMPTY else NewsLoadStatus.SUCCESS))
-                put("NOTICE", NewsCategoryLoadState(if (notices.isEmpty()) NewsLoadStatus.EMPTY else NewsLoadStatus.SUCCESS))
+                focusLoads.forEach { (sid, _, loaded) -> put("FOCUS_$sid", loaded.toNewsCategoryLoadState()) }
+                put("MONEY", moneyResult.toNewsCategoryLoadState())
+                put("NOTICE", noticeResult.toNewsCategoryLoadState())
             }
         )
+    }
+
+    private fun <T> NaverFetchResult<T>.toNewsCategoryLoadState(): NewsCategoryLoadState {
+        return when (status) {
+            NaverFetchStatus.SUCCESS -> NewsCategoryLoadState(NewsLoadStatus.SUCCESS, message)
+            NaverFetchStatus.EMPTY -> NewsCategoryLoadState(NewsLoadStatus.EMPTY, message)
+            NaverFetchStatus.FAILED -> NewsCategoryLoadState(NewsLoadStatus.FAILED, message)
+        }
     }
 
     override fun getMostViewedNews(limit: Int): List<NewsArticle> {
