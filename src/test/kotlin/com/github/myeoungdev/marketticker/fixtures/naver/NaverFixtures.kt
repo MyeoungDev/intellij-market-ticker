@@ -1066,18 +1066,18 @@ object NaverFixtures {
     const val JSON_NOTICE_LIST_SUCCESS = """
     [
       {
-        "noticeId": "142",
+        "no": "142",
         "title": "미국/유럽 서머타임 적용에 따른 거래시간 변경 안내",
-        "category": "거래시간",
-        "categoryColor": "green",
-        "createdAt": "2026-03-09T14:18:12"
+        "comment": "거래시간",
+        "noticeTypeName": "거래시간",
+        "datetime": "2026-03-09T14:18:12"
       },
       {
-        "noticeId": "141",
+        "no": "141",
         "title": "코스피 서킷브레이커 발동, 코스닥 매도 사이드카",
-        "category": "주의",
-        "categoryColor": "red",
-        "createdAt": "2026-03-09T10:46:08"
+        "comment": "주의",
+        "noticeTypeName": "주의",
+        "datetime": "2026-03-09T10:46:08"
       }
     ]
     """

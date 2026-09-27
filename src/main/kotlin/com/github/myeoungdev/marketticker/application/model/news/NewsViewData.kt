@@ -2,11 +2,13 @@ package com.github.myeoungdev.marketticker.application.model.news
 
 import com.github.myeoungdev.marketticker.domain.model.news.HeadlineNewsBundle
 import com.github.myeoungdev.marketticker.domain.model.news.NewsArticle
+import com.github.myeoungdev.marketticker.domain.model.news.NewsCategoryLoadState
 import com.github.myeoungdev.marketticker.domain.model.news.TickerOverviewCard
 
 data class NewsHomeViewData(
     val headlines: HeadlineNewsBundle,
-    val mostViewed: List<NewsArticle>
+    val mostViewed: List<NewsArticle>,
+    val mostViewedState: NewsCategoryLoadState = NewsCategoryLoadState()
 )
 
 data class TickerNewsSummaryViewData(

@@ -370,6 +370,7 @@ class MarketTickerView(
             IndicatorCategory.SENTIMENT,
             IndicatorCategory.DOMESTIC_INDEX,
             IndicatorCategory.WORLD_INDEX,
+            IndicatorCategory.BOND,
             IndicatorCategory.EXCHANGE_RATE,
             IndicatorCategory.METAL,
             IndicatorCategory.ENERGY
@@ -384,6 +385,7 @@ class MarketTickerView(
                 IndicatorCategory.SENTIMENT -> localizationService.text("공포/탐욕", "Fear & Greed")
                 IndicatorCategory.DOMESTIC_INDEX -> localizationService.text("국내", "KR")
                 IndicatorCategory.WORLD_INDEX -> localizationService.text("해외", "US")
+                IndicatorCategory.BOND -> localizationService.text("국채", "Bonds")
                 IndicatorCategory.EXCHANGE_RATE -> localizationService.text("환율", "FX")
                 IndicatorCategory.METAL -> localizationService.text("금속", "Metal")
                 IndicatorCategory.ENERGY -> localizationService.text("에너지", "Energy")
@@ -412,7 +414,12 @@ class MarketTickerView(
                     val priceText = if (sentimentPresentation != null) {
                         sentimentPresentation.scoreText
                     } else {
-                        localizationService.formatDecimal(indicator.currentPrice, 2)
+                        formatIndicatorPrice(
+                            value = indicator.currentPrice,
+                            unit = indicator.unit,
+                            formatDecimal = localizationService::formatDecimal,
+                            formatAmount = moneyDisplayFormatter::formatAmount
+                        )
                     }
                     val rateColor = when {
                         sentimentPresentation != null -> sentimentPresentation.palette.accent
@@ -457,6 +464,9 @@ class MarketTickerView(
                 label = indicator.sentimentLabel ?: indicator.displayHint,
                 formatDecimal = localizationService::formatDecimal
             ).displayName
+        }
+        if (indicator.category == IndicatorCategory.BOND) {
+            return localizationService.text(indicator.name, indicator.englishName ?: indicator.name)
         }
 
         return when (indicator.code.uppercase()) {

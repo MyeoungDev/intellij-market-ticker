@@ -22,14 +22,33 @@ data class NewsArticle(
 
 data class NewsSection(
     val title: String,
-    val articles: List<NewsArticle>
+    val articles: List<NewsArticle>,
+    val key: String = ""
+)
+
+enum class NewsLoadStatus {
+    SUCCESS,
+    EMPTY,
+    FAILED
+}
+
+data class NewsCategoryLoadState(
+    val status: NewsLoadStatus = NewsLoadStatus.EMPTY,
+    val message: String = ""
+)
+
+data class NewsCategoryPage(
+    val articles: List<NewsArticle> = emptyList(),
+    val state: NewsCategoryLoadState = NewsCategoryLoadState()
 )
 
 data class HeadlineNewsBundle(
     val headlines: Map<String, List<NewsArticle>> = emptyMap(),
     val worldNews: List<NewsArticle> = emptyList(),
     val moneyStories: List<NewsArticle> = emptyList(),
-    val focusSections: List<NewsSection> = emptyList()
+    val focusSections: List<NewsSection> = emptyList(),
+    val notices: List<NewsArticle> = emptyList(),
+    val categoryStates: Map<String, NewsCategoryLoadState> = emptyMap()
 )
 
 data class TickerOverviewCard(

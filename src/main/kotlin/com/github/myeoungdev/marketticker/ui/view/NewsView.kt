@@ -7,6 +7,8 @@ import com.github.myeoungdev.marketticker.application.service.LocalizationServic
 import com.github.myeoungdev.marketticker.application.service.AppSettingsService
 import com.github.myeoungdev.marketticker.application.service.NewsFacadeService
 import com.github.myeoungdev.marketticker.domain.model.news.NewsArticle
+import com.github.myeoungdev.marketticker.domain.model.news.NewsCategoryLoadState
+import com.github.myeoungdev.marketticker.domain.model.news.NewsLoadStatus
 import com.intellij.ide.BrowserUtil
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.Disposable
@@ -20,12 +22,14 @@ import com.intellij.ui.tabs.JBTabsFactory
 import com.intellij.ui.tabs.TabInfo
 import com.intellij.util.ui.JBUI
 import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.CancellationException
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.cancel
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
+import io.github.oshai.kotlinlogging.KotlinLogging
 import java.awt.BorderLayout
 import java.awt.Component
 import java.awt.Dimension
@@ -45,6 +49,8 @@ import javax.swing.JPanel
 import javax.swing.JTextArea
 import javax.swing.ListSelectionModel
 import javax.swing.SwingConstants
+
+private val logger = KotlinLogging.logger {}
 
 /**
  * 뉴스 탭입니다.
@@ -83,6 +89,8 @@ class NewsView(
     private var selectedCategoryKey: String = "MAINNEWS"
     private var rebuildingCategories: Boolean = false
     private var categoryArticles: Map<String, List<NewsArticle>> = emptyMap()
+    private var categoryStates: Map<String, NewsCategoryLoadState> = emptyMap()
+    private var mostViewedState: NewsCategoryLoadState = NewsCategoryLoadState()
     private val categoryPageByKey = mutableMapOf<String, Int>()
     private val categoryHasMoreByKey = mutableMapOf<String, Boolean>()
     private val categoryLoadingByKey = mutableMapOf<String, Boolean>()
@@ -124,12 +132,21 @@ class NewsView(
         statusLabel.text = localizationService.text("뉴스를 불러오는 중...", "Loading news...")
         val pageSize = appSettingsService.getNewsPageSize()
         scope.launch {
-            val homeData = newsFacadeService.loadNewsHome(
-                pageSize = pageSize,
-                forceRefresh = forceRefresh
-            )
-            withContext(Dispatchers.Main) {
-                applyNewsHome(homeData)
+            try {
+                val homeData = newsFacadeService.loadNewsHome(
+                    pageSize = pageSize,
+                    forceRefresh = forceRefresh
+                )
+                withContext(Dispatchers.Main) {
+                    applyNewsHome(homeData)
+                }
+            } catch (e: CancellationException) {
+                throw e
+            } catch (t: Throwable) {
+                logger.warn(t) { "Failed to load news home" }
+                withContext(Dispatchers.Main) {
+                    applyNewsLoadFailure()
+                }
             }
         }
     }
@@ -272,8 +289,10 @@ class NewsView(
     private fun applyNewsHome(homeData: NewsHomeViewData) {
         rankingListModel.clear()
         homeData.mostViewed.forEach(rankingListModel::addElement)
+        mostViewedState = homeData.mostViewedState
 
         categoryArticles = buildCategoryMap(homeData)
+        categoryStates = homeData.headlines.categoryStates
         resetCategoryPaging()
         rebuildCategories()
         applyCategory(selectedCategoryKey)
@@ -287,20 +306,45 @@ class NewsView(
         repaint()
     }
 
+    private fun applyNewsLoadFailure() {
+        categoryArticles = emptyMap()
+        categoryStates = emptyMap()
+        mostViewedState = NewsCategoryLoadState(NewsLoadStatus.FAILED)
+        categoryListModel.clear()
+        rankingListModel.clear()
+        categoryPageByKey.clear()
+        categoryHasMoreByKey.clear()
+        categoryLoadingByKey.clear()
+        categoryKeys.clear()
+        categorySelector.removeAllItems()
+        renderDetail(null)
+        updateMoreButtonState()
+        statusLabel.text = localizationService.text(
+            "뉴스를 불러오지 못했습니다. 새로고침을 다시 시도해 주세요.",
+            "Could not load news. Try refreshing again."
+        )
+        revalidate()
+        repaint()
+    }
+
     private fun buildCategoryMap(homeData: NewsHomeViewData): Map<String, List<NewsArticle>> {
         val map = linkedMapOf<String, List<NewsArticle>>()
         homeData.headlines.headlines.forEach { (key, value) ->
-            if (value.isNotEmpty()) {
+            if (value.isNotEmpty() || homeData.headlines.categoryStates.containsKey(key)) {
                 map[key] = value
             }
         }
         homeData.headlines.focusSections.forEachIndexed { index, section ->
             if (section.articles.isNotEmpty()) {
-                map["FOCUS_$index"] = section.articles
+                val key = section.key.takeIf { it.isNotBlank() } ?: index.toString()
+                map["FOCUS_$key"] = section.articles
             }
         }
         if (homeData.headlines.moneyStories.isNotEmpty()) {
             map["MONEY"] = homeData.headlines.moneyStories
+        }
+        if (homeData.headlines.notices.isNotEmpty()) {
+            map["NOTICE"] = homeData.headlines.notices
         }
         return map
     }
@@ -356,16 +400,13 @@ class NewsView(
         updateStatusText()
     }
 
-    private fun displayCategory(categoryKey: String): String {
-        return displayCategoryBase(categoryKey)
-    }
-
     private fun displayCategoryBase(categoryKey: String): String {
         return when {
             categoryKey == "FLASHNEWS" -> localizationService.text("속보", "Flash")
             categoryKey == "MAINNEWS" -> localizationService.text("주요 뉴스", "Main News")
             categoryKey == "WORLDNEWS" -> localizationService.text("해외 뉴스", "World News")
             categoryKey == "MONEY" -> localizationService.text("머니스토리", "Money Story")
+            categoryKey == "NOTICE" -> localizationService.text("공지", "Notices")
             categoryKey.startsWith("FOCUS_") -> {
                 categoryArticles[categoryKey]?.firstOrNull()?.sectionLabel?.takeIf { it.isNotBlank() }
                     ?: localizationService.text("시장 섹션", "Market Section")
@@ -375,9 +416,30 @@ class NewsView(
     }
 
     private fun updateStatusText() {
+        val selectedState = categoryStates[selectedCategoryKey]
+        val selectedCategoryLabel = displayCategoryBase(selectedCategoryKey)
+        if (selectedState?.status == NewsLoadStatus.FAILED) {
+            statusLabel.text = localizationService.text(
+                "${selectedCategoryLabel}을(를) 불러오지 못했습니다. 다른 카테고리는 계속 사용할 수 있습니다.",
+                "Could not load $selectedCategoryLabel. Other categories remain available."
+            )
+            return
+        }
+        if (categoryListModel.isEmpty && selectedState?.status == NewsLoadStatus.EMPTY) {
+            statusLabel.text = localizationService.text(
+                "${selectedCategoryLabel} 기사 없음 · 많이 본 뉴스 ${rankingListModel.size()}건",
+                "No $selectedCategoryLabel articles · most viewed ${rankingListModel.size()} items"
+            )
+            return
+        }
+        val mostViewedSuffix = if (mostViewedState.status == NewsLoadStatus.FAILED) {
+            localizationService.text("많이 본 뉴스 실패", "most viewed failed")
+        } else {
+            localizationService.text("많이 본 뉴스 ${rankingListModel.size()}건", "most viewed ${rankingListModel.size()} items")
+        }
         statusLabel.text = localizationService.text(
-            "${displayCategory(selectedCategoryKey)} ${categoryListModel.size()}건 · 많이 본 뉴스 ${rankingListModel.size()}건",
-            "${displayCategory(selectedCategoryKey)} ${categoryListModel.size()} items · most viewed ${rankingListModel.size()}"
+            "$selectedCategoryLabel ${categoryListModel.size()}건 · $mostViewedSuffix",
+            "$selectedCategoryLabel ${categoryListModel.size()} items · $mostViewedSuffix"
         )
     }
 
@@ -409,20 +471,32 @@ class NewsView(
         updateMoreButtonState()
 
         scope.launch {
-            val moreArticles: List<NewsArticle> = newsFacadeService.loadNewsCategory(
-                categoryKey = categoryKey,
-                page = nextPage,
-                pageSize = pageSize
-            )
+            val pageResult = runCatching {
+                newsFacadeService.loadNewsCategoryPage(categoryKey, nextPage, pageSize)
+            }
             if (!isActive) return@launch
 
             ApplicationManager.getApplication().invokeLater {
-                if (!isActive) return@invokeLater
-
                 categoryLoadingByKey[categoryKey] = false
+                val loadedPage = pageResult.getOrElse { error ->
+                    categoryStates = categoryStates.toMutableMap().apply {
+                        put(categoryKey, NewsCategoryLoadState(NewsLoadStatus.FAILED, error.message.orEmpty()))
+                    }
+                    updateMoreButtonState()
+                    updateStatusText()
+                    return@invokeLater
+                }
+                categoryStates = categoryStates.toMutableMap().apply {
+                    put(categoryKey, loadedPage.state)
+                }
+                if (loadedPage.state.status == NewsLoadStatus.FAILED) {
+                    updateMoreButtonState()
+                    updateStatusText()
+                    return@invokeLater
+                }
 
                 val existingArticles = categoryArticles[categoryKey].orEmpty()
-                val pageUpdate = NewsPagingPolicy.merge(existingArticles, moreArticles, pageSize)
+                val pageUpdate = NewsPagingPolicy.merge(existingArticles, loadedPage.articles, pageSize)
 
                 categoryArticles = categoryArticles.toMutableMap().apply {
                     put(categoryKey, pageUpdate.mergedArticles)

@@ -1,6 +1,7 @@
 package com.github.myeoungdev.marketticker.infrastructure.naver.dto
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties
+import com.fasterxml.jackson.annotation.JsonAlias
 
 /**
  * Naver 국내 뉴스 리스트 응답입니다.
@@ -330,15 +331,36 @@ data class NaverNewsFocusSection(
     val news: List<NaverNewsFocusArticle> = emptyList()
 )
 
+/** 뉴스 포커스 API의 페이지 응답입니다. */
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class NaverNewsFocusResponse(
+    val page: Int = 1,
+    val pageSize: Int = 0,
+    val articleTotal: Int = 0,
+    val recentdates: List<String> = emptyList(),
+    val articles: List<NaverNewsFocusArticle> = emptyList(),
+    val date: String? = null,
+    val isFirstDate: Boolean = false
+)
+
 /**
  * 포커스 섹션의 개별 기사입니다.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class NaverNewsFocusArticle(
+    @JsonAlias("officeID", "officeId")
+    val officeId: String? = null,
+    @JsonAlias("officeHName", "officeHname")
+    val officeHname: String? = null,
+    @JsonAlias("articleID", "articleId")
+    val articleId: String? = null,
     val title: String = "",
+    val subcontent: String? = null,
+    val date: String? = null,
     val press: String? = null,
     val time: String? = null,
     val url: String? = null,
+    val thumbnails: NaverNewsFocusThumbnails? = null,
     val thumbnailUrl: String? = null,
     val isVideo: Boolean = false
 ) {
@@ -348,25 +370,44 @@ data class NaverNewsFocusArticle(
      */
     fun toNewsArticle(category: String): NaverNewsArticle {
         return NaverNewsArticle(
+            officeId = officeId ?: press,
+            officeHname = officeHname ?: press,
+            articleId = articleId,
             title = title,
             url = url,
-            datetime = time,
-            officeHname = press,
-            thumbUrl = thumbnailUrl,
+            datetime = time ?: date,
+            subcontent = subcontent,
+            thumbUrl = thumbnailUrl ?: thumbnails?.thumbnail154 ?: thumbnails?.thumbnail120,
             badgeLabel = category,
-            badgeColor = "gray"
-            ,
+            badgeColor = "gray",
             sectionKey = category,
             sectionLabel = category
         )
     }
 }
 
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class NaverNewsFocusThumbnails(
+    val thumbnail70: String? = null,
+    val thumbnail100: String? = null,
+    val thumbnail120: String? = null,
+    val thumbnail154: String? = null
+)
+
 /**
  * 머니스토리 카드입니다.
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class NaverMoneyStoryArticle(
+    val id: Long? = null,
+    val category: NaverMoneyStoryCategory? = null,
+    val channel: NaverMoneyStoryChannel? = null,
+    val contentType: String? = null,
+    val imageUrl: String? = null,
+    val aiSummary: String? = null,
+    val teaser: String? = null,
+    val displayAt: String? = null,
+    val buttonUrl: String? = null,
     val url: String? = null,
     val photo: NaverMoneyStoryPhoto? = null,
     val title: String = "",
@@ -381,10 +422,11 @@ data class NaverMoneyStoryArticle(
     fun toNewsArticle(): NaverNewsArticle {
         return NaverNewsArticle(
             title = title,
-            url = url,
-            datetime = date,
-            officeHname = categoryName,
-            thumbUrl = photo?.src,
+            url = url ?: buttonUrl ?: category?.url,
+            datetime = date ?: displayAt,
+            subcontent = teaser ?: aiSummary,
+            officeHname = categoryName ?: category?.subName ?: category?.mainName,
+            thumbUrl = photo?.src ?: imageUrl ?: category?.imageUrl,
             badgeLabel = "Story",
             badgeColor = "green",
             sectionKey = "STORY",
@@ -392,6 +434,26 @@ data class NaverMoneyStoryArticle(
         )
     }
 }
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class NaverMoneyStoryResponse(
+    val totalCount: Int = 0,
+    val moneyContentList: List<NaverMoneyStoryArticle> = emptyList()
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class NaverMoneyStoryCategory(
+    val mainName: String? = null,
+    val subName: String? = null,
+    val imageUrl: String? = null,
+    val url: String? = null
+)
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class NaverMoneyStoryChannel(
+    val name: String? = null,
+    val url: String? = null
+)
 
 /**
  * 머니스토리 사진 정보입니다.
@@ -407,11 +469,17 @@ data class NaverMoneyStoryPhoto(
  */
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class NaverNoticeSummary(
-    val noticeId: String,
-    val title: String,
+    @JsonAlias("noticeId", "no")
+    val noticeId: String = "",
+    val title: String = "",
+    @JsonAlias("noticeTypeName", "comment")
     val category: String? = null,
     val categoryColor: String? = null,
-    val createdAt: String? = null
+    @JsonAlias("createdAt", "datetime")
+    val createdAt: String? = null,
+    val contents: String? = null,
+    val endUrl: String? = null,
+    val itemName: String? = null
 ) {
 
     /**
@@ -420,7 +488,9 @@ data class NaverNoticeSummary(
     fun toNewsArticle(): NaverNewsArticle {
         return NaverNewsArticle(
             title = title,
+            url = endUrl,
             datetime = createdAt,
+            subcontent = contents?.stripHtml(),
             officeHname = category,
             badgeLabel = category ?: "공지",
             badgeColor = categoryColor,
@@ -430,6 +500,17 @@ data class NaverNoticeSummary(
         )
     }
 }
+
+/** 공시 pageable 응답입니다. */
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class NaverNoticePage(
+    val content: List<NaverNoticeSummary> = emptyList(),
+    val totalPages: Int = 0,
+    val totalElements: Long = 0,
+    val last: Boolean = true,
+    val number: Int = 0,
+    val size: Int = 0
+)
 
 /**
  * 거래소 공지 섹션입니다.

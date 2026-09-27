@@ -5,6 +5,8 @@ import com.github.myeoungdev.marketticker.application.model.research.ResearchSum
 import com.github.myeoungdev.marketticker.application.model.research.StockResearchViewData
 import com.github.myeoungdev.marketticker.application.provider.DefaultDataSourceRegistry
 import com.github.myeoungdev.marketticker.application.provider.ResearchProvider
+import com.github.myeoungdev.marketticker.application.provider.ResearchLoadResult
+import com.github.myeoungdev.marketticker.application.provider.ResearchLoadStatus
 import com.github.myeoungdev.marketticker.application.provider.SearchProvider
 import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
@@ -34,13 +36,21 @@ class ResearchFacadeService(
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     suspend fun loadResearchHome(forceRefresh: Boolean = false): ResearchHomeViewData {
-        val latest = cached("research-home:latest", 300_000L, forceRefresh) {
-            researchProvider.getCategoryLatestResearch()
+        val latestResult = cached("research-home:latest", 300_000L, forceRefresh) {
+            researchProvider.getCategoryLatestResearchResult()
         }
-        val ranking = loadRankingBundle(ResearchRankingType.SEARCH_TOP, 1, forceRefresh)
+        val rankingResult = cached("research-home-ranking:SEARCH_TOP:1", 300_000L, forceRefresh) {
+            researchProvider.getResearchRankingResult(ResearchRankingType.SEARCH_TOP, 1)
+        }
+        val latest = latestResult.value
+        val ranking = rankingResult.value
         return ResearchHomeViewData(
             latestByCategory = latest,
-            rankingArticles = ranking.latestResearch.map { it.withAnalyst(buildRankingMeta(ranking, 1)) }
+            rankingArticles = ranking.latestResearch.map { it.withAnalyst(buildRankingMeta(ranking, 1)) },
+            latestStatus = latestResult.status,
+            rankingStatus = rankingResult.status,
+            latestMessage = latestResult.message,
+            rankingMessage = rankingResult.message
         )
     }
 
@@ -67,18 +77,24 @@ class ResearchFacadeService(
                 statusMessage = "NO_MATCH"
             )
 
-        val articles = cached(
+        val researchResult = cached(
             key = "research-stock:${resolved.marketType.name}:${resolved.symbol}",
             ttlMillis = 600_000L,
             forceRefresh = forceRefresh
         ) {
-            researchProvider.getStockResearch(resolved.symbol)
+            researchProvider.getStockResearchResult(resolved.symbol)
         }
 
         return StockResearchViewData(
             resolvedTicker = resolved,
-            articles = articles,
-            statusMessage = if (articles.isEmpty()) "EMPTY" else "OK"
+            articles = researchResult.value,
+            statusMessage = when (researchResult.status) {
+                ResearchLoadStatus.SUCCESS -> "OK"
+                ResearchLoadStatus.EMPTY -> "EMPTY"
+                ResearchLoadStatus.FAILED -> "FAILED"
+            },
+            loadStatus = researchResult.status,
+            errorMessage = researchResult.message
         )
     }
 
@@ -94,15 +110,15 @@ class ResearchFacadeService(
     }
 
     suspend fun loadTickerResearchSummary(ticker: Ticker, forceRefresh: Boolean = false): ResearchSummaryViewData {
-        val articles = cached(
+        val researchResult = cached(
             key = "research-summary:${ticker.marketType.name}:${ticker.symbol}",
             ttlMillis = 600_000L,
             forceRefresh = forceRefresh
         ) {
             if (!ticker.marketType.isKoreanMarket()) {
-                emptyList()
+                ResearchLoadResult(emptyList(), ResearchLoadStatus.EMPTY)
             } else {
-                researchProvider.getStockResearch(ticker.symbol, size = 3).take(3)
+                researchProvider.getStockResearchResult(ticker.symbol, size = 3)
             }
         }
 
@@ -110,10 +126,13 @@ class ResearchFacadeService(
             title = "${ticker.name} 리서치",
             statusMessage = when {
                 !ticker.marketType.isKoreanMarket() -> "국내 종목 리서치만 지원합니다."
-                articles.isEmpty() -> "최근 리서치 없음"
-                else -> "최근 리서치 ${articles.size}건"
+                researchResult.status == ResearchLoadStatus.FAILED -> "리서치를 불러오지 못했습니다."
+                researchResult.status == ResearchLoadStatus.EMPTY -> "최근 리서치 없음"
+                else -> "최근 리서치 ${researchResult.value.size}건"
             },
-            articles = articles
+            articles = researchResult.value,
+            loadStatus = researchResult.status,
+            errorMessage = researchResult.message
         )
     }
 
@@ -181,6 +200,9 @@ class ResearchFacadeService(
         key: String,
         ttlMillis: Long,
         forceRefresh: Boolean,
+        shouldCache: (T) -> Boolean = { value ->
+            value !is ResearchLoadResult<*> || value.status != ResearchLoadStatus.FAILED
+        },
         loader: () -> T
     ): T {
         val now = System.currentTimeMillis()
@@ -209,7 +231,9 @@ class ResearchFacadeService(
         return try {
             val value = deferred.await()
             mutex.withLock {
-                cache[key] = CacheEntry(System.currentTimeMillis() + ttlMillis, value)
+                if (shouldCache(value as T)) {
+                    cache[key] = CacheEntry(System.currentTimeMillis() + ttlMillis, value)
+                }
                 inFlight.remove(key)
             }
             value as T

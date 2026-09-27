@@ -10,6 +10,7 @@ import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.fixtures.domain.TickerFixtures
 import com.github.myeoungdev.marketticker.fixtures.naver.NaverFixtures
+import com.github.myeoungdev.marketticker.domain.model.news.NewsLoadStatus
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverDiscussionRankingResponse
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverExchangeRateItem
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverResearchLatestResponse
@@ -17,6 +18,8 @@ import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverResearch
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCoinOverview
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCryptoChartResponse
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverRealTimeStockPriceResponse
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverDomesticV2Session
+import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverDomesticV2StockItem
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverSearchResponse
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.ResearchCategoryKey
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.ResearchRankingType
@@ -27,6 +30,7 @@ import com.github.tomakehurst.wiremock.http.Fault
 import org.assertj.core.api.Assertions.assertThat
 import org.junit.jupiter.api.*
 import java.net.http.HttpClient
+import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 
@@ -68,21 +72,23 @@ class NaverClientTest {
             foreignChartUrl = "$baseUrl/chart/foreign/item",
             researchAggregateUrl = "$baseUrl/research/aggregate",
             researchRecentPopularUrl = "$baseUrl/research/recent-popular",
-            researchCategoryLatestUrl = "$baseUrl/research/category-latest",
             industryResearchUrl = "$baseUrl/research/industry-research",
             discussionRankingUrl = "$baseUrl/community/discussion/rankings",
             researchRankingUrl = "$baseUrl/research/ranking",
-            stockResearchBaseUrl = "$baseUrl/research",
             newsListUrl = "$baseUrl/news/list",
+            newsFocusUrl = "$baseUrl/news/focus",
             worldNewsUrl = "$baseUrl/foreign/news/worldNews",
+            moneyStoryUrl = "$baseUrl/content/moneyStory",
             domesticDetailNewsUrl = "$baseUrl/domestic/detail/news",
             domesticStockDetailUrl = "$baseUrl/domestic/detail",
             foreignStockNewsUrl = "$baseUrl/foreign/worldStock/list",
             foreignStockOverviewUrl = "$baseUrl/securityService/stock",
             foreignStockBasicUrl = "$baseUrl/securityService/stock",
-            newsAggregateUrl = "$baseUrl/news/aggregate/home",
-            noticeListUrl = "$baseUrl/home/noticeList",
-            newsSearchUrl = "$baseUrl/news/search"
+            noticeListUrl = "$baseUrl/news/noticeList",
+            newsSearchUrl = "$baseUrl/news/search",
+            researchLatestV2Url = "$baseUrl/research/latestResearch",
+            researchCompanyV2Url = "$baseUrl/research/company/by-items",
+            treasuryBaseUrl = "$baseUrl/marketindex/bond/nation"
         )
     }
 
@@ -265,6 +271,19 @@ class NaverClientTest {
         }
 
         @Test
+        fun `NXT가 활성 상태면 레거시 가격 변환도 NXT 세션을 선택한다`() {
+            val item = NaverDomesticV2StockItem(
+                itemCode = "005930",
+                itemName = "삼성전자",
+                marketCode = "KOSPI",
+                krx = NaverDomesticV2Session(currentPrice = "100", marketState = "CLOSED"),
+                nxt = NaverDomesticV2Session(currentPrice = "110", marketState = "OPEN")
+            )
+
+            assertThat(item.toLegacyPrice()?.closePrice).isEqualTo("110")
+        }
+
+        @Test
         fun `JSON 문자열이 DTO로 정상적으로 역직렬화 된다`() {
             // Given
             val json = NaverFixtures.JSON_SEARCH_SUCCESS_SAMSUNG
@@ -427,6 +446,31 @@ class NaverClientTest {
         }
 
         @Test
+        fun `최신 국내 v2 시세 계약을 기존 가격 DTO로 매핑한다`() {
+            wireMockServer.stubFor(
+                get(urlPathEqualTo("/domestic/v2/stock"))
+                    .withQueryParam("itemCodes", equalTo("005930"))
+                    .willReturn(
+                        aResponse().withStatus(200).withHeader("Content-Type", "application/json").withBody(
+                            """{"pollingInterval":7000,"datas":[{"itemCode":"005930","itemName":"삼성전자","marketCode":"KOSPI","nationCode":"KOR","krx":{"currentPrice":"103400","changePrice":"2600","changeRate":"2.58","openingPrice":"101000","highPrice":"104000","lowPrice":"100500","tradingVolume":"10079219","tradingValue":"1032919000000","marketState":"OPEN"},"currencyCode":"KRW","isinCode":"KR7005930003"}]}"""
+                        )
+                    )
+            )
+
+            val client = NaverClient(
+                client = HttpClient.newBuilder().build(),
+                domesticPriceUrl = "${wireMockServer.baseUrl()}/domestic/v2/stock"
+            )
+
+            val result = client.fetchStockPrice(listOf(TickerFixtures.SAMSUNG_ELECTRONICS))
+
+            assertThat(result).hasSize(1)
+            assertThat(result.first().itemCode).isEqualTo("005930")
+            assertThat(result.first().closePrice).isEqualTo("103400")
+            assertThat(result.first().stockExchangeType.code).isEqualTo("KS")
+        }
+
+        @Test
         fun `코인 시세 조회 API 성공 시 코인 데이터를 파싱한다`() {
             wireMockServer.stubFor(
                 get(urlPathMatching("/coin/price.*"))
@@ -495,7 +539,8 @@ class NaverClientTest {
         @Test
         fun `리서치 최신 API 성공 시 카테고리별 보고서를 반환한다`() {
             wireMockServer.stubFor(
-                get(urlEqualTo("/research/category-latest"))
+                get(urlPathEqualTo("/research/latestResearch"))
+                    .withQueryParam("size", equalTo("10"))
                     .willReturn(
                         aResponse()
                             .withStatus(200)
@@ -634,14 +679,15 @@ class NaverClientTest {
         @Test
         fun `종목 리서치 API 성공 시 특정 종목 보고서 리스트를 반환한다`() {
             wireMockServer.stubFor(
-                get(urlPathEqualTo("/research/005930/research"))
-                    .withQueryParam("page", equalTo("0"))
+                get(urlPathEqualTo("/research/company/by-items"))
+                    .withQueryParam("itemCodes", equalTo("005930"))
                     .withQueryParam("size", equalTo("10"))
+                    .withQueryParam("index", equalTo("0"))
                     .willReturn(
                         aResponse()
                             .withStatus(200)
                             .withHeader("Content-Type", "application/json")
-                            .withBody(NaverFixtures.JSON_STOCK_RESEARCH_SUCCESS)
+                            .withBody("""{"005930":${NaverFixtures.JSON_STOCK_RESEARCH_SUCCESS}}""")
                     )
             )
 
@@ -755,6 +801,30 @@ class NaverClientTest {
         }
 
         @Test
+        fun `최신 환율 계약은 currencies query와 currencyInfo를 매핑한다`() {
+            wireMockServer.stubFor(
+                get(urlPathEqualTo("/stockDomestic/exchangeRates/list"))
+                    .withQueryParam("currencies", equalTo("USD,JPY,EUR,CNY,HKD"))
+                    .willReturn(
+                        aResponse().withStatus(200).withHeader("Content-Type", "application/json").withBody(
+                            """[{"currencyInfo":{"currencyCode":"USD","currencyKoreanName":"달러"},"saleBaseRate":1358.6,"changeVal":-16.4,"changeRate":-1.19}]"""
+                        )
+                    )
+            )
+
+            val client = NaverClient(
+                client = HttpClient.newBuilder().build(),
+                exchangeRateUrl = "${wireMockServer.baseUrl()}/stockDomestic/exchangeRates/list"
+            )
+
+            val result = client.fetchExchangeRates()
+
+            assertThat(result).hasSize(1)
+            assertThat(result.first().currencyInfo?.currencyCode).isEqualTo("USD")
+            assertThat(result.first().saleBaseRate).isEqualTo("1358.6")
+        }
+
+        @Test
         fun `환율 API 실패 시 빈 목록을 반환한다`() {
             wireMockServer.stubFor(
                 get(urlEqualTo("/domestic/exchange/List"))
@@ -816,8 +886,11 @@ class NaverClientTest {
         @Test
         fun `뉴스 리스트 API 성공 시 기사 목록을 반환한다`() {
             wireMockServer.stubFor(
-                get(urlPathMatching("/news/list.*"))
+                get(urlPathEqualTo("/news/list"))
                     .withQueryParam("category", equalTo("FLASHNEWS"))
+                    .withQueryParam("page", equalTo("1"))
+                    .withQueryParam("pageSize", equalTo("15"))
+                    .withQueryParam("date", equalTo("20260914"))
                     .willReturn(
                         aResponse()
                             .withStatus(200)
@@ -826,7 +899,10 @@ class NaverClientTest {
                     )
             )
 
-            val result = naverClient.fetchNewsList(category = "FLASHNEWS")
+            val result = naverClient.fetchNewsList(
+                category = "FLASHNEWS",
+                date = LocalDate.of(2026, 9, 14)
+            )
 
             assertThat(result).hasSize(1)
             assertThat(result.first().title).isEqualTo("테스트 뉴스 제목")
@@ -834,10 +910,86 @@ class NaverClientTest {
         }
 
         @Test
+        fun `뉴스 포커스 머니스토리 공지 API는 최신 웹 계약을 사용한다`() {
+            wireMockServer.stubFor(
+                get(urlPathEqualTo("/news/focus"))
+                    .withQueryParam("sid", equalTo("401"))
+                    .withQueryParam("page", equalTo("1"))
+                    .withQueryParam("pageSize", equalTo("5"))
+                    .withQueryParam("date", equalTo("20260914"))
+                    .withQueryParam("enableFallback", equalTo("true"))
+                    .withQueryParam("maxDays", equalTo("7"))
+                    .willReturn(okJson("""{"articles":[{"officeID":"001","officeHName":"테스트","articleID":"1","title":"포커스","date":"20260914110000","url":"https://example.com/focus"}]}"""))
+            )
+            wireMockServer.stubFor(
+                get(urlPathEqualTo("/content/moneyStory"))
+                    .withQueryParam("mainCategoryIdList", equalTo("1"))
+                    .withQueryParam("size", equalTo("20"))
+                    .willReturn(okJson("""{"totalCount":1,"moneyContentList":[{"title":"머니","displayAt":"2026-09-14T11:00:00","imageUrl":"https://example.com/money.jpg"}]}"""))
+            )
+            wireMockServer.stubFor(
+                get(urlPathEqualTo("/news/noticeList"))
+                    .withQueryParam("page", equalTo("1"))
+                    .withQueryParam("pageSize", equalTo("2"))
+                    .withQueryParam("keyword", equalTo("공시"))
+                    .withQueryParam("startDate", equalTo("20260901"))
+                    .withQueryParam("endDate", equalTo("20260914"))
+                    .withQueryParam("typeIdx", equalTo("ST"))
+                    .withQueryParam("enableFallback", equalTo("true"))
+                    .withQueryParam("maxDays", equalTo("3"))
+                    .willReturn(okJson("""{"content":[{"no":"1","title":"공지","datetime":"2026-09-14T11:00:00"}],"totalPages":1,"totalElements":1,"last":true,"number":0,"size":2}"""))
+            )
+
+            val focus = naverClient.fetchNewsFocusResult(401, date = LocalDate.of(2026, 9, 14))
+            val money = naverClient.fetchMoneyStory(size = 20)
+            val notice = naverClient.fetchNoticePage(
+                pageSize = 2,
+                keyword = "공시",
+                startDate = LocalDate.of(2026, 9, 1),
+                endDate = LocalDate.of(2026, 9, 14),
+                typeIdx = listOf("ST")
+            )
+
+            assertThat(focus.status).isEqualTo(NaverFetchStatus.SUCCESS)
+            assertThat(focus.value.articles).hasSize(1)
+            assertThat(focus.value.articles.first().toNewsArticle("시장").articleUrl()).isEqualTo("https://example.com/focus")
+            assertThat(money.status).isEqualTo(NaverFetchStatus.SUCCESS)
+            assertThat(money.value.moneyContentList).hasSize(1)
+            assertThat(notice.status).isEqualTo(NaverFetchStatus.SUCCESS)
+            assertThat(notice.value.content).hasSize(1)
+            assertThat(notice.value.totalElements).isEqualTo(1)
+        }
+
+        @Test
+        fun `주요 뉴스 리스트 API는 현재 페이지 계약을 사용한다`() {
+            wireMockServer.stubFor(
+                get(urlPathEqualTo("/news/list"))
+                    .withQueryParam("category", equalTo("MAINNEWS"))
+                    .withQueryParam("page", equalTo("2"))
+                    .withQueryParam("pageSize", equalTo("20"))
+                    .withQueryParam("date", equalTo("20260914"))
+                    .willReturn(okJson(NaverFixtures.JSON_NEWS_LIST_FLASH_SUCCESS))
+            )
+
+            val result = naverClient.fetchNewsList(
+                category = "MAINNEWS",
+                page = 2,
+                pageSize = 20,
+                date = LocalDate.of(2026, 9, 14)
+            )
+
+            assertThat(result).hasSize(1)
+            assertThat(result.first().title).isEqualTo("테스트 뉴스 제목")
+        }
+
+        @Test
         fun `랭킹 뉴스 API 성공 시 랭킹 기사 목록을 반환한다`() {
             wireMockServer.stubFor(
-                get(urlPathMatching("/news/list.*"))
+                get(urlPathEqualTo("/news/list"))
                     .withQueryParam("category", equalTo("RANKNEWS"))
+                    .withQueryParam("page", equalTo("1"))
+                    .withQueryParam("pageSize", equalTo("15"))
+                    .withQueryParam("date", equalTo("20260914"))
                     .willReturn(
                         aResponse()
                             .withStatus(200)
@@ -846,7 +998,10 @@ class NaverClientTest {
                     )
             )
 
-            val result = naverClient.fetchNewsList(category = "RANKNEWS")
+            val result = naverClient.fetchNewsList(
+                category = "RANKNEWS",
+                date = LocalDate.of(2026, 9, 14)
+            )
 
             assertThat(result).hasSize(1)
             assertThat(result.first().title).contains("외국인")
@@ -859,7 +1014,9 @@ class NaverClientTest {
         @Test
         fun `해외 뉴스 API 성공 시 기사 목록을 반환한다`() {
             wireMockServer.stubFor(
-                get(urlPathMatching("/foreign/news/worldNews.*"))
+                get(urlPathEqualTo("/foreign/news/worldNews"))
+                    .withQueryParam("page", equalTo("1"))
+                    .withQueryParam("pageSize", equalTo("15"))
                     .willReturn(
                         aResponse()
                             .withStatus(200)
@@ -875,6 +1032,45 @@ class NaverClientTest {
             assertThat(result.first().officeHname).isEqualTo("로이터")
             assertThat(result.first().articleUrl()).isEqualTo("https://stock.naver.com/news/worldnews/2509419")
             assertThat(result.first().subcontent).contains("전력 수입")
+        }
+
+        @Test
+        fun `뉴스 리스트 API 실패와 빈 응답을 상태로 구분한다`() {
+            wireMockServer.stubFor(
+                get(urlPathEqualTo("/news/list"))
+                    .withQueryParam("category", equalTo("MAINNEWS"))
+                    .willReturn(serverError())
+            )
+            wireMockServer.stubFor(
+                get(urlPathEqualTo("/news/list"))
+                    .withQueryParam("category", equalTo("FLASHNEWS"))
+                    .willReturn(okJson("""{"articles":[]}"""))
+            )
+
+            val failed = naverClient.fetchNewsListResult(category = "MAINNEWS")
+            val empty = naverClient.fetchNewsListResult(category = "FLASHNEWS")
+
+            assertThat(failed.status).isEqualTo(NewsLoadStatus.FAILED)
+            assertThat(empty.status).isEqualTo(NewsLoadStatus.EMPTY)
+        }
+
+        @Test
+        fun `랭킹 뉴스는 집계 홈이 아닌 리스트 API를 사용한다`() {
+            wireMockServer.stubFor(
+                get(urlPathEqualTo("/news/list"))
+                    .withQueryParam("category", equalTo("RANKNEWS"))
+                    .willReturn(okJson(NaverFixtures.JSON_NEWS_LIST_RANK_SUCCESS))
+            )
+            wireMockServer.stubFor(
+                get(urlPathEqualTo("/news/aggregate/home"))
+                    .willReturn(notFound())
+            )
+
+            val result = naverClient.fetchRankingNews(limit = 15)
+
+            assertThat(result).hasSize(1)
+            wireMockServer.verify(1, getRequestedFor(urlPathEqualTo("/news/list")))
+            wireMockServer.verify(0, getRequestedFor(urlPathEqualTo("/news/aggregate/home")))
         }
 
         @Test
@@ -1130,34 +1326,14 @@ class NaverClientTest {
         }
 
         @Test
-        fun `뉴스 홈 집계 API 성공 시 헤드라인과 공지 데이터를 파싱한다`() {
-            wireMockServer.stubFor(
-                get(urlPathMatching("/news/aggregate/home.*"))
-                    .willReturn(
-                        aResponse()
-                            .withStatus(200)
-                            .withHeader("Content-Type", "application/json")
-                            .withBody(NaverFixtures.JSON_NEWS_HOME_SUCCESS)
-                    )
-            )
-
-            val result = naverClient.fetchNewsHome()
-
-            assertThat(result).isNotNull
-            assertThat(result?.flashNews).hasSize(1)
-            assertThat(result?.newsFocus).hasSize(1)
-            assertThat(result?.newsNotice?.items).hasSize(1)
-        }
-
-        @Test
         fun `공지 리스트 API 성공 시 공지 요약 목록을 반환한다`() {
             wireMockServer.stubFor(
-                get(urlPathMatching("/home/noticeList.*"))
+                get(urlPathMatching("/news/noticeList.*"))
                     .willReturn(
                         aResponse()
                             .withStatus(200)
                             .withHeader("Content-Type", "application/json")
-                            .withBody(NaverFixtures.JSON_NOTICE_LIST_SUCCESS)
+                            .withBody("""{"content":${NaverFixtures.JSON_NOTICE_LIST_SUCCESS}}""")
                     )
             )
 
@@ -1165,7 +1341,7 @@ class NaverClientTest {
 
             assertThat(result).hasSize(2)
             assertThat(result.first().title).contains("서머타임")
-            assertThat(result.first().categoryColor).isEqualTo("green")
+            assertThat(result.first().category).isEqualTo("거래시간")
         }
     }
 

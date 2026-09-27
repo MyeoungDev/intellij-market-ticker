@@ -48,6 +48,7 @@ data class NaverResearchArticle(
     val category: String = "",
     val itemCode: String? = null,
     val itemName: String? = null,
+    @JsonAlias("researchId", "nid")
     val researchId: String = "",
     val title: String = "",
     val content: String = "",
@@ -66,15 +67,16 @@ data class NaverResearchArticle(
 data class NaverStockResearchItem(
     @JsonProperty("nid")
     val nid: String = "",
-    @JsonProperty("itemcode")
+    @JsonAlias("itemcode", "itemCode")
     val itemCode: String = "",
-    @JsonProperty("itemname")
+    @JsonAlias("itemname", "itemName")
     val itemName: String = "",
     val brokerName: String = "",
     val brokerCode: String? = null,
     val title: String = "",
     val content: String = "",
     val goalPrice: String? = null,
+    @JsonAlias("opinion", "opinionText")
     val opinion: String? = null,
     val attachUrl: String = "",
     val readCount: String? = null,
@@ -104,17 +106,17 @@ data class NaverStockResearchItem(
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 data class NaverResearchLatestResponse(
-    @JsonProperty("MARKET")
+    @JsonAlias("MARKET", "market")
     val market: List<NaverResearchArticle> = emptyList(),
-    @JsonProperty("COMPANY")
+    @JsonAlias("COMPANY", "company")
     val company: List<NaverResearchArticle> = emptyList(),
-    @JsonProperty("INDUSTRY")
+    @JsonAlias("INDUSTRY", "industry")
     val industry: List<NaverResearchArticle> = emptyList(),
-    @JsonProperty("INVEST")
+    @JsonAlias("INVEST", "invest")
     val invest: List<NaverResearchArticle> = emptyList(),
-    @JsonProperty("ECONOMY")
+    @JsonAlias("ECONOMY", "economy")
     val economy: List<NaverResearchArticle> = emptyList(),
-    @JsonProperty("DEBENTURE")
+    @JsonAlias("DEBENTURE", "debenture")
     val debenture: List<NaverResearchArticle> = emptyList()
 ) {
     fun categoryMap(): Map<ResearchCategoryKey, List<NaverResearchArticle>> {

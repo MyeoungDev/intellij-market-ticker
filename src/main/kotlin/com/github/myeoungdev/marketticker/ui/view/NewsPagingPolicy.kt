@@ -17,7 +17,7 @@ internal object NewsPagingPolicy {
             mergedArticles = existingArticles + appendedArticles,
             appendedArticles = appendedArticles,
             shouldAdvancePage = incomingArticles.isNotEmpty(),
-            hasMore = incomingArticles.size >= pageSize
+            hasMore = appendedArticles.isNotEmpty() && incomingArticles.size >= pageSize
         )
     }
 

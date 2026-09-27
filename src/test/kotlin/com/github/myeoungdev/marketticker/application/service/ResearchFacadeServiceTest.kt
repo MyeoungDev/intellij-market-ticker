@@ -1,6 +1,8 @@
 package com.github.myeoungdev.marketticker.application.service
 
 import com.github.myeoungdev.marketticker.application.provider.ResearchProvider
+import com.github.myeoungdev.marketticker.application.provider.ResearchLoadResult
+import com.github.myeoungdev.marketticker.application.provider.ResearchLoadStatus
 import com.github.myeoungdev.marketticker.application.provider.SearchProvider
 import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
@@ -28,6 +30,17 @@ class ResearchFacadeServiceTest {
     }
 
     @Test
+    fun `리서치 홈과 랭킹 상세는 서로 다른 캐시 값을 사용한다`() = runBlocking {
+        val provider = FakeResearchProvider()
+        val service = ResearchFacadeService(provider, FakeSearchProvider())
+
+        service.loadResearchHome()
+        service.loadRankingResearch(ResearchRankingType.SEARCH_TOP, 1)
+
+        assertThat(provider.rankingCalls.get()).isEqualTo(2)
+    }
+
+    @Test
     fun `종목 리서치는 검색 결과를 내부 ticker로 해석해서 조회한다`() = runBlocking {
         val provider = FakeResearchProvider()
         val service = ResearchFacadeService(provider, FakeSearchProvider())
@@ -40,7 +53,36 @@ class ResearchFacadeServiceTest {
         assertThat(provider.stockCalls.get()).isEqualTo(1)
     }
 
-    private class FakeResearchProvider : ResearchProvider {
+    @Test
+    fun `리서치 실패는 FAILED 상태로 전달되고 다음 조회를 막지 않는다`() = runBlocking {
+        val provider = FailingOnceResearchProvider()
+        val service = ResearchFacadeService(provider, FakeSearchProvider())
+
+        val failed = service.loadStockResearch("삼성전자")
+        val recovered = service.loadStockResearch("삼성전자", forceRefresh = false)
+
+        assertThat(failed.loadStatus).isEqualTo(ResearchLoadStatus.FAILED)
+        assertThat(failed.statusMessage).isEqualTo("FAILED")
+        assertThat(recovered.loadStatus).isEqualTo(ResearchLoadStatus.SUCCESS)
+        assertThat(provider.stockCalls.get()).isEqualTo(2)
+    }
+
+    @Test
+    fun `종목 리서치 요약은 실패와 빈 결과를 구분하고 실패를 캐시하지 않는다`() = runBlocking {
+        val provider = FailingSummaryResearchProvider()
+        val service = ResearchFacadeService(provider, FakeSearchProvider())
+        val ticker = Ticker("005930", "005930", "삼성전자", MarketType.KOSPI, "KOR", "대한민국")
+
+        val failed = service.loadTickerResearchSummary(ticker)
+        val recovered = service.loadTickerResearchSummary(ticker)
+
+        assertThat(failed.loadStatus).isEqualTo(ResearchLoadStatus.FAILED)
+        assertThat(recovered.loadStatus).isEqualTo(ResearchLoadStatus.SUCCESS)
+        assertThat(provider.summaryCalls.get()).isEqualTo(2)
+        assertThat(provider.lastSummarySize).isEqualTo(3)
+    }
+
+    private open class FakeResearchProvider : ResearchProvider {
         val latestCalls = AtomicInteger()
         val rankingCalls = AtomicInteger()
         val stockCalls = AtomicInteger()
@@ -60,7 +102,7 @@ class ResearchFacadeServiceTest {
             return listOf(article(itemCode, "${itemCode} 종목 리서치"))
         }
 
-        private fun article(id: String, title: String): ResearchArticle {
+        protected fun article(id: String, title: String): ResearchArticle {
             return ResearchArticle(
                 researchId = id,
                 title = title,
@@ -77,6 +119,31 @@ class ResearchFacadeServiceTest {
             return listOf(
                 Ticker("005930", "005930", "삼성전자", MarketType.KOSPI, "KOR", "대한민국")
             )
+        }
+    }
+
+    private class FailingOnceResearchProvider : FakeResearchProvider() {
+        override fun getStockResearchResult(itemCode: String, size: Int): ResearchLoadResult<List<ResearchArticle>> {
+            return if (stockCalls.incrementAndGet() == 1) {
+                ResearchLoadResult(emptyList(), ResearchLoadStatus.FAILED, "temporary upstream failure")
+            } else {
+                ResearchLoadResult(listOf(article(itemCode, "복구된 리서치")), ResearchLoadStatus.SUCCESS)
+            }
+        }
+    }
+
+    private class FailingSummaryResearchProvider : FakeResearchProvider() {
+        val summaryCalls = AtomicInteger()
+        var lastSummarySize: Int? = null
+
+        override fun getStockResearchResult(itemCode: String, size: Int): ResearchLoadResult<List<ResearchArticle>> {
+            summaryCalls.incrementAndGet()
+            lastSummarySize = size
+            return if (summaryCalls.get() == 1) {
+                ResearchLoadResult(emptyList(), ResearchLoadStatus.FAILED, "temporary upstream failure")
+            } else {
+                ResearchLoadResult(listOf(article(itemCode, "복구된 요약")), ResearchLoadStatus.SUCCESS)
+            }
         }
     }
 }

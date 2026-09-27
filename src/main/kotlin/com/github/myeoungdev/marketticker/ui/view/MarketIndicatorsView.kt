@@ -243,6 +243,7 @@ class MarketIndicatorsView : JPanel(BorderLayout()), Disposable {
             IndicatorCategory.EXCHANGE_RATE -> localizationService.text("환율", "FX")
             IndicatorCategory.DOMESTIC_INDEX -> localizationService.text("국내 지수", "Domestic")
             IndicatorCategory.WORLD_INDEX -> localizationService.text("해외 지수", "Global")
+            IndicatorCategory.BOND -> localizationService.text("국채", "Treasuries")
             IndicatorCategory.METAL -> localizationService.text("금속", "Metals")
             IndicatorCategory.ENERGY -> localizationService.text("에너지", "Energy")
         }
@@ -256,6 +257,9 @@ class MarketIndicatorsView : JPanel(BorderLayout()), Disposable {
                 label = indicator.sentimentLabel ?: indicator.displayHint,
                 formatDecimal = localizationService::formatDecimal
             ).displayName
+        }
+        if (indicator.category == IndicatorCategory.BOND) {
+            return localizationService.text(indicator.name, indicator.englishName ?: indicator.name)
         }
 
         return when (indicator.code.uppercase()) {

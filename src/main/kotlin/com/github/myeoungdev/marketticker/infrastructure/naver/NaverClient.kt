@@ -6,6 +6,7 @@ import com.github.myeoungdev.marketticker.common.config.httpClient
 import com.github.myeoungdev.marketticker.common.config.objectMapper
 import com.github.myeoungdev.marketticker.domain.model.DomesticTradeType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
+import com.github.myeoungdev.marketticker.domain.model.news.NewsLoadStatus
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCoinPrice
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCryptoCandle
 import com.github.myeoungdev.marketticker.infrastructure.naver.dto.NaverCryptoChartResponse
@@ -34,6 +35,7 @@ import java.net.URLEncoder
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -47,15 +49,52 @@ import java.time.format.DateTimeFormatter
  *
  * 반환 규칙:
  * - 조회 실패 시 리스트 계열은 가능한 한 `emptyList()`를 반환합니다.
+ * - 뉴스 result 계열은 빈 응답과 실패를 `NewsLoadStatus`로 구분합니다.
  * - 단건 조회 실패 시 `null`을 반환합니다.
- * - UI 레이어는 이 반환값을 그대로 사용해 fallback 또는 빈 상태를 렌더링합니다.
+ * - UI 레이어는 이 반환값을 그대로 사용해 실패 또는 빈 상태를 렌더링합니다.
  */
 private val logger = KotlinLogging.logger {}
+
+enum class TreasuryNation(val pathValue: String) {
+    USA("USA"),
+    KOR("KOR")
+}
+
+data class NaverNewsFetchResult(
+    val articles: List<NaverNewsArticle>,
+    val status: NewsLoadStatus,
+    val message: String = ""
+) {
+    companion object {
+        fun success(articles: List<NaverNewsArticle>): NaverNewsFetchResult {
+            return NaverNewsFetchResult(
+                articles = articles,
+                status = if (articles.isEmpty()) NewsLoadStatus.EMPTY else NewsLoadStatus.SUCCESS
+            )
+        }
+
+        fun failed(message: String): NaverNewsFetchResult {
+            return NaverNewsFetchResult(
+                articles = emptyList(),
+                status = NewsLoadStatus.FAILED,
+                message = message
+            )
+        }
+    }
+}
+
+enum class NaverFetchStatus { SUCCESS, EMPTY, FAILED }
+
+data class NaverFetchResult<T>(
+    val value: T,
+    val status: NaverFetchStatus,
+    val message: String = ""
+)
 
 class NaverClient(
     private val client: HttpClient = httpClient,
     private val searchBaseUrl: String = "https://stock.naver.com/api/autocomplete/search/autoComplete",
-    private val domesticPriceUrl: String = "https://polling.finance.naver.com/api/realtime/domestic/stock",
+    private val domesticPriceUrl: String = "https://polling.finance.naver.com/api/realtime/domestic/v2/stock",
     private val worldPriceUrl: String = "https://polling.finance.naver.com/api/realtime/worldstock/stock",
     private val coinPriceUrl: String = "https://polling.finance.naver.com/api/realtime/coin/price",
     private val coinOverviewUrl: String = "https://stock.naver.com/api/coin/price",
@@ -64,29 +103,31 @@ class NaverClient(
     private val worldIndexUrl: String = "https://stock.naver.com/api/polling/worldstock/index",
     private val marketMetalUrl: String = "https://stock.naver.com/api/polling/marketindex/metals",
     private val marketEnergyUrl: String = "https://stock.naver.com/api/polling/marketindex/energy",
-    private val exchangeRateUrl: String = "https://stock.naver.com/api/domestic/exchange/List",
+    private val exchangeRateUrl: String = "https://stock.naver.com/api/stockDomestic/exchangeRates/list",
     private val domesticChartUrl: String = "https://api.stock.naver.com/chart/domestic/item",
     private val foreignChartUrl: String = "https://api.stock.naver.com/chart/foreign/item",
     private val researchAggregateUrl: String = "https://stock.naver.com/api/domestic/home/researchaggregate/static",
     private val researchRecentPopularUrl: String = "https://stock.naver.com/api/domestic/research/recent-popular",
-    private val researchCategoryLatestUrl: String = "https://stock.naver.com/api/domestic/research/category-lastest",
     private val industryResearchUrl: String = "https://stock.naver.com/api/domestic/research/industry-research",
     private val discussionRankingUrl: String = "https://stock.naver.com/api/community/discussion/rankings",
     private val researchRankingUrl: String = "https://stock.naver.com/api/domestic/research/ranking",
-    private val stockResearchBaseUrl: String = "https://stock.naver.com/api/domestic/research",
     private val newsListUrl: String = "https://stock.naver.com/api/domestic/news/list",
+    private val newsFocusUrl: String = "https://stock.naver.com/api/domestic/news/focus",
     private val worldNewsUrl: String = "https://stock.naver.com/api/foreign/news/worldNews",
+    private val moneyStoryUrl: String = "https://stock.naver.com/api/content/moneyStory",
     private val domesticDetailNewsUrl: String = "https://stock.naver.com/api/domestic/detail/news",
     private val domesticStockDetailUrl: String = "https://stock.naver.com/api/domestic/detail",
     private val foreignStockNewsUrl: String = "https://stock.naver.com/api/foreign/worldStock/list",
     private val foreignStockOverviewUrl: String = "https://stock.naver.com/api/securityService/stock",
     private val foreignStockBasicUrl: String = "https://stock.naver.com/api/securityService/stock",
-    private val newsAggregateUrl: String = "https://stock.naver.com/api/domestic/news/aggregate/home",
-    private val noticeListUrl: String = "https://stock.naver.com/api/domestic/home/noticeList",
+    private val noticeListUrl: String = "https://stock.naver.com/api/domestic/news/noticeList",
     private val newsSearchUrl: String = "https://stock.naver.com/api/domestic/news/search",
     private val domesticMarketStockDefaultUrl: String = "https://stock.naver.com/api/domestic/market/stock/default",
     private val foreignMarketStockGlobalUrl: String = "https://stock.naver.com/api/foreign/market/stock/global",
     private val coinRankUrlBase: String = "https://stock.naver.com/api/coin/rank",
+    private val researchLatestV2Url: String = "https://stock.naver.com/api/stockSecurity/researches/v2/latestResearch",
+    private val researchCompanyV2Url: String = "https://stock.naver.com/api/stockSecurity/researches/v2/company/by-items",
+    private val treasuryBaseUrl: String = "https://stock.naver.com/api/securityService/marketindex/bond/nation",
 ) {
 
     companion object {
@@ -100,6 +141,10 @@ class NaverClient(
         private const val CONTENT_TYPE_JSON = "application/json"
         private const val ORIGIN_KEY = "Origin"
         private const val ORIGIN_VALUE = "https://stock.naver.com"
+        private val NEWS_REQUEST_TIMEOUT: Duration = Duration.ofSeconds(15)
+        private val INDICATOR_REQUEST_TIMEOUT: Duration = Duration.ofSeconds(10)
+        private val PRICE_REQUEST_TIMEOUT: Duration = Duration.ofSeconds(10)
+        private val RESEARCH_REQUEST_TIMEOUT: Duration = Duration.ofSeconds(15)
         private val CHART_TIME_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMddHHmm")
         private val NEWS_DATE_FORMATTER: DateTimeFormatter = DateTimeFormatter.ofPattern("yyyyMMdd")
     }
@@ -179,7 +224,7 @@ class NaverClient(
 
         logger.debug { "Requesting Domestic: ${domesticTickers.size}, World: ${worldTickers.size}" }
 
-        val domesticResult = fetchPricesInternal(domesticTickers, domesticPriceUrl)
+        val domesticResult = fetchDomesticPrices(domesticTickers, domesticPriceUrl)
         val worldResult = fetchPricesInternal(worldTickers, worldPriceUrl)
 
         logger.debug { "Result Domestic: ${domesticResult.datas.size}, World: ${worldResult.datas.size}" }
@@ -203,6 +248,7 @@ class NaverClient(
 
             val request = HttpRequest.newBuilder()
                 .uri(URI.create(fullUrl))
+                .timeout(PRICE_REQUEST_TIMEOUT)
                 .header(USER_AGENT_KEY, USER_AGENT_VALUE)
                 .header(ACCEPT_KEY, ACCEPT_VALUE)
                 .GET()
@@ -271,6 +317,7 @@ class NaverClient(
 
             val request = HttpRequest.newBuilder()
                 .uri(URI.create(fullUrl))
+                .timeout(PRICE_REQUEST_TIMEOUT)
                 .header(USER_AGENT_KEY, USER_AGENT_VALUE)
                 .header(ACCEPT_KEY, ACCEPT_VALUE)
                 .GET()
@@ -301,16 +348,29 @@ class NaverClient(
         category: String = "FLASHNEWS",
         page: Int = 1,
         pageSize: Int = 15,
-        date: LocalDate = LocalDate.now(ZoneId.of("Asia/Seoul"))
-    ): List<NaverNewsArticle> {
+        date: LocalDate = LocalDate.now(ZoneId.of("Asia/Seoul")),
+        enableFallback: Boolean = true,
+        maxDays: Int = 3
+    ): List<NaverNewsArticle> = fetchNewsListResult(category, page, pageSize, date, enableFallback, maxDays).articles
+
+    fun fetchNewsListResult(
+        category: String = "FLASHNEWS",
+        page: Int = 1,
+        pageSize: Int = 15,
+        date: LocalDate = LocalDate.now(ZoneId.of("Asia/Seoul")),
+        enableFallback: Boolean = true,
+        maxDays: Int = 3
+    ): NaverNewsFetchResult {
         checkBackgroundThread()
         return try {
             val normalizedCategory = category.trim().uppercase().ifBlank { "FLASHNEWS" }
             val fullUrl = "$newsListUrl?category=$normalizedCategory&page=${page.coerceAtLeast(1)}" +
-                    "&pageSize=${pageSize.coerceIn(1, 50)}&date=${date.format(NEWS_DATE_FORMATTER)}"
+                    "&pageSize=${pageSize.coerceIn(1, 50)}&date=${date.format(NEWS_DATE_FORMATTER)}" +
+                    "&enableFallback=$enableFallback&maxDays=${maxDays.coerceIn(0, 30)}"
 
             val request = HttpRequest.newBuilder()
                 .uri(URI.create(fullUrl))
+                .timeout(NEWS_REQUEST_TIMEOUT)
                 .header(USER_AGENT_KEY, USER_AGENT_VALUE)
                 .header(ACCEPT_KEY, ACCEPT_VALUE)
                 .header(ORIGIN_KEY, ORIGIN_VALUE)
@@ -320,13 +380,13 @@ class NaverClient(
             val response = client.send(request, HttpResponse.BodyHandlers.ofString())
             if (response.statusCode() != 200) {
                 logger.error { "Naver news list API Error [${response.statusCode()}]: $fullUrl" }
-                return emptyList()
+                return NaverNewsFetchResult.failed("HTTP ${response.statusCode()}")
             }
             val body: NaverNewsListResponse = objectMapper.readValue(response.body())
-            body.articles
+            NaverNewsFetchResult.success(body.articles)
         } catch (e: Exception) {
             logger.error(e) { "Failed to fetch news list" }
-            emptyList()
+            NaverNewsFetchResult.failed(e.message.orEmpty())
         }
     }
 
@@ -336,13 +396,25 @@ class NaverClient(
      * 원본 응답은 Reuters 기반 별도 DTO를 사용하지만, 반환값은 국내 뉴스와 동일한
      * `NaverNewsArticle` 형식으로 정규화됩니다.
      */
-    fun fetchWorldNews(page: Int = 1, pageSize: Int = 15): List<NaverNewsArticle> {
+    fun fetchWorldNews(
+        page: Int = 1,
+        pageSize: Int = 15,
+        date: LocalDate? = null
+    ): List<NaverNewsArticle> = fetchWorldNewsResult(page, pageSize, date).articles
+
+    fun fetchWorldNewsResult(
+        page: Int = 1,
+        pageSize: Int = 15,
+        date: LocalDate? = null
+    ): NaverNewsFetchResult {
         checkBackgroundThread()
         return try {
-            val fullUrl = "$worldNewsUrl?page=${page.coerceAtLeast(1)}&pageSize=${pageSize.coerceIn(1, 50)}"
+            val dateQuery = date?.let { "&date=${it.format(NEWS_DATE_FORMATTER)}" }.orEmpty()
+            val fullUrl = "$worldNewsUrl?page=${page.coerceAtLeast(1)}&pageSize=${pageSize.coerceIn(1, 50)}$dateQuery"
 
             val request = HttpRequest.newBuilder()
                 .uri(URI.create(fullUrl))
+                .timeout(NEWS_REQUEST_TIMEOUT)
                 .header(USER_AGENT_KEY, USER_AGENT_VALUE)
                 .header(ACCEPT_KEY, ACCEPT_VALUE)
                 .header(ORIGIN_KEY, ORIGIN_VALUE)
@@ -352,13 +424,81 @@ class NaverClient(
             val response = client.send(request, HttpResponse.BodyHandlers.ofString())
             if (response.statusCode() != 200) {
                 logger.error { "Naver world news API Error [${response.statusCode()}]: $fullUrl" }
-                return emptyList()
+                return NaverNewsFetchResult.failed("HTTP ${response.statusCode()}")
             }
             val body: List<NaverWorldNewsArticle> = objectMapper.readValue(response.body())
-            body.map { it.toNewsArticle() }
+            NaverNewsFetchResult.success(body.map { it.toNewsArticle() })
         } catch (e: Exception) {
             logger.error(e) { "Failed to fetch world news list" }
-            emptyList()
+            NaverNewsFetchResult.failed(e.message.orEmpty())
+        }
+    }
+
+    /** 뉴스 홈 포커스 섹션을 조회합니다. */
+    fun fetchNewsFocusResult(
+        sid: Int,
+        page: Int = 1,
+        pageSize: Int = 5,
+        date: LocalDate = LocalDate.now(ZoneId.of("Asia/Seoul")),
+        enableFallback: Boolean = true,
+        maxDays: Int = 7
+    ): NaverFetchResult<NaverNewsFocusResponse> {
+        checkBackgroundThread()
+        return try {
+            val fullUrl = "$newsFocusUrl?sid=${sid.coerceAtLeast(1)}&page=${page.coerceAtLeast(1)}" +
+                    "&pageSize=${pageSize.coerceIn(1, 50)}&date=${date.format(NEWS_DATE_FORMATTER)}" +
+                    "&enableFallback=$enableFallback&maxDays=${maxDays.coerceIn(0, 30)}"
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(fullUrl))
+                .timeout(NEWS_REQUEST_TIMEOUT)
+                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+                .header(ACCEPT_KEY, ACCEPT_VALUE)
+                .header(ORIGIN_KEY, ORIGIN_VALUE)
+                .GET()
+                .build()
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            if (response.statusCode() != 200) {
+                logger.error { "Naver news focus API Error [${response.statusCode()}]: $fullUrl" }
+                return NaverFetchResult(NaverNewsFocusResponse(), NaverFetchStatus.FAILED, "HTTP ${response.statusCode()}")
+            }
+            val value: NaverNewsFocusResponse = objectMapper.readValue(response.body())
+            NaverFetchResult(
+                value = value,
+                status = if (value.articles.isEmpty()) NaverFetchStatus.EMPTY else NaverFetchStatus.SUCCESS
+            )
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to fetch news focus: sid=$sid" }
+            NaverFetchResult(NaverNewsFocusResponse(), NaverFetchStatus.FAILED, e.message.orEmpty())
+        }
+    }
+
+    /** 뉴스 홈 머니스토리 목록을 조회합니다. */
+    fun fetchMoneyStory(mainCategoryIdList: Int = 1, size: Int = 20): NaverFetchResult<NaverMoneyStoryResponse> {
+        checkBackgroundThread()
+        return try {
+            val fullUrl = "$moneyStoryUrl?mainCategoryIdList=${mainCategoryIdList.coerceAtLeast(1)}" +
+                    "&size=${size.coerceIn(1, 50)}"
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(fullUrl))
+                .timeout(NEWS_REQUEST_TIMEOUT)
+                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+                .header(ACCEPT_KEY, ACCEPT_VALUE)
+                .header(ORIGIN_KEY, ORIGIN_VALUE)
+                .GET()
+                .build()
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            if (response.statusCode() != 200) {
+                logger.error { "Naver money story API Error [${response.statusCode()}]: $fullUrl" }
+                return NaverFetchResult(NaverMoneyStoryResponse(), NaverFetchStatus.FAILED, "HTTP ${response.statusCode()}")
+            }
+            val value: NaverMoneyStoryResponse = objectMapper.readValue(response.body())
+            NaverFetchResult(
+                value = value,
+                status = if (value.moneyContentList.isEmpty()) NaverFetchStatus.EMPTY else NaverFetchStatus.SUCCESS
+            )
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to fetch money story" }
+            NaverFetchResult(NaverMoneyStoryResponse(), NaverFetchStatus.FAILED, e.message.orEmpty())
         }
     }
 
@@ -629,66 +769,45 @@ class NaverClient(
     }
 
     /**
-     * 뉴스 홈 집계 데이터를 조회합니다.
-     */
-    fun fetchNewsHome(
-        flashNewsSize: Int = 4,
-        mainNewsSize: Int = 6,
-        rankingNewsSize: Int = 5,
-        overseasNewsSize: Int = 5,
-        focusSize: Int = 5,
-        moneyStorySize: Int = 12,
-        noticeSize: Int = 5
-    ): NaverNewsAggregateResponse? {
-        checkBackgroundThread()
-        return try {
-            val fullUrl =
-                "$newsAggregateUrl?flashNewsSize=${flashNewsSize.coerceIn(1, 10)}" +
-                        "&mainNewsSize=${mainNewsSize.coerceIn(1, 10)}" +
-                        "&rankingNewsSize=${rankingNewsSize.coerceIn(1, 30)}" +
-                        "&overseasNewsSize=${overseasNewsSize.coerceIn(1, 10)}" +
-                        "&focusSize=${focusSize.coerceIn(1, 10)}" +
-                        "&moneyStorySize=${moneyStorySize.coerceIn(1, 20)}" +
-                        "&noticeSize=${noticeSize.coerceIn(1, 20)}"
-
-            val request = HttpRequest.newBuilder()
-                .uri(URI.create(fullUrl))
-                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
-                .header(ACCEPT_KEY, ACCEPT_VALUE)
-                .header(ORIGIN_KEY, ORIGIN_VALUE)
-                .GET()
-                .build()
-
-            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
-            if (response.statusCode() != 200) {
-                logger.error { "Naver news aggregate API Error [${response.statusCode()}]: $fullUrl" }
-                return null
-            }
-
-            objectMapper.readValue(response.body())
-        } catch (e: Exception) {
-            logger.error(e) { "Failed to fetch news home" }
-            null
-        }
-    }
-
-    /**
      * 뉴스 홈의 랭킹 기사 목록을 조회합니다.
      */
     fun fetchRankingNews(limit: Int = 20): List<NaverNewsArticle> {
-        return fetchNewsHome(rankingNewsSize = limit)?.rankingNews?.map { it.toNewsArticle() } ?: emptyList()
+        return fetchNewsList(category = "RANKNEWS", page = 1, pageSize = limit.coerceIn(1, 30))
     }
 
     /**
      * 상단 공지 요약 목록을 조회합니다.
      */
-    fun fetchNoticeList(page: Int = 1, pageSize: Int = 10): List<NaverNoticeSummary> {
+    fun fetchNoticeList(page: Int = 1, pageSize: Int = 10): List<NaverNoticeSummary> =
+        fetchNoticePage(page, pageSize).value.content
+
+    fun fetchNoticePage(
+        page: Int = 1,
+        pageSize: Int = 10,
+        keyword: String? = null,
+        startDate: LocalDate? = null,
+        endDate: LocalDate? = null,
+        typeIdx: List<String> = emptyList(),
+        enableFallback: Boolean = true,
+        maxDays: Int = 3
+    ): NaverFetchResult<NaverNoticePage> {
         checkBackgroundThread()
         return try {
-            val fullUrl = "$noticeListUrl?page=${page.coerceAtLeast(1)}&pageSize=${pageSize.coerceIn(1, 20)}"
+            val query = buildList {
+                add("page=${page.coerceAtLeast(1)}")
+                add("pageSize=${pageSize.coerceIn(1, 20)}")
+                keyword?.takeIf { it.isNotBlank() }?.let { add("keyword=${URLEncoder.encode(it, Charsets.UTF_8)}") }
+                startDate?.let { add("startDate=${it.format(NEWS_DATE_FORMATTER)}") }
+                endDate?.let { add("endDate=${it.format(NEWS_DATE_FORMATTER)}") }
+                typeIdx.filter { it.isNotBlank() }.forEach { add("typeIdx=${URLEncoder.encode(it, Charsets.UTF_8)}") }
+                add("enableFallback=$enableFallback")
+                add("maxDays=${maxDays.coerceIn(0, 30)}")
+            }.joinToString("&")
+            val fullUrl = "$noticeListUrl?$query"
 
             val request = HttpRequest.newBuilder()
                 .uri(URI.create(fullUrl))
+                .timeout(NEWS_REQUEST_TIMEOUT)
                 .header(USER_AGENT_KEY, USER_AGENT_VALUE)
                 .header(ACCEPT_KEY, ACCEPT_VALUE)
                 .header(ORIGIN_KEY, ORIGIN_VALUE)
@@ -698,13 +817,29 @@ class NaverClient(
             val response = client.send(request, HttpResponse.BodyHandlers.ofString())
             if (response.statusCode() != 200) {
                 logger.error { "Naver notice list API Error [${response.statusCode()}]: $fullUrl" }
-                return emptyList()
+                return NaverFetchResult(NaverNoticePage(), NaverFetchStatus.FAILED, "HTTP ${response.statusCode()}")
             }
 
-            objectMapper.readValue(response.body())
+            val root = objectMapper.readTree(response.body())
+            val value = if (root.isArray) {
+                NaverNoticePage(
+                    content = objectMapper.readValue(root.toString()),
+                    totalElements = root.size().toLong(),
+                    totalPages = 1,
+                    last = true,
+                    number = page - 1,
+                    size = pageSize
+                )
+            } else {
+                objectMapper.readValue(root.toString())
+            }
+            NaverFetchResult(
+                value = value,
+                status = if (value.content.isEmpty()) NaverFetchStatus.EMPTY else NaverFetchStatus.SUCCESS
+            )
         } catch (e: Exception) {
             logger.error(e) { "Failed to fetch notice list" }
-            emptyList()
+            NaverFetchResult(NaverNoticePage(), NaverFetchStatus.FAILED, e.message.orEmpty())
         }
     }
 
@@ -821,8 +956,14 @@ class NaverClient(
         checkBackgroundThread()
 
         return try {
+            val currencyCodes = exchangeRateCodesForRequest()
+            val fullUrl = if (exchangeRateUrl.endsWith("/exchange/List")) {
+                exchangeRateUrl
+            } else {
+                "$exchangeRateUrl?currencies=${URLEncoder.encode(currencyCodes.joinToString(","), Charsets.UTF_8)}"
+            }
             val request = HttpRequest.newBuilder()
-                .uri(URI.create(exchangeRateUrl))
+                .uri(URI.create(fullUrl))
                 .header(USER_AGENT_KEY, USER_AGENT_VALUE)
                 .header(ACCEPT_KEY, ACCEPT_VALUE)
                 .GET()
@@ -830,7 +971,7 @@ class NaverClient(
 
             val response = client.send(request, HttpResponse.BodyHandlers.ofString())
             if (response.statusCode() != 200) {
-                logger.error { "Naver exchange rate API Error [${response.statusCode()}]: $exchangeRateUrl" }
+                logger.error { "Naver exchange rate API Error [${response.statusCode()}]: $fullUrl" }
                 return emptyList()
             }
 
@@ -841,6 +982,7 @@ class NaverClient(
         }
     }
 
+    @Deprecated("The research aggregate endpoint is obsolete; use fetchCategoryLatestResearch().")
     fun fetchResearchAggregate(): NaverResearchAggregateResponse {
         checkBackgroundThread()
 
@@ -867,6 +1009,7 @@ class NaverClient(
         }
     }
 
+    @Deprecated("The legacy recent-popular endpoint is obsolete; use the v2 research APIs.")
     fun fetchRecentPopularResearch(): List<NaverResearchArticle> {
         checkBackgroundThread()
 
@@ -892,11 +1035,16 @@ class NaverClient(
     }
 
     fun fetchCategoryLatestResearch(): NaverResearchLatestResponse {
+        return fetchCategoryLatestResearchResult().value
+    }
+
+    fun fetchCategoryLatestResearchResult(): NaverFetchResult<NaverResearchLatestResponse> {
         checkBackgroundThread()
 
         return try {
             val request = HttpRequest.newBuilder()
-                .uri(URI.create(researchCategoryLatestUrl))
+                .uri(URI.create("$researchLatestV2Url?size=10"))
+                .timeout(RESEARCH_REQUEST_TIMEOUT)
                 .header(USER_AGENT_KEY, USER_AGENT_VALUE)
                 .header(ACCEPT_KEY, ACCEPT_VALUE)
                 .GET()
@@ -904,17 +1052,23 @@ class NaverClient(
 
             val response = client.send(request, HttpResponse.BodyHandlers.ofString())
             if (response.statusCode() != 200) {
-                logger.error { "Naver research latest API Error [${response.statusCode()}]: $researchCategoryLatestUrl" }
-                return NaverResearchLatestResponse()
+                logger.error { "Naver research latest API Error [${response.statusCode()}]: $researchLatestV2Url" }
+                return NaverFetchResult(NaverResearchLatestResponse(), NaverFetchStatus.FAILED, "HTTP ${response.statusCode()}")
             }
 
-            objectMapper.readValue(response.body())
+            val value: NaverResearchLatestResponse = objectMapper.readValue(response.body())
+            NaverFetchResult(
+                value = value,
+                status = if (listOf(value.market, value.company, value.industry, value.invest, value.economy, value.debenture)
+                        .flatten().isEmpty()) NaverFetchStatus.EMPTY else NaverFetchStatus.SUCCESS
+            )
         } catch (e: Exception) {
             logger.error(e) { "Failed to fetch category latest research" }
-            NaverResearchLatestResponse()
+            NaverFetchResult(NaverResearchLatestResponse(), NaverFetchStatus.FAILED, e.message.orEmpty())
         }
     }
 
+    @Deprecated("The legacy industry-research endpoint is obsolete; use the v2 research APIs.")
     fun fetchIndustryResearch(): Map<String, List<NaverResearchArticle>> {
         checkBackgroundThread()
 
@@ -973,12 +1127,20 @@ class NaverClient(
         rankingType: ResearchRankingType,
         selectedRank: Int
     ): NaverResearchRankingResponse {
+        return fetchResearchRankingResult(rankingType, selectedRank).value
+    }
+
+    fun fetchResearchRankingResult(
+        rankingType: ResearchRankingType,
+        selectedRank: Int
+    ): NaverFetchResult<NaverResearchRankingResponse> {
         checkBackgroundThread()
 
         return try {
             val fullUrl = "$researchRankingUrl?rankingType=${rankingType.code}&selectedRank=$selectedRank"
             val request = HttpRequest.newBuilder()
                 .uri(URI.create(fullUrl))
+                .timeout(RESEARCH_REQUEST_TIMEOUT)
                 .header(USER_AGENT_KEY, USER_AGENT_VALUE)
                 .header(ACCEPT_KEY, ACCEPT_VALUE)
                 .GET()
@@ -987,13 +1149,17 @@ class NaverClient(
             val response = client.send(request, HttpResponse.BodyHandlers.ofString())
             if (response.statusCode() != 200) {
                 logger.error { "Naver research ranking API Error [${response.statusCode()}]: $fullUrl" }
-                return NaverResearchRankingResponse()
+                return NaverFetchResult(NaverResearchRankingResponse(), NaverFetchStatus.FAILED, "HTTP ${response.statusCode()}")
             }
 
-            objectMapper.readValue(response.body())
+            val value: NaverResearchRankingResponse = objectMapper.readValue(response.body())
+            NaverFetchResult(
+                value = value,
+                status = if (value.ranking.isEmpty() && value.latestResearch.isEmpty()) NaverFetchStatus.EMPTY else NaverFetchStatus.SUCCESS
+            )
         } catch (e: Exception) {
             logger.error(e) { "Failed to fetch research ranking: ${rankingType.code}/$selectedRank" }
-            NaverResearchRankingResponse()
+            NaverFetchResult(NaverResearchRankingResponse(), NaverFetchStatus.FAILED, e.message.orEmpty())
         }
     }
 
@@ -1155,13 +1321,22 @@ class NaverClient(
     }
 
     fun fetchStockResearch(itemCode: String, page: Int = 0, size: Int = 10): List<NaverResearchArticle> {
+        return fetchStockResearchResult(itemCode, page, size).value
+    }
+
+    fun fetchStockResearchResult(
+        itemCode: String,
+        page: Int = 0,
+        size: Int = 10
+    ): NaverFetchResult<List<NaverResearchArticle>> {
         checkBackgroundThread()
-        if (itemCode.isBlank()) return emptyList()
+        if (itemCode.isBlank()) return NaverFetchResult(emptyList(), NaverFetchStatus.EMPTY)
 
         return try {
-            val fullUrl = "$stockResearchBaseUrl/$itemCode/research?page=$page&size=$size"
+            val fullUrl = "$researchCompanyV2Url?itemCodes=${URLEncoder.encode(itemCode, Charsets.UTF_8)}&size=${size.coerceIn(1, 100)}&index=${page.coerceAtLeast(0)}"
             val request = HttpRequest.newBuilder()
                 .uri(URI.create(fullUrl))
+                .timeout(RESEARCH_REQUEST_TIMEOUT)
                 .header(USER_AGENT_KEY, USER_AGENT_VALUE)
                 .header(ACCEPT_KEY, ACCEPT_VALUE)
                 .GET()
@@ -1170,19 +1345,49 @@ class NaverClient(
             val response = client.send(request, HttpResponse.BodyHandlers.ofString())
             if (response.statusCode() != 200) {
                 logger.error { "Naver stock research API Error [${response.statusCode()}]: $fullUrl" }
-                return emptyList()
+                return NaverFetchResult(emptyList(), NaverFetchStatus.FAILED, "HTTP ${response.statusCode()}")
             }
 
-            objectMapper.readValue<List<NaverStockResearchItem>>(response.body()).map { it.toArticle() }
+            val responseByItem: Map<String, List<NaverStockResearchItem>> = objectMapper.readValue(response.body())
+            val value = responseByItem[itemCode].orEmpty().map { it.toArticle() }
+            NaverFetchResult(value, if (value.isEmpty()) NaverFetchStatus.EMPTY else NaverFetchStatus.SUCCESS)
         } catch (e: Exception) {
             logger.error(e) { "Failed to fetch stock research for $itemCode" }
+            NaverFetchResult(emptyList(), NaverFetchStatus.FAILED, e.message.orEmpty())
+        }
+    }
+
+    /** 허용된 국가의 국채 전체 목록을 조회합니다. */
+    fun fetchTreasuryBonds(nation: TreasuryNation): List<NaverMarketIndicatorItem> {
+        checkBackgroundThread()
+        val treasuryUrl = "$treasuryBaseUrl/${nation.pathValue}"
+        return try {
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(treasuryUrl))
+                .timeout(INDICATOR_REQUEST_TIMEOUT)
+                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+                .header(ACCEPT_KEY, ACCEPT_VALUE)
+                .GET()
+                .build()
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            if (response.statusCode() != 200) {
+                logger.error { "Naver treasury API Error [${response.statusCode()}]: $treasuryUrl" }
+                return emptyList()
+            }
+            objectMapper.readValue(response.body())
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to fetch treasury bonds: nation=${nation.pathValue}" }
             emptyList()
         }
     }
 
+    /** 기존 호출부 호환용 미국 국채 조회 메서드입니다. */
+    fun fetchUsTreasuryBonds(): List<NaverMarketIndicatorItem> = fetchTreasuryBonds(TreasuryNation.USA)
+
     private fun getIndicatorResponse(fullUrl: String): NaverMarketIndicatorResponse {
         val request = HttpRequest.newBuilder()
             .uri(URI.create(fullUrl))
+            .timeout(INDICATOR_REQUEST_TIMEOUT)
             .header(USER_AGENT_KEY, USER_AGENT_VALUE)
             .header(ACCEPT_KEY, ACCEPT_VALUE)
             .GET()
@@ -1215,6 +1420,7 @@ class NaverClient(
 
             val request = HttpRequest.newBuilder()
                 .uri(URI.create(fullUrl))
+                .timeout(PRICE_REQUEST_TIMEOUT)
                 .header(USER_AGENT_KEY, USER_AGENT_VALUE)
                 .header(ACCEPT_KEY, ACCEPT_VALUE)
                 .GET()
@@ -1234,6 +1440,44 @@ class NaverClient(
             return NaverRealTimeStockPriceResponse()
         }
     }
+
+    private fun fetchDomesticPrices(
+        tickers: List<Ticker>,
+        baseUrl: String
+    ): NaverRealTimeStockPriceResponse {
+        if (!baseUrl.endsWith("/v2/stock")) {
+            return fetchPricesInternal(tickers, baseUrl)
+        }
+        if (tickers.isEmpty()) return NaverRealTimeStockPriceResponse()
+
+        return try {
+            val itemCodes = tickers.joinToString(",") { it.tradingSymbol }
+            val fullUrl = "$baseUrl?itemCodes=${URLEncoder.encode(itemCodes, Charsets.UTF_8)}"
+            val request = HttpRequest.newBuilder()
+                .uri(URI.create(fullUrl))
+                .timeout(PRICE_REQUEST_TIMEOUT)
+                .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+                .header(ACCEPT_KEY, ACCEPT_VALUE)
+                .GET()
+                .build()
+            val response = client.send(request, HttpResponse.BodyHandlers.ofString())
+            if (response.statusCode() != 200) {
+                logger.error { "Naver domestic v2 price API Error [${response.statusCode()}]: $fullUrl" }
+                return NaverRealTimeStockPriceResponse()
+            }
+            val v2: NaverDomesticV2StockResponse = objectMapper.readValue(response.body())
+            NaverRealTimeStockPriceResponse(
+                pollingInterval = v2.pollingInterval,
+                time = v2.time,
+                datas = v2.datas.mapNotNull { it.toLegacyPrice() }
+            )
+        } catch (e: Exception) {
+            logger.error(e) { "Failed to fetch domestic v2 stock prices" }
+            NaverRealTimeStockPriceResponse()
+        }
+    }
+
+    private fun exchangeRateCodesForRequest(): List<String> = listOf("USD", "JPY", "EUR", "CNY", "HKD")
 
 
 }

@@ -2,6 +2,7 @@ package com.github.myeoungdev.marketticker.ui.view
 
 import com.github.myeoungdev.marketticker.application.service.LocalizationService
 import com.github.myeoungdev.marketticker.application.service.ResearchFacadeService
+import com.github.myeoungdev.marketticker.application.provider.ResearchLoadStatus
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.domain.model.research.ResearchArticle
 import com.intellij.ide.BrowserUtil
@@ -103,7 +104,18 @@ class StockResearchSummaryPanel : JPanel(BorderLayout()), Disposable {
             val viewData = researchFacadeService.loadTickerResearchSummary(ticker)
             withContext(Dispatchers.Main) {
                 if (!isActive) return@withContext
-                if (viewData.articles.isEmpty()) {
+                if (viewData.loadStatus == ResearchLoadStatus.FAILED) {
+                    model.replaceAll(
+                        listOf(
+                            ResearchArticle(
+                                title = localizationService.text(
+                                    "리서치를 불러오지 못했습니다.",
+                                    "Could not load research."
+                                )
+                            )
+                        )
+                    )
+                } else if (viewData.articles.isEmpty()) {
                     model.replaceAll(
                         listOf(
                             ResearchArticle(

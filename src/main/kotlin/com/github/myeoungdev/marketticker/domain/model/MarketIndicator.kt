@@ -11,6 +11,7 @@ data class MarketIndicator(
     val marketStatus: MarketStatus,
     val category: IndicatorCategory,
     val unit: String? = null,
+    val englishName: String? = null,
     val sentimentScore: Double? = null,
     val sentimentLabel: String? = null,
     val displayHint: String? = null
@@ -25,5 +26,6 @@ enum class IndicatorCategory {
     WORLD_INDEX,
     METAL,
     ENERGY,
-    EXCHANGE_RATE
+    EXCHANGE_RATE,
+    BOND
 }

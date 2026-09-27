@@ -14,6 +14,7 @@ internal fun groupMarketIndicators(indicators: List<MarketIndicator>): List<Mark
         IndicatorCategory.EXCHANGE_RATE,
         IndicatorCategory.DOMESTIC_INDEX,
         IndicatorCategory.WORLD_INDEX,
+        IndicatorCategory.BOND,
         IndicatorCategory.METAL,
         IndicatorCategory.ENERGY
     )

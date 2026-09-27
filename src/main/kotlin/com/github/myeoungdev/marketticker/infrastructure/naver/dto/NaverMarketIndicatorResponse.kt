@@ -32,7 +32,7 @@ data class NaverMarketIndicatorItem(
     val fluctuationsRatio: String,
     val compareToPreviousClosePrice: String? = null,
     val fluctuations: String? = null,
-    val marketStatus: String,
+    val marketStatus: String? = null,
     val unit: String? = null
 ) {
 
@@ -47,7 +47,7 @@ data class NaverMarketIndicatorItem(
             name = title,
             currentPrice = close,
             changeRate = ratio,
-            marketStatus = MarketStatus.of(marketStatus),
+            marketStatus = MarketStatus.of(marketStatus.orEmpty()),
             category = category,
             unit = unit
         )
@@ -83,24 +83,48 @@ data class NaverExchangeRateItem(
     val name: String? = null,
     val fullName: String? = null,
     val symbol: String? = null,
-    val saleBaseRate: String,
-    val changeRate: String,
+    val saleBaseRate: String? = null,
+    val changeRate: String = "0",
     val changeVal: String? = null,
-    val marketStatus: String,
+    val marketStatus: String = "",
+    val currencyInfo: NaverCurrencyInfo? = null,
 ) {
 
     fun toMarketIndicator(): MarketIndicator {
-        val code = marketIndexCd ?: symbol ?: "UNKNOWN"
-        val title = symbol ?: name ?: code
+        val code = normalizedMarketIndexCode() ?: symbol ?: currencyInfo?.currencyCode ?: "UNKNOWN"
+        val title = symbol ?: name ?: currencyInfo?.currencyKoreanName ?: code
 
         return MarketIndicator(
             code = code,
             name = title,
-            currentPrice = saleBaseRate.parseCommaToDouble(),
+            currentPrice = requireNotNull(saleBaseRate).parseCommaToDouble(),
             changeRate = changeRate.parseCommaToDouble(),
             marketStatus = MarketStatus.of(marketStatus),
             category = IndicatorCategory.EXCHANGE_RATE,
             unit = "KRW"
         )
     }
+
+    fun normalizedMarketIndexCode(): String? {
+        return marketIndexCd?.takeIf { it.isNotBlank() }?.let(::toFxCode)
+            ?: currencyInfo?.currencyCode?.takeIf { it.isNotBlank() }?.let(::toFxCode)
+            ?: symbol?.takeIf { it.isNotBlank() }?.let(::toFxCode)
+    }
+
+    private fun toFxCode(value: String): String {
+        val normalized = value.trim().uppercase()
+        return when {
+            normalized.startsWith("FX_") -> normalized
+            normalized.endsWith("KRW") -> "FX_$normalized"
+            else -> "FX_${normalized}KRW"
+        }
+    }
 }
+
+@JsonIgnoreProperties(ignoreUnknown = true)
+data class NaverCurrencyInfo(
+    val currencyCode: String? = null,
+    val nationKoreanName: String? = null,
+    val currencyKoreanName: String? = null,
+    val currencyBasis: Double? = null
+)

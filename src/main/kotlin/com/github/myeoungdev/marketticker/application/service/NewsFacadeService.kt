@@ -6,6 +6,8 @@ import com.github.myeoungdev.marketticker.application.provider.DefaultDataSource
 import com.github.myeoungdev.marketticker.application.provider.NewsProvider
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.domain.model.news.NewsArticle
+import com.github.myeoungdev.marketticker.domain.model.news.NewsCategoryPage
+import com.github.myeoungdev.marketticker.domain.model.news.NewsLoadStatus
 import com.intellij.openapi.components.Service
 import kotlinx.coroutines.CompletableDeferred
 import kotlinx.coroutines.CoroutineScope
@@ -35,10 +37,20 @@ class NewsFacadeService(
         forceRefresh: Boolean = false
     ): NewsHomeViewData {
         val resolvedPageSize = pageSize.coerceIn(1, 50)
-        return cached("news-home:v2:ps$resolvedPageSize", 60_000L, forceRefresh) {
+        return cached(
+            key = "news-home:v3:ps$resolvedPageSize",
+            ttlMillis = 60_000L,
+            forceRefresh = forceRefresh,
+            shouldCache = { value ->
+                value.mostViewedState.status != NewsLoadStatus.FAILED &&
+                    value.headlines.categoryStates.values.none { it.status == NewsLoadStatus.FAILED }
+            }
+        ) {
+            val mostViewedPage = newsProvider.getMostViewedNewsPage(limit = 15)
             NewsHomeViewData(
                 headlines = newsProvider.getHeadlineNews(resolvedPageSize),
-                mostViewed = newsProvider.getMostViewedNews(limit = 15)
+                mostViewed = mostViewedPage.articles,
+                mostViewedState = mostViewedPage.state
             )
         }
     }
@@ -53,6 +65,24 @@ class NewsFacadeService(
         val cacheKey = "news-category:${categoryKey.uppercase()}:p$page:s$resolvedPageSize"
         return cached(cacheKey, 60_000L, forceRefresh) {
             newsProvider.getCategoryNews(categoryKey, page, resolvedPageSize)
+        }
+    }
+
+    suspend fun loadNewsCategoryPage(
+        categoryKey: String,
+        page: Int,
+        pageSize: Int = AppSettingsService.DEFAULT_NEWS_PAGE_SIZE,
+        forceRefresh: Boolean = false
+    ): NewsCategoryPage {
+        val resolvedPageSize = pageSize.coerceIn(1, 50)
+        val cacheKey = "news-category-page:${categoryKey.uppercase()}:p$page:s$resolvedPageSize"
+        return cached(
+            key = cacheKey,
+            ttlMillis = 60_000L,
+            forceRefresh = forceRefresh,
+            shouldCache = { it.state.status != NewsLoadStatus.FAILED }
+        ) {
+            newsProvider.getCategoryNewsPage(categoryKey, page, resolvedPageSize)
         }
     }
 
@@ -82,6 +112,7 @@ class NewsFacadeService(
         key: String,
         ttlMillis: Long,
         forceRefresh: Boolean,
+        shouldCache: (T) -> Boolean = { true },
         loader: () -> T
     ): T {
         val now = System.currentTimeMillis()
@@ -110,7 +141,9 @@ class NewsFacadeService(
         return try {
             val value = deferred.await()
             mutex.withLock {
-                cache[key] = CacheEntry(System.currentTimeMillis() + ttlMillis, value)
+                if (shouldCache(value as T)) {
+                    cache[key] = CacheEntry(System.currentTimeMillis() + ttlMillis, value)
+                }
                 inFlight.remove(key)
             }
             value as T
