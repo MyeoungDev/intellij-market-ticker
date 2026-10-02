@@ -5,6 +5,12 @@
 ## [Unreleased]
 
 ### Fixed
+
+### Added
+
+## [1.0.0]
+
+### Fixed
 - Stabilized Naver news and research failure handling so transient API errors are not cached as empty results.
 - Fixed research home and ranking cache collisions, including ticker research summary failure handling.
 - Fixed domestic price selection to follow the active KRX/NXT session and prevented missing exchange rates from becoming zero-valued indicators. (#64)
