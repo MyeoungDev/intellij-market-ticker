@@ -10,7 +10,6 @@ import com.github.myeoungdev.marketticker.application.service.MarketHoursPolicy
 import com.github.myeoungdev.marketticker.application.service.MoneyDisplayFormatter
 import com.github.myeoungdev.marketticker.application.service.PriceAlertService
 import com.github.myeoungdev.marketticker.application.service.PriceRefreshSource
-import com.github.myeoungdev.marketticker.common.extenion.parseCommaToDouble
 import com.github.myeoungdev.marketticker.domain.model.MarketType
 import com.github.myeoungdev.marketticker.domain.model.Ticker
 import com.github.myeoungdev.marketticker.domain.model.TickerPrice
@@ -76,6 +75,14 @@ class WatchlistView(private val project: Project) : Disposable {
             0
         ) {
             override fun isCellEditable(row: Int, column: Int) = false
+
+            override fun getColumnClass(columnIndex: Int): Class<*> {
+                return when (columnIndex) {
+                    1, 2, 3 -> java.lang.Double::class.java
+                    5, 6 -> java.lang.Boolean::class.java
+                    else -> String::class.java
+                }
+            }
         }
 
     private val tickerTable = JBTable(tableModel).apply {
@@ -83,6 +90,7 @@ class WatchlistView(private val project: Project) : Disposable {
         rowHeight = 30
         emptyText.text = localizationService.text("관심 종목이 없습니다. 검색을 통해 추가하세요.", "Watchlist is empty. Search and add symbols.")
     }
+    private val tableRowSorter = TriStateTableRowSorter(tableModel)
 
     private val groupFilter = JComboBox<String>()
 
@@ -108,6 +116,8 @@ class WatchlistView(private val project: Project) : Disposable {
         tickerTable.setDefaultRenderer(Object::class.java, PriceCellRenderer())
         tickerTable.dropMode = DropMode.INSERT_ROWS
         tickerTable.transferHandler = WatchlistRowTransferHandler()
+        tickerTable.rowSorter = tableRowSorter
+        tableRowSorter.addRowSorterListener { updateReorderAvailability() }
 
         tickerTable.columnModel.getColumn(0).preferredWidth = 115
         tickerTable.columnModel.getColumn(1).preferredWidth = 95
@@ -326,21 +336,15 @@ class WatchlistView(private val project: Project) : Disposable {
                     it.symbol == entry.symbol && it.marketType == MarketType.of(entry.marketType)
                 }
 
-                val currentPrice = price?.currentPrice
-                val changeRate = price?.changeRate ?: 0.0
-                val changeAmount = price?.changeAmount
-                val sign = if (changeRate > 0) "+" else ""
-                val rateText = "$sign${localizationService.formatDecimal(changeRate, 2)}%"
-
                 tableModel.addRow(
                     arrayOf(
                         entry.name,
-                        moneyDisplayFormatter.formatAmount(currentPrice, price?.currency),
-                        moneyDisplayFormatter.formatSignedAmount(changeAmount, null),
-                        rateText,
+                        price?.currentPrice,
+                        price?.changeAmount,
+                        price?.changeRate,
                         entry.groupTag.ifBlank { defaultGroup(entry) },
-                        "",
-                        ""
+                        isPollableNow(entry),
+                        alertService.getAlert(entry.symbol) != null
                     )
                 )
             }
@@ -374,7 +378,7 @@ class WatchlistView(private val project: Project) : Disposable {
     }
 
     private fun updateReorderAvailability() {
-        tickerTable.dragEnabled = isAllFilterSelected()
+        tickerTable.dragEnabled = isAllFilterSelected() && tableRowSorter.sortKeys.isEmpty()
     }
 
     private fun selectPendingEntry() {
@@ -487,8 +491,7 @@ class WatchlistView(private val project: Project) : Disposable {
             super.getTableCellRendererComponent(table, "", isSelected, hasFocus, row, column)
 
             val modelRow = table?.convertRowIndexToModel(row) ?: row
-            val entry = getWatchlistEntryAtRow(modelRow)
-            val hasAlert = entry != null && alertService.getAlert(entry.symbol) != null
+            val hasAlert = tableModel.getValueAt(modelRow, column) as? Boolean ?: false
 
             icon = if (hasAlert) {
                 AllIcons.Toolwindows.NotificationsNew
@@ -509,8 +512,7 @@ class WatchlistView(private val project: Project) : Disposable {
             if (table == null) return c
 
             val modelRow = table.convertRowIndexToModel(row)
-            val entry = getWatchlistEntryAtRow(modelRow)
-            val pollable = entry?.let(::isPollableNow)
+            val pollable = tableModel.getValueAt(modelRow, column) as? Boolean
 
             horizontalAlignment = CENTER
             foreground = when (pollable) {
@@ -531,13 +533,26 @@ class WatchlistView(private val project: Project) : Disposable {
         override fun getTableCellRendererComponent(
             table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int
         ): Component {
-            val c = super.getTableCellRendererComponent(table, value, isSelected, hasFocus, row, column)
+            val modelColumn = table?.convertColumnIndexToModel(column) ?: column
+            val modelRow = table?.convertRowIndexToModel(row) ?: row
+            val entry = getWatchlistEntryAtRow(modelRow)
+            val currency = entry?.let { watchlistEntry ->
+                currentPrices.find {
+                    it.symbol == watchlistEntry.symbol && it.marketType == MarketType.of(watchlistEntry.marketType)
+                }?.currency
+            }
+            val displayValue = when (modelColumn) {
+                1 -> moneyDisplayFormatter.formatAmount(value as? Double, currency)
+                2 -> moneyDisplayFormatter.formatSignedAmount(value as? Double, null)
+                3 -> formatChangeRate(value as? Double)
+                else -> value
+            }
+            val c = super.getTableCellRendererComponent(table, displayValue, isSelected, hasFocus, row, column)
             if (table == null) return c
 
-            val modelColumn = table.convertColumnIndexToModel(column)
             background = if (isSelected) table.selectionBackground else table.background
-            if (modelColumn in setOf(2, 3) && value is String) {
-                val numeric = value.parseCommaToDouble()
+            if (modelColumn in setOf(2, 3)) {
+                val numeric = value as? Double ?: 0.0
                 foreground = when {
                     numeric > 0 -> JBColor.RED
                     numeric < 0 -> JBColor.BLUE
@@ -547,6 +562,12 @@ class WatchlistView(private val project: Project) : Disposable {
                 foreground = if (isSelected) table.selectionForeground else table.foreground
             }
             return c
+        }
+
+        private fun formatChangeRate(value: Double?): String {
+            val numeric = value ?: 0.0
+            val sign = if (numeric > 0) "+" else ""
+            return "$sign${localizationService.formatDecimal(numeric, 2)}%"
         }
     }
 }

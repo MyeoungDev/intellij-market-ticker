@@ -87,6 +87,13 @@ class PortfolioView : Disposable {
             0
         ) {
             override fun isCellEditable(row: Int, column: Int) = false
+
+            override fun getColumnClass(columnIndex: Int): Class<*> {
+                return when (columnIndex) {
+                    1, 2, 3, 4, 5, 6 -> java.lang.Double::class.java
+                    else -> String::class.java
+                }
+            }
         }
 
     private val portfolioTable = JBTable(tableModel).apply {
@@ -97,6 +104,7 @@ class PortfolioView : Disposable {
             "Portfolio is empty. Add portfolio data from watchlist."
         )
     }
+    private val tableRowSorter = TriStateTableRowSorter(tableModel)
 
     private var currentWatchlistEntries: List<WatchlistRepository.WatchlistEntry> = emptyList()
     private var currentPrices: List<TickerPrice> = emptyList()
@@ -147,6 +155,7 @@ class PortfolioView : Disposable {
 
     private fun setupUI() {
         portfolioTable.setDefaultRenderer(Object::class.java, PriceCellRenderer())
+        portfolioTable.rowSorter = tableRowSorter
         setupSummaryPanel()
         val popupMenu = JPopupMenu()
         val editPortfolioItem = JMenuItem(localizationService.text("포트폴리오 정보 편집", "Edit portfolio"))
@@ -249,6 +258,7 @@ class PortfolioView : Disposable {
 
     private fun updateTable() {
         ApplicationManager.getApplication().invokeLater {
+            val selectedEntry = getSelectedWatchlistEntry()
             tableModel.rowCount = 0
 
             val portfolioRows = PortfolioSummaryCalculator.projectPositions(currentWatchlistEntries, currentPrices)
@@ -268,30 +278,25 @@ class PortfolioView : Disposable {
             }
 
             portfolioTable.repaint()
+            restoreSelection(selectedEntry)
         }
     }
 
-    private fun portfolioRow(position: PortfolioPosition): Array<Any> {
+    private fun portfolioRow(position: PortfolioPosition): Array<Any?> {
         val returnRate = if (position.purchaseAmount > 0.0) {
             position.unrealized / position.purchaseAmount * 100.0
         } else {
             0.0
         }
 
-        return arrayOf(
+        return arrayOf<Any?>(
             position.entry.name,
-            localizationService.formatDecimal(position.quantity, 2),
-            moneyDisplayFormatter.formatAmount(position.purchasePrice, position.currency),
-            moneyDisplayFormatter.formatAmount(position.price?.currentPrice, position.price?.currency),
-            moneyDisplayFormatter.formatAmount(position.marketValue, position.currency),
-            SignedDisplayValue(
-                text = moneyDisplayFormatter.formatSignedAmount(position.unrealized, position.currency),
-                numericValue = position.unrealized
-            ),
-            SignedDisplayValue(
-                text = formatSignedPercent(returnRate),
-                numericValue = returnRate
-            )
+            position.quantity,
+            position.purchasePrice,
+            position.price?.currentPrice,
+            position.marketValue,
+            position.unrealized,
+            returnRate
         )
     }
 
@@ -437,6 +442,17 @@ class PortfolioView : Disposable {
         portfolioTable.requestFocusInWindow()
     }
 
+    private fun restoreSelection(selectedEntry: WatchlistRepository.WatchlistEntry?) {
+        if (selectedEntry == null) return
+        val modelRow = portfolioEntries.indexOfFirst {
+            it.symbol == selectedEntry.symbol && it.marketType == selectedEntry.marketType
+        }
+        if (modelRow < 0) return
+        val viewRow = portfolioTable.convertRowIndexToView(modelRow)
+        if (viewRow < 0) return
+        portfolioTable.setRowSelectionInterval(viewRow, viewRow)
+    }
+
     private fun WatchlistRepository.WatchlistEntry.toTicker(): Ticker {
         return Ticker(
             symbol = symbol,
@@ -448,25 +464,38 @@ class PortfolioView : Disposable {
         )
     }
 
-    private data class SignedDisplayValue(
-        val text: String,
-        val numericValue: Double
-    )
-
-    private class PriceCellRenderer : DefaultTableCellRenderer() {
+    private inner class PriceCellRenderer : DefaultTableCellRenderer() {
         override fun getTableCellRendererComponent(
             table: JTable?, value: Any?, isSelected: Boolean, hasFocus: Boolean, row: Int, column: Int
         ): Component {
-            val displayValue = if (value is SignedDisplayValue) value.text else value
+            val modelColumn = table?.convertColumnIndexToModel(column) ?: column
+            val modelRow = table?.convertRowIndexToModel(row) ?: row
+            val entry = getWatchlistEntryAtRow(modelRow)
+            val price = entry?.let { portfolioEntry ->
+                currentPrices.find {
+                    it.symbol == portfolioEntry.symbol && it.marketType == MarketType.of(portfolioEntry.marketType)
+                }
+            }
+            val currency = price?.currency ?: entry?.let { MarketType.of(it.marketType).nativeCurrency() }
+            val displayValue = when (modelColumn) {
+                1 -> (value as? Double)?.let { localizationService.formatDecimal(it, 2) } ?: "-"
+                2 -> moneyDisplayFormatter.formatAmount(value as? Double, currency)
+                3 -> moneyDisplayFormatter.formatAmount(value as? Double, price?.currency)
+                4 -> moneyDisplayFormatter.formatAmount(value as? Double, currency)
+                5 -> moneyDisplayFormatter.formatSignedAmount(value as? Double, currency)
+                6 -> formatSignedPercent(value as? Double)
+                else -> value
+            }
             val c = super.getTableCellRendererComponent(table, displayValue, isSelected, hasFocus, row, column)
             if (table == null) return c
 
             c.foreground = if (isSelected) table.selectionForeground else table.foreground
 
-            if (!isSelected && value is SignedDisplayValue) {
+            if (!isSelected && modelColumn in setOf(5, 6)) {
+                val numericValue = value as? Double ?: 0.0
                 c.foreground = when {
-                    value.numericValue > 0 -> JBColor.RED
-                    value.numericValue < 0 -> JBColor.BLUE
+                    numericValue > 0 -> JBColor.RED
+                    numericValue < 0 -> JBColor.BLUE
                     else -> table.foreground
                 }
             }
