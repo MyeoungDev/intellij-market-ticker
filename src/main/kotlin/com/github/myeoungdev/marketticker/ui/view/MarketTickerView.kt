@@ -20,6 +20,7 @@ import com.intellij.ui.components.JBList
 import com.intellij.ui.components.JBScrollPane
 import com.intellij.ui.components.JBTextField
 import com.intellij.ui.tabs.TabInfo
+import com.intellij.ui.tabs.JBTabs
 import com.intellij.ui.tabs.JBTabsFactory
 import com.intellij.util.ui.JBUI
 import kotlinx.coroutines.*
@@ -76,6 +77,7 @@ class MarketTickerView(
     private val watchlistPortfolioTabs = JBTabsFactory.createTabs(project, this)
     private val bottomTabs = JBTabsFactory.createTabs(project, this)
     private val mainTabs = JBTabsFactory.createTabs(project, this)
+    private val stockPanel = JPanel(BorderLayout())
     private var latestIndicators: List<MarketIndicator> = emptyList()
     private var latestPrices: List<TickerPrice> = emptyList()
 
@@ -164,10 +166,8 @@ class MarketTickerView(
             firstComponent.minimumSize = Dimension(0, 240)
             secondComponent.minimumSize = Dimension(0, 120)
         }
-        val stockPanel = JPanel(BorderLayout()).apply {
-            add(mainSplitter, BorderLayout.CENTER)
-            add(marketPulseContainer, BorderLayout.SOUTH)
-        }
+        stockPanel.add(mainSplitter, BorderLayout.CENTER)
+        stockPanel.add(marketPulseContainer, BorderLayout.SOUTH)
         mainTabs.addTabInfo(localizationService.text("주식", "Stocks"), stockPanel)
         mainTabs.addTabInfo(localizationService.text("스크리너", "Screener"), screenerView)
         mainTabs.addTabInfo(localizationService.text("주요 지표", "Major Indicators"), marketIndicatorsView)
@@ -182,6 +182,7 @@ class MarketTickerView(
         portfolioView.onTickerSelected = { ticker, _ ->
             showTickerDetails(ticker)
         }
+        screenerView.onTickerSelected = screenerTickerSelection(mainTabs, stockPanel, ::showTickerDetails)
 
         applyDisplaySettings()
         subscribeSettingsUpdates()
@@ -498,4 +499,13 @@ class MarketTickerView(
         stockResearchView.showTicker(ticker)
     }
 
+}
+
+internal fun screenerTickerSelection(
+    mainTabs: JBTabs,
+    stockPanel: JComponent,
+    showTickerDetails: (Ticker) -> Unit
+): (Ticker) -> Unit = { ticker ->
+    showTickerDetails(ticker)
+    mainTabs.tabs.firstOrNull { it.component === stockPanel }?.let { mainTabs.select(it, true) }
 }

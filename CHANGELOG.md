@@ -7,8 +7,10 @@
 ### Fixed
 
 ### Added
+- Added domestic daily theme summaries with expandable constituent lists and navigation to stock details.
+- Added clickable sorting to watchlist and portfolio tables, including numeric sorting and a three-state sort cycle.
 
-## [1.0.0]
+## [1.1.0]
 
 ### Fixed
 - Stabilized Naver news and research failure handling so transient API errors are not cached as empty results.

@@ -35,11 +35,18 @@ import java.net.URLEncoder
 import java.net.http.HttpClient
 import java.net.http.HttpRequest
 import java.net.http.HttpResponse
+import java.net.http.HttpTimeoutException
+import java.io.IOException
 import java.time.Duration
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.time.format.DateTimeFormatter
+import java.util.concurrent.CompletionException
+import java.util.concurrent.CompletionStage
+import java.util.concurrent.Flow
+import java.util.concurrent.TimeUnit
+import java.util.concurrent.TimeoutException
 
 /**
  * Naver 증권/마켓 API를 호출하는 저수준 HTTP 클라이언트입니다.
@@ -128,8 +135,9 @@ class NaverClient(
     private val researchLatestV2Url: String = "https://stock.naver.com/api/stockSecurity/researches/v2/latestResearch",
     private val researchCompanyV2Url: String = "https://stock.naver.com/api/stockSecurity/researches/v2/company/by-items",
     private val treasuryBaseUrl: String = "https://stock.naver.com/api/securityService/marketindex/bond/nation",
+    private val themeRankingsUrl: String = "https://stock.naver.com/api/stockSecurity/rankings/v2/domestic/themes",
+    private val themeMembersUrl: String = "https://stock.naver.com/api/domestic/market/theme",
 ) {
-
     companion object {
         private const val USER_AGENT_KEY = "User-Agent"
         private const val USER_AGENT_VALUE = "Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 " +
@@ -1161,6 +1169,79 @@ class NaverClient(
             logger.error(e) { "Failed to fetch research ranking: ${rankingType.code}/$selectedRank" }
             NaverFetchResult(NaverResearchRankingResponse(), NaverFetchStatus.FAILED, e.message.orEmpty())
         }
+    }
+
+    /** 테마 API 실패는 기존 목록 조회 메서드와 달리 호출자에게 전달합니다. */
+    fun fetchThemeRankingsPage(
+        cursor: String? = null,
+        timeout: Duration = Duration.ofSeconds(8)
+    ): NaverThemeRankingPage {
+        val query = "sortType=changeRate&size=100&excludeCodes=25&period=daily" +
+            (cursor?.let { "&cursor=${URLEncoder.encode(it, Charsets.UTF_8)}" } ?: "")
+        val body = sendThemeRequest("$themeRankingsUrl?$query", timeout)
+        val tree = objectMapper.readTree(body)
+        if (tree == null || !tree.isObject || tree["hasNext"]?.isBoolean != true ||
+            tree["items"]?.isArray != true || tree["items"].size() > 100 ||
+            (tree["cursor"] != null && !tree["cursor"].isNull && !tree["cursor"].isTextual)) {
+            throw IOException("Invalid Naver theme ranking page")
+        }
+        tree["items"].forEach { item ->
+            if (!item.isObject || item["code"]?.isTextual != true || item["name"]?.isTextual != true) {
+                throw IOException("Invalid Naver theme identity")
+            }
+        }
+        return objectMapper.readValue(body)
+    }
+
+    fun fetchThemeMembers(themeCode: String): List<NaverThemeMember> {
+        require(themeCode.isNotBlank()) { "Theme code is required" }
+        val encodedCode = URLEncoder.encode(themeCode, Charsets.UTF_8).replace("+", "%20")
+        val body = sendThemeRequest(
+            "$themeMembersUrl/$encodedCode/stocklist?marketType=ALL&orderType=quantTop&startIdx=0&pageSize=20",
+            Duration.ofSeconds(8)
+        )
+        val tree = objectMapper.readTree(body)
+        if (tree == null || !tree.isArray || tree.size() > 20) {
+            throw IOException("Invalid Naver theme member list")
+        }
+        tree.forEach { item ->
+            if (!item.isObject || item["itemcode"]?.isTextual != true || item["itemname"]?.isTextual != true) {
+                throw IOException("Invalid Naver theme member identity")
+            }
+        }
+        return objectMapper.readValue(body)
+    }
+
+    private fun sendThemeRequest(url: String, timeout: Duration): String {
+        checkBackgroundThread()
+        if (Thread.currentThread().isInterrupted) throw InterruptedException("Theme request interrupted")
+        require(!timeout.isNegative && !timeout.isZero && timeout <= Duration.ofSeconds(8))
+        val request = HttpRequest.newBuilder(URI.create(url))
+            .timeout(timeout)
+            .header(USER_AGENT_KEY, USER_AGENT_VALUE)
+            .header(ACCEPT_KEY, ACCEPT_VALUE)
+            .header(ORIGIN_KEY, ORIGIN_VALUE)
+            .GET().build()
+        val startedAt = System.nanoTime()
+        val handler = HttpResponse.BodyHandler<String> { info ->
+            val subscriber = HttpResponse.BodyHandlers.ofString().apply(info)
+            val remainingNanos = (timeout.toNanos() - (System.nanoTime() - startedAt)).coerceAtLeast(1)
+            val body = subscriber.body.toCompletableFuture().orTimeout(remainingNanos, TimeUnit.NANOSECONDS)
+                .exceptionally { failure ->
+                    throw CompletionException(if (failure is TimeoutException)
+                        HttpTimeoutException("Naver theme response body timeout") else failure)
+                }
+            object : HttpResponse.BodySubscriber<String> by subscriber {
+                override fun getBody(): CompletionStage<String> = body
+                override fun onSubscribe(subscription: Flow.Subscription) {
+                    subscriber.onSubscribe(subscription)
+                    body.whenComplete { _, failure -> if (failure != null) subscription.cancel() }
+                }
+            }
+        }
+        val response = client.send(request, handler)
+        if (response.statusCode() != 200) throw IOException("Naver theme HTTP ${response.statusCode()}")
+        return response.body()
     }
 
     /**

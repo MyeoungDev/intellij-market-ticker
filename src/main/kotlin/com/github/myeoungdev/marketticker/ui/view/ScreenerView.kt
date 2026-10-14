@@ -33,22 +33,28 @@ import kotlinx.coroutines.cancel
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withContext
 import java.awt.BorderLayout
+import java.awt.Dimension
 import java.awt.Component
 import java.awt.FlowLayout
 import javax.swing.DefaultComboBoxModel
 import javax.swing.JButton
+import javax.swing.Box
+import javax.swing.BoxLayout
 import javax.swing.JComboBox
 import javax.swing.JList
 import javax.swing.JLabel
 import javax.swing.JMenuItem
 import javax.swing.JPanel
 import javax.swing.JPopupMenu
+import javax.swing.JTabbedPane
 import javax.swing.JTable
 import javax.swing.table.DefaultTableCellRenderer
 import javax.swing.table.DefaultTableModel
 import java.util.concurrent.atomic.AtomicLong
 
 class ScreenerView : JPanel(BorderLayout()), Disposable {
+
+    var onTickerSelected: ((Ticker) -> Unit)? = null
 
     private val localizationService = service<LocalizationService>()
     private val marketDataService = service<MarketDataService>()
@@ -63,6 +69,8 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
     private val presetCombo = JComboBox(DefaultComboBoxModel(ScreenerPreset.values()))
     private val refreshButton = JButton()
     private val statusLabel = JLabel()
+    private val themeSummaryPanel = ThemeSummaryPanel(::resolveAndAdd)
+    private val modeTabs = JTabbedPane()
     private val screenTableModel = object : DefaultTableModel(
         arrayOf(
             localizationService.text("종목명", "Name"),
@@ -85,9 +93,15 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
 
     init {
         border = JBUI.Borders.empty(10)
-        add(buildToolbar(), BorderLayout.NORTH)
-        add(JBScrollPane(screenTable), BorderLayout.CENTER)
-        add(statusLabel, BorderLayout.SOUTH)
+        val rankingPanel = JPanel(BorderLayout()).apply {
+            add(buildToolbar(), BorderLayout.NORTH)
+            add(JBScrollPane(screenTable), BorderLayout.CENTER)
+            add(statusLabel, BorderLayout.SOUTH)
+        }
+        modeTabs.addTab(localizationService.text("종목 랭킹", "Stock Rankings"), rankingPanel)
+        modeTabs.addTab(localizationService.text("테마", "Themes"), themeSummaryPanel)
+        modeTabs.addChangeListener { themeSummaryPanel.syncVisibility() }
+        add(modeTabs, BorderLayout.CENTER)
         setupUiText()
         bindTable()
         subscribeSettingsUpdates()
@@ -97,19 +111,24 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
 
     override fun dispose() {
         scope.cancel()
+        themeSummaryPanel.dispose()
     }
 
     private fun buildToolbar(): JPanel {
-        return JPanel(BorderLayout(8, 0)).apply {
-            add(
-                JPanel(FlowLayout(FlowLayout.LEFT, 8, 0)).apply {
-                    add(marketCombo)
-                    add(domesticTradeTypePanel.apply { add(domesticTradeTypeCombo) })
-                    add(presetCombo)
-                },
-                BorderLayout.CENTER
-            )
-            add(refreshButton, BorderLayout.EAST)
+        marketCombo.setToolbarWidth(104)
+        domesticTradeTypeCombo.setToolbarWidth(76)
+        domesticTradeTypePanel.setToolbarWidth(76)
+        presetCombo.setToolbarWidth(120)
+
+        return JPanel().apply {
+            layout = BoxLayout(this, BoxLayout.X_AXIS)
+            add(marketCombo)
+            add(Box.createHorizontalStrut(6))
+            add(domesticTradeTypePanel.apply { add(domesticTradeTypeCombo) })
+            add(Box.createHorizontalStrut(6))
+            add(presetCombo)
+            add(Box.createHorizontalGlue())
+            add(refreshButton)
         }.also {
             marketCombo.addActionListener {
                 rebuildPresetModel()
@@ -120,6 +139,13 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
             presetCombo.addActionListener { loadPreset(forceRefresh = false) }
             refreshButton.addActionListener { loadPreset(forceRefresh = true) }
         }
+    }
+
+    private fun Component.setToolbarWidth(width: Int) {
+        val height = preferredSize.height
+        preferredSize = Dimension(width, height)
+        minimumSize = Dimension(width, height)
+        maximumSize = Dimension(width, height)
     }
 
     private fun setupUiText() {

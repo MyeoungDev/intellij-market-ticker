@@ -9,6 +9,7 @@ import com.github.myeoungdev.marketticker.infrastructure.naver.NaverPriceProvide
 import com.github.myeoungdev.marketticker.infrastructure.naver.NaverResearchProvider
 import com.github.myeoungdev.marketticker.infrastructure.naver.NaverSearchProvider
 import com.github.myeoungdev.marketticker.infrastructure.naver.NaverScreenerProvider
+import com.github.myeoungdev.marketticker.infrastructure.naver.NaverThemeSummaryProvider
 import com.github.myeoungdev.marketticker.infrastructure.finviz.FinvizCalendarProvider
 import com.github.myeoungdev.marketticker.infrastructure.finviz.FinvizClient
 
@@ -24,6 +25,7 @@ object DefaultDataSourceRegistry {
     private val newsProvider: NewsProvider by lazy { NaverNewsProvider(naverClient) }
     private val researchProvider: ResearchProvider by lazy { NaverResearchProvider(naverClient) }
     private val screenerProvider: ScreenerProvider by lazy { NaverScreenerProvider(naverClient) }
+    private val themeSummaryProvider: ThemeSummaryProvider by lazy { NaverThemeSummaryProvider(naverClient) }
     private val chartProvider: ChartProvider by lazy { NaverChartProvider(naverClient) }
     private val marketIndicatorProvider: MarketIndicatorProvider by lazy {
         CompositeMarketIndicatorProvider(
@@ -44,6 +46,8 @@ object DefaultDataSourceRegistry {
     fun researchProvider(): ResearchProvider = researchProvider
 
     fun screenerProvider(): ScreenerProvider = screenerProvider
+
+    fun themeSummaryProvider(): ThemeSummaryProvider = themeSummaryProvider
 
     fun chartProvider(): ChartProvider = chartProvider
 
