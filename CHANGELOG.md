@@ -5,6 +5,7 @@
 ## [Unreleased]
 
 ### Fixed
+- New price alerts now default to one-time notifications; repeat alerts remain available as an explicit option.
 
 ### Added
 - Added domestic daily theme summaries with expandable constituent lists and navigation to stock details.

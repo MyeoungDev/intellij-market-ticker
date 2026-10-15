@@ -8,6 +8,24 @@ import org.junit.jupiter.api.Test
 class PriceHistoryServiceTest {
 
     @Test
+    fun `append는 심볼별 최근 4000개 가격만 유지한다`() {
+        val service = PriceHistoryService()
+        val price = TickerPriceFixtures.APPLE_RISING
+
+        service.append((0..4_000).map { price.copy(currentPrice = it.toDouble()) })
+
+        val firstCandle = service.buildCandles(
+            symbol = price.symbol,
+            marketType = price.marketType.name,
+            period = PriceHistoryService.Period.DAY,
+            zoneId = MarketType.NASDAQ.zoneId
+        ).first()
+
+        assertThat(firstCandle.open).isEqualTo(1.0)
+        assertThat(firstCandle.close).isEqualTo(4_000.0)
+    }
+
+    @Test
     fun `append 후 DAY 캔들을 생성할 수 있다`() {
         val service = PriceHistoryService()
         val price = TickerPriceFixtures.APPLE_RISING

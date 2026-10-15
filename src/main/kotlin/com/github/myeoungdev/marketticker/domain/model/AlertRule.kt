@@ -11,7 +11,7 @@ data class AlertRule(
     var volatilityPercentage: Double = 5.0,
     var isVolatilityEnabled: Boolean = true,
     var isEnabled: Boolean = true,
-    var alertMode: String = AlertMode.REPEATING.name,
+    var alertMode: String = AlertMode.ONCE.name,
     var repeatIntervalMinutes: Int = 5,
     var marketHoursOnly: Boolean = false,
     var soundEnabled: Boolean = false,

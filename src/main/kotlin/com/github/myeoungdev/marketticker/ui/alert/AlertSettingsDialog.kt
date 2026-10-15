@@ -36,7 +36,7 @@ class AlertSettingsDialog(
         var marketHoursOnly: Boolean = false,
         var soundEnabled: Boolean = false,
         var repeatIntervalMinutesStr: String = "5",
-        var alertMode: AlertMode = AlertMode.REPEATING,
+        var alertMode: AlertMode = AlertMode.ONCE,
     )
 
     private val model = AlertViewModel()
@@ -111,9 +111,17 @@ class AlertSettingsDialog(
             }
 
             row(localizationService.text("반복 간격(분)", "Repeat interval (min)")) {
-                textField()
+                val repeatIntervalField = textField()
                     .bindText(model::repeatIntervalMinutesStr)
                     .columns(6)
+                    .component
+
+                fun updateRepeatIntervalEnabled() {
+                    repeatIntervalField.isEnabled = modeCombo.selectedItem == AlertMode.REPEATING
+                }
+
+                modeCombo.addActionListener { updateRepeatIntervalEnabled() }
+                updateRepeatIntervalEnabled()
             }
 
             row {
@@ -139,7 +147,7 @@ class AlertSettingsDialog(
         val targetPrice = model.targetPriceStr.toDoubleOrNull()
         val volatility = model.volatilityStr.toDoubleOrNull() ?: 5.0
         val repeatInterval = model.repeatIntervalMinutesStr.toIntOrNull()?.coerceIn(1, 240) ?: 5
-        val selectedMode = modeCombo.selectedItem as? AlertMode ?: AlertMode.REPEATING
+        val selectedMode = modeCombo.selectedItem as? AlertMode ?: AlertMode.ONCE
 
         val rule = AlertRule(
             symbol = ticker.symbol,

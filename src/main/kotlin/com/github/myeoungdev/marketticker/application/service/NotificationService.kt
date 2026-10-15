@@ -28,8 +28,7 @@ class NotificationService {
     private val priceAlertService = service<PriceAlertService>()
     private val moneyDisplayFormatter = MoneyDisplayFormatter()
     private val domesticDisplayPriceSelector = DomesticDisplayPriceSelector()
-
-    private val lastAlertTimeMap = ConcurrentHashMap<String, Long>()
+    private val repeatGate = NotificationRepeatGate()
 
     /**
      * Ticker 의 현재 가격을 통해 등록된 알람 기준에 맞는지 판별하고
@@ -43,17 +42,13 @@ class NotificationService {
             val rule = priceAlertService.getAlert(selectedPrice.symbol) ?: return@forEach
             if (!priceAlertService.shouldTriggerAlert(selectedPrice)) return@forEach
 
-            val now = System.currentTimeMillis()
-            val lastTime = lastAlertTimeMap.getOrDefault(selectedPrice.symbol, 0L)
-            val minIntervalMs = (rule.repeatIntervalMinutes.coerceAtLeast(1) * 60 * 1000).toLong()
-
-            if (AlertMode.of(rule.alertMode) == AlertMode.REPEATING && now - lastTime < minIntervalMs) {
+            val mode = AlertMode.of(rule.alertMode)
+            if (!repeatGate.allow(selectedPrice.symbol, mode, rule.repeatIntervalMinutes)) {
                 return@forEach
             }
 
             sendNotification(selectedPrice, rule.soundEnabled)
-            lastAlertTimeMap[selectedPrice.symbol] = now
-            if (AlertMode.of(rule.alertMode) == AlertMode.ONCE) {
+            if (mode == AlertMode.ONCE) {
                 priceAlertService.markTriggered(selectedPrice.symbol)
             }
         }
@@ -112,5 +107,24 @@ class NotificationService {
         if (withSound) {
             Toolkit.getDefaultToolkit().beep()
         }
+    }
+}
+
+internal class NotificationRepeatGate(
+    private val nowMillis: () -> Long = System::currentTimeMillis
+) {
+    private val lastAlertTimeMap = ConcurrentHashMap<String, Long>()
+
+    fun allow(symbol: String, mode: AlertMode, repeatIntervalMinutes: Int): Boolean {
+        val now = nowMillis()
+        val lastTime = lastAlertTimeMap.getOrDefault(symbol, 0L)
+        val minIntervalMs = (repeatIntervalMinutes.coerceAtLeast(1) * 60 * 1000).toLong()
+
+        if (mode == AlertMode.REPEATING && now - lastTime < minIntervalMs) {
+            return false
+        }
+
+        lastAlertTimeMap[symbol] = now
+        return true
     }
 }

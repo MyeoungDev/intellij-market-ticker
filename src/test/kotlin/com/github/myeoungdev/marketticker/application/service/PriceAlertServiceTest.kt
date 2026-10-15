@@ -2,6 +2,7 @@ package com.github.myeoungdev.marketticker.application.service
 
 import com.github.myeoungdev.marketticker.domain.model.AlertMode
 import com.github.myeoungdev.marketticker.domain.model.MarketStatus
+import com.github.myeoungdev.marketticker.domain.model.AlertRule
 import com.github.myeoungdev.marketticker.fixtures.domain.AlertRuleFixtures
 import com.github.myeoungdev.marketticker.fixtures.domain.TickerPriceFixtures
 import org.assertj.core.api.Assertions.assertThat
@@ -216,6 +217,13 @@ class PriceAlertServiceTest {
     @Nested
     @DisplayName("4. 고급 알림 옵션 테스트")
     inner class AdvancedAlertOptionTest {
+
+        @Test
+        fun `새 알림은 기본적으로 1회 알림이다`() {
+            val rule = AlertRule()
+
+            assertThat(AlertMode.of(rule.alertMode)).isEqualTo(AlertMode.ONCE)
+        }
 
         @Test
         fun `장중 전용 옵션이면 장마감에서는 알림이 울리지 않는다`() {
