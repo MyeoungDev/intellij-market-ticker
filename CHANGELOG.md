@@ -5,8 +5,11 @@
 ## [Unreleased]
 
 ### Fixed
+- ETF list pagination now replaces the current page instead of appending rows, and expired ETF cache entries are evicted with bounded cache sizes.
 
 ### Added
+- Added a domestic ETF workspace with discovery filters and ranking, grouped watchlists, comparison for up to four ETFs, and inline detail panels.
+- Added a Settings option for the ETF return period used by detail and comparison views.
 
 ## [1.2.0]
 

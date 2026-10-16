@@ -6,6 +6,7 @@ import com.intellij.openapi.components.State
 import com.intellij.openapi.components.Storage
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.github.myeoungdev.marketticker.domain.model.CurrencyType
+import com.github.myeoungdev.marketticker.domain.model.etf.EtfPerformancePeriod
 
 /**
  * Market Ticker 전역 설정을 저장/조회하는 애플리케이션 서비스입니다.
@@ -150,7 +151,8 @@ class AppSettingsService : PersistentStateComponent<AppSettingsService.State> {
         var showMarketSessionIndicator: Boolean = true,
         var showChartTab: Boolean = true,
         var showHeatmapTab: Boolean = true,
-        var showPortfolioSummary: Boolean = true
+        var showPortfolioSummary: Boolean = true,
+        var etfPerformancePeriod: String = EtfPerformancePeriod.MONTH_1.name
     )
 
     private var settingsState = State()
@@ -283,5 +285,13 @@ class AppSettingsService : PersistentStateComponent<AppSettingsService.State> {
      */
     fun setHeatmapTabVisible(visible: Boolean) {
         settingsState.showHeatmapTab = visible
+    }
+
+    fun getEtfPerformancePeriod(): EtfPerformancePeriod =
+        EtfPerformancePeriod.values().firstOrNull { it.name == settingsState.etfPerformancePeriod }
+            ?: EtfPerformancePeriod.MONTH_1
+
+    fun setEtfPerformancePeriod(period: EtfPerformancePeriod) {
+        settingsState.etfPerformancePeriod = period.name
     }
 }

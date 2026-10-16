@@ -71,6 +71,9 @@ Market Ticker takes the opposite approach:
 - `📈 Screener`
   Naver ranking-based discovery for search top, value top, rising, and falling names.
 
+- `🧺 ETF`
+  Domestic ETF discovery, grouped watchlists, and side-by-side comparison for up to four funds.
+
 - `📅 Calendar`
   Earnings and economic event list with a detail panel.
 

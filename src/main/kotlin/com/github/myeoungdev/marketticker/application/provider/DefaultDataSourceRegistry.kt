@@ -10,6 +10,7 @@ import com.github.myeoungdev.marketticker.infrastructure.naver.NaverResearchProv
 import com.github.myeoungdev.marketticker.infrastructure.naver.NaverSearchProvider
 import com.github.myeoungdev.marketticker.infrastructure.naver.NaverScreenerProvider
 import com.github.myeoungdev.marketticker.infrastructure.naver.NaverThemeSummaryProvider
+import com.github.myeoungdev.marketticker.infrastructure.naver.NaverEtfProvider
 import com.github.myeoungdev.marketticker.infrastructure.finviz.FinvizCalendarProvider
 import com.github.myeoungdev.marketticker.infrastructure.finviz.FinvizClient
 
@@ -36,6 +37,7 @@ object DefaultDataSourceRegistry {
         )
     }
     private val calendarProvider: CalendarProvider by lazy { FinvizCalendarProvider(finvizClient) }
+    private val etfProvider: EtfProvider by lazy { NaverEtfProvider() }
 
     fun priceProvider(): PriceProvider = priceProvider
 
@@ -54,4 +56,6 @@ object DefaultDataSourceRegistry {
     fun marketIndicatorProvider(): MarketIndicatorProvider = marketIndicatorProvider
 
     fun calendarProvider(): CalendarProvider = calendarProvider
+
+    fun etfProvider(): EtfProvider = etfProvider
 }
