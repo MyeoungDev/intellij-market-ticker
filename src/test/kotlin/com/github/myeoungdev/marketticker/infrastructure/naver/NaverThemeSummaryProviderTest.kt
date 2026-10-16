@@ -289,12 +289,33 @@ class NaverThemeSummaryProviderTest {
         assertThat(members.last().price).isNull()
         assertThat(members.last().changeRate).isNull()
         assertThat(members.last().volume).isNull()
-        val request = server.allServeEvents.single().request
-        assertThat(request.queryParams.keys).containsExactlyInAnyOrder("marketType", "orderType", "startIdx", "pageSize")
-        assertThat(request.queryParameter("marketType").firstValue()).isEqualTo("ALL")
-        assertThat(request.queryParameter("orderType").firstValue()).isEqualTo("quantTop")
-        assertThat(request.queryParameter("startIdx").firstValue()).isEqualTo("0")
-        assertThat(request.queryParameter("pageSize").firstValue()).isEqualTo("20")
+        val requests = server.allServeEvents.map { it.request }
+        assertThat(requests).hasSize(2)
+        assertThat(requests.map { it.queryParameter("marketType").firstValue() })
+            .containsExactlyInAnyOrder("KOSPI", "KOSDAQ")
+        requests.forEach { request ->
+            assertThat(request.queryParams.keys).containsExactlyInAnyOrder("marketType", "orderType", "startIdx", "pageSize")
+            assertThat(request.queryParameter("orderType").firstValue()).isEqualTo("quantTop")
+            assertThat(request.queryParameter("startIdx").firstValue()).isEqualTo("0")
+            assertThat(request.queryParameter("pageSize").firstValue()).isEqualTo("20")
+        }
+    }
+
+    @Test
+    fun `members parse the current paged response shape from both markets`() {
+        val memberPath = "/api/domestic/market/theme/566/stocklist"
+        server.stubFor(get(urlPathEqualTo(memberPath)).withQueryParam("marketType", equalTo("KOSPI"))
+            .willReturn(okJson("""{"hasNext":false,"items":[{"itemCode":"005930","itemName":"Samsung","krx":{"currentPrice":"71000","changeRate":"1.25","tradingVolume":"9000"}}],"cursor":null}""")))
+        server.stubFor(get(urlPathEqualTo(memberPath)).withQueryParam("marketType", equalTo("KOSDAQ"))
+            .willReturn(okJson("""{"hasNext":false,"items":[{"itemCode":"042510","itemName":"Raon","krx":{"currentPrice":"12000","changeRate":"-2.5","tradingVolume":"12000"}}],"cursor":null}""")))
+
+        val members = provider().getThemeMembers("566")
+
+        assertThat(members.map { it.ticker.symbol }).containsExactly("042510", "005930")
+        assertThat(members.map { it.ticker.marketType }).containsExactly(MarketType.KOSDAQ, MarketType.KOSPI)
+        assertThat(members.map { it.price }).containsExactly(12000.0, 71000.0)
+        assertThat(members.map { it.changeRate }).containsExactly(-2.5, 1.25)
+        assertThat(members.map { it.volume }).containsExactly(12000L, 9000L)
     }
 
     private fun provider(requestTimeout: Duration = Duration.ofSeconds(8), chainTimeout: Duration = Duration.ofSeconds(30)) =

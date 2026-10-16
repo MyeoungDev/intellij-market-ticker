@@ -1196,20 +1196,40 @@ class NaverClient(
     fun fetchThemeMembers(themeCode: String): List<NaverThemeMember> {
         require(themeCode.isNotBlank()) { "Theme code is required" }
         val encodedCode = URLEncoder.encode(themeCode, Charsets.UTF_8).replace("+", "%20")
-        val body = sendThemeRequest(
-            "$themeMembersUrl/$encodedCode/stocklist?marketType=ALL&orderType=quantTop&startIdx=0&pageSize=20",
-            Duration.ofSeconds(8)
-        )
-        val tree = objectMapper.readTree(body)
-        if (tree == null || !tree.isArray || tree.size() > 20) {
-            throw IOException("Invalid Naver theme member list")
-        }
-        tree.forEach { item ->
-            if (!item.isObject || item["itemcode"]?.isTextual != true || item["itemname"]?.isTextual != true) {
-                throw IOException("Invalid Naver theme member identity")
+        return listOf("KOSPI", "KOSDAQ").flatMap { marketType ->
+            val body = sendThemeRequest(
+                "$themeMembersUrl/$encodedCode/stocklist?marketType=$marketType&orderType=quantTop&startIdx=0&pageSize=20",
+                Duration.ofSeconds(8)
+            )
+            val root = objectMapper.readTree(body)
+            val items = when {
+                root?.isArray == true -> root
+                root?.isObject == true && root["items"]?.isArray == true -> root["items"]
+                else -> throw IOException("Invalid Naver theme member list")
+            }
+            if (items.size() > 20) throw IOException("Invalid Naver theme member list")
+            items.map { item ->
+                val code = item["itemCode"] ?: item["itemcode"]
+                val name = item["itemName"] ?: item["itemname"]
+                if (!item.isObject || code?.isTextual != true || name?.isTextual != true) {
+                    throw IOException("Invalid Naver theme member identity")
+                }
+                val krx = item["krx"]
+                NaverThemeMember(
+                    itemcode = code.asText(),
+                    itemname = name.asText(),
+                    sosok = item["sosok"]?.asText() ?: if (item.has("itemCode")) {
+                        if (marketType == "KOSPI") "0" else "1"
+                    } else "9",
+                    nowPrice = item["nowPrice"]?.asText() ?: krx?.get("currentPrice")?.asText(),
+                    prevChangeRate = item["prevChangeRate"]?.asText() ?: krx?.get("changeRate")?.asText(),
+                    tradeVolume = item["tradeVolume"]?.asText() ?: krx?.get("tradingVolume")?.asText()
+                )
             }
         }
-        return objectMapper.readValue(body)
+            .distinctBy { it.itemcode }
+            .sortedByDescending { it.tradeVolume?.replace(",", "")?.toLongOrNull() ?: 0L }
+            .take(20)
     }
 
     private fun sendThemeRequest(url: String, timeout: Duration): String {

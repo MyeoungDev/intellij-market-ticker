@@ -5,6 +5,13 @@
 ## [Unreleased]
 
 ### Fixed
+
+### Added
+
+## [1.2.0]
+
+### Fixed
+- Fixed theme constituent lookup by requesting KOSPI and KOSDAQ separately and parsing Naver's current response format.
 - New price alerts now default to one-time notifications; repeat alerts remain available as an explicit option.
 
 ### Added
