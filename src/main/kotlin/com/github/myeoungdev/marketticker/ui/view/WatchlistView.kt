@@ -34,6 +34,7 @@ import java.awt.datatransfer.Transferable
 import java.awt.event.MouseAdapter
 import java.awt.event.MouseEvent
 import javax.swing.JComboBox
+import javax.swing.JButton
 import javax.swing.DropMode
 import javax.swing.JComponent
 import javax.swing.JMenuItem
@@ -113,7 +114,11 @@ class WatchlistView(private val project: Project) : Disposable {
     }
 
     private fun setupUI() {
-        tickerTable.setDefaultRenderer(Object::class.java, PriceCellRenderer())
+        val priceRenderer = PriceCellRenderer()
+        tickerTable.setDefaultRenderer(Object::class.java, priceRenderer)
+        // Double columns have their own Swing default renderer, so explicitly apply the
+        // watchlist renderer to keep amount/rate formatting and up/down colors active.
+        (1..3).forEach { tickerTable.columnModel.getColumn(it).cellRenderer = priceRenderer }
         tickerTable.dropMode = DropMode.INSERT_ROWS
         tickerTable.transferHandler = WatchlistRowTransferHandler()
         tickerTable.rowSorter = tableRowSorter
@@ -246,13 +251,22 @@ class WatchlistView(private val project: Project) : Disposable {
             }
         })
 
-        val filterPanel = JPanel(FlowLayout(FlowLayout.LEFT, 8, 4))
+        val groupFilterPanel = JPanel(FlowLayout(FlowLayout.LEFT, 8, 4))
         groupFilter.addItem(localizationService.text("전체", "All"))
         groupFilter.addActionListener {
             updateReorderAvailability()
             updateTable()
         }
-        filterPanel.add(groupFilter)
+        groupFilterPanel.add(groupFilter)
+
+        val refreshButton = JButton(localizationService.text("새로고침", "Refresh")).apply {
+            toolTipText = localizationService.text("관심 종목 시세를 수동으로 갱신합니다.", "Manually refresh watchlist prices.")
+            addActionListener { marketDataService.forceRefresh() }
+        }
+        val filterPanel = JPanel(BorderLayout()).apply {
+            add(groupFilterPanel, BorderLayout.WEST)
+            add(refreshButton, BorderLayout.EAST)
+        }
 
         panel.add(filterPanel, BorderLayout.NORTH)
         panel.add(JBScrollPane(tickerTable), BorderLayout.CENTER)

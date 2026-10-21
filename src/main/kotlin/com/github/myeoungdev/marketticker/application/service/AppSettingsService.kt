@@ -7,6 +7,7 @@ import com.intellij.openapi.components.Storage
 import com.intellij.util.xmlb.XmlSerializerUtil
 import com.github.myeoungdev.marketticker.domain.model.CurrencyType
 import com.github.myeoungdev.marketticker.domain.model.etf.EtfPerformancePeriod
+import com.github.myeoungdev.marketticker.domain.model.etf.EtfDiscoveryReturnPeriod
 
 /**
  * Market Ticker 전역 설정을 저장/조회하는 애플리케이션 서비스입니다.
@@ -152,7 +153,8 @@ class AppSettingsService : PersistentStateComponent<AppSettingsService.State> {
         var showChartTab: Boolean = true,
         var showHeatmapTab: Boolean = true,
         var showPortfolioSummary: Boolean = true,
-        var etfPerformancePeriod: String = EtfPerformancePeriod.MONTH_1.name
+        var etfPerformancePeriod: String = EtfPerformancePeriod.MONTH_1.name,
+        var etfDiscoveryReturnPeriod: String = EtfDiscoveryReturnPeriod.MONTH_3.name
     )
 
     private var settingsState = State()
@@ -293,5 +295,13 @@ class AppSettingsService : PersistentStateComponent<AppSettingsService.State> {
 
     fun setEtfPerformancePeriod(period: EtfPerformancePeriod) {
         settingsState.etfPerformancePeriod = period.name
+    }
+
+    fun getEtfDiscoveryReturnPeriod(): EtfDiscoveryReturnPeriod =
+        EtfDiscoveryReturnPeriod.values().firstOrNull { it.name == settingsState.etfDiscoveryReturnPeriod }
+            ?: EtfDiscoveryReturnPeriod.MONTH_3
+
+    fun setEtfDiscoveryReturnPeriod(period: EtfDiscoveryReturnPeriod) {
+        settingsState.etfDiscoveryReturnPeriod = period.name
     }
 }

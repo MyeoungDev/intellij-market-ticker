@@ -9,6 +9,12 @@
 
 ### Added
 - Added a domestic ETF workspace with discovery filters and ranking, grouped watchlists, comparison for up to four ETFs, and inline detail panels.
+- ETF comparison now shows a top-ten holdings weight matrix, shared-holding filtering, per-ETF reference dates, and weighted overlap only when complete same-date holdings are confirmed.
+- Added ETF comparison for return, expense ratio, and distribution history metrics; distribution data loads when comparison details are opened.
+- ETF comparison summary now shows 1-, 3-, 6-, and 12-month returns side by side.
+- ETF comparison adds observed API fund-flow values, price-to-iNAV premium/discount, and sector/country/asset allocation charts; fund-flow values retain neutral labeling because their units and aggregation semantics are not confirmed.
+- ETF comparison includes trading value and yearly distribution frequency/months when the source provides them; missing expense-ratio values remain unavailable rather than inferred.
+- Removed groups from the ETF watchlist and kept a single comparison view.
 - Added a Settings option for the ETF return period used by detail and comparison views.
 
 ## [1.2.0]

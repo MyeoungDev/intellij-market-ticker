@@ -64,7 +64,7 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
 
     private val marketCombo = JComboBox(DefaultComboBoxModel(MarketType.screenerMarkets().toTypedArray()))
-    private val domesticTradeTypePanel = JPanel(FlowLayout(FlowLayout.LEFT, 0, 0))
+    private val domesticTradeTypePanel = JPanel(BorderLayout())
     private val domesticTradeTypeCombo = JComboBox(DefaultComboBoxModel(DomesticTradeType.values()))
     private val presetCombo = JComboBox(DefaultComboBoxModel(ScreenerPreset.values()))
     private val refreshButton = JButton()
@@ -115,17 +115,19 @@ class ScreenerView : JPanel(BorderLayout()), Disposable {
     }
 
     private fun buildToolbar(): JPanel {
-        marketCombo.setToolbarWidth(104)
-        domesticTradeTypeCombo.setToolbarWidth(76)
-        domesticTradeTypePanel.setToolbarWidth(76)
-        presetCombo.setToolbarWidth(120)
+        marketCombo.setToolbarWidth(96)
+        domesticTradeTypeCombo.setToolbarWidth(62)
+        presetCombo.setToolbarWidth(108)
 
         return JPanel().apply {
             layout = BoxLayout(this, BoxLayout.X_AXIS)
             add(marketCombo)
-            add(Box.createHorizontalStrut(6))
-            add(domesticTradeTypePanel.apply { add(domesticTradeTypeCombo) })
-            add(Box.createHorizontalStrut(6))
+            add(Box.createHorizontalStrut(4))
+            add(domesticTradeTypePanel.apply {
+                add(domesticTradeTypeCombo, BorderLayout.CENTER)
+                setToolbarWidth(62)
+            })
+            add(Box.createHorizontalStrut(4))
             add(presetCombo)
             add(Box.createHorizontalGlue())
             add(refreshButton)

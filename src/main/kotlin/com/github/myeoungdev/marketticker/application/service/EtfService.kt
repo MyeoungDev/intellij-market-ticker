@@ -4,6 +4,7 @@ import com.github.myeoungdev.marketticker.application.provider.DefaultDataSource
 import com.github.myeoungdev.marketticker.application.provider.EtfProvider
 import com.github.myeoungdev.marketticker.domain.model.etf.EtfDetail
 import com.github.myeoungdev.marketticker.domain.model.etf.EtfSummary
+import com.github.myeoungdev.marketticker.domain.model.etf.EtfDistributionHistory
 import com.intellij.openapi.components.Service
 import kotlinx.coroutines.sync.Mutex
 import kotlinx.coroutines.sync.withLock
@@ -20,6 +21,7 @@ class EtfService(private val provider: EtfProvider = DefaultDataSourceRegistry.e
     private val mutex = Mutex()
     private val listCache = LinkedHashMap<Int, Pair<Long, List<EtfSummary>>>(16, 0.75f, true)
     private val detailCache = LinkedHashMap<String, Pair<Long, EtfDetail?>>(16, 0.75f, true)
+    private val distributionCache = LinkedHashMap<String, Pair<Long, EtfDistributionHistory>>(16, 0.75f, true)
 
     suspend fun loadEtfs(force: Boolean = false): List<EtfSummary> {
         return loadPage(0, force)
@@ -54,6 +56,23 @@ class EtfService(private val provider: EtfProvider = DefaultDataSourceRegistry.e
             evictExpired(detailCache, storedAt)
             detailCache[code] = storedAt + CACHE_TTL_MS to value
             trimOldest(detailCache, MAX_CACHED_DETAILS)
+        }
+        return value
+    }
+
+    suspend fun loadDistributions(code: String): EtfDistributionHistory {
+        val cached = mutex.withLock {
+            val now = System.currentTimeMillis()
+            evictExpired(distributionCache, now)
+            distributionCache[code]?.takeIf { it.first > now }?.second
+        }
+        if (cached != null) return cached
+        val value = kotlinx.coroutines.withContext(kotlinx.coroutines.Dispatchers.IO) { provider.getDomesticEtfDistributions(code) }
+        mutex.withLock {
+            val storedAt = System.currentTimeMillis()
+            evictExpired(distributionCache, storedAt)
+            distributionCache[code] = storedAt + CACHE_TTL_MS to value
+            trimOldest(distributionCache, MAX_CACHED_DETAILS)
         }
         return value
     }

@@ -11,8 +11,7 @@ import com.intellij.openapi.components.Storage
 class EtfWatchlistRepository : PersistentStateComponent<EtfWatchlistRepository.State> {
     data class Entry(
         var code: String = "",
-        var name: String = "",
-        var group: String = "기본"
+        var name: String = ""
     )
 
     data class State(var entries: MutableList<Entry> = mutableListOf())
@@ -22,11 +21,6 @@ class EtfWatchlistRepository : PersistentStateComponent<EtfWatchlistRepository.S
     override fun loadState(state: State) { this.state = State(state.entries.map { it.copy() }.toMutableList()) }
     fun entries(): List<Entry> = state.entries.map { it.copy() }
     fun contains(code: String): Boolean = state.entries.any { it.code == code }
-    fun add(etf: EtfSummary) {
-        if (!contains(etf.code)) state.entries.add(Entry(etf.code, etf.name))
-    }
+    fun add(etf: EtfSummary) { if (!contains(etf.code)) state.entries.add(Entry(etf.code, etf.name)) }
     fun remove(code: String) { state.entries.removeIf { it.code == code } }
-    fun move(code: String, group: String) {
-        state.entries.firstOrNull { it.code == code }?.group = group.trim().ifBlank { "기본" }
-    }
 }

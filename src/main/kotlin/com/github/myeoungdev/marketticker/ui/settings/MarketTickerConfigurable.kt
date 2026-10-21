@@ -6,6 +6,7 @@ import com.github.myeoungdev.marketticker.application.service.AppSettingsService
 import com.github.myeoungdev.marketticker.application.service.LocalizationService
 import com.github.myeoungdev.marketticker.domain.model.CurrencyType
 import com.github.myeoungdev.marketticker.domain.model.etf.EtfPerformancePeriod
+import com.github.myeoungdev.marketticker.domain.model.etf.EtfDiscoveryReturnPeriod
 import com.intellij.openapi.application.ApplicationManager
 import com.intellij.openapi.components.service
 import com.intellij.openapi.options.Configurable
@@ -52,6 +53,7 @@ class MarketTickerConfigurable : Configurable {
     private val chartTabCheckBox = JCheckBox()
     private val heatmapTabCheckBox = JCheckBox()
     private val etfPerformancePeriodCombo = JComboBox(EtfPerformancePeriod.values())
+    private val etfDiscoveryReturnPeriodCombo = JComboBox(EtfDiscoveryReturnPeriod.values())
 
     private var component: JComponent? = null
 
@@ -86,6 +88,14 @@ class MarketTickerConfigurable : Configurable {
                 override fun getListCellRendererComponent(list: JList<*>?, value: Any?, index: Int, isSelected: Boolean, cellHasFocus: Boolean): Component {
                     val label = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus) as JLabel
                     val period = value as? EtfPerformancePeriod
+                    label.text = period?.let { localizationService.text(it.labelKo, it.labelEn) } ?: ""
+                    return label
+                }
+            }
+            etfDiscoveryReturnPeriodCombo.renderer = object : DefaultListCellRenderer() {
+                override fun getListCellRendererComponent(list: JList<*>?, value: Any?, index: Int, isSelected: Boolean, cellHasFocus: Boolean): Component {
+                    val label = super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus) as JLabel
+                    val period = value as? EtfDiscoveryReturnPeriod
                     label.text = period?.let { localizationService.text(it.labelKo, it.labelEn) } ?: ""
                     return label
                 }
@@ -144,6 +154,10 @@ class MarketTickerConfigurable : Configurable {
                     cell(etfPerformancePeriodCombo).align(AlignX.FILL)
                 }
 
+                row(localizationService.text("ETF 발견 수익률 표시", "ETF discovery return period")) {
+                    cell(etfDiscoveryReturnPeriodCombo).align(AlignX.FILL)
+                }
+
                 row {
                     marketPulseCheckBox.text = localizationService.text("한 줄 지표 표시", "Show market pulse ticker")
                     cell(marketPulseCheckBox)
@@ -194,6 +208,7 @@ class MarketTickerConfigurable : Configurable {
         val baseCurrency = baseCurrencyCombo.selectedItem as? CurrencyType ?: CurrencyType.KRW
         val newsPageSize = newsPageSizeCombo.selectedItem as? Int ?: AppSettingsService.DEFAULT_NEWS_PAGE_SIZE
         val etfPerformancePeriod = etfPerformancePeriodCombo.selectedItem as? EtfPerformancePeriod ?: EtfPerformancePeriod.MONTH_1
+        val etfDiscoveryReturnPeriod = etfDiscoveryReturnPeriodCombo.selectedItem as? EtfDiscoveryReturnPeriod ?: EtfDiscoveryReturnPeriod.MONTH_3
 
         return automaticPollingCheckBox.isSelected != settingsService.isAutomaticPollingEnabled() ||
                 mode != settingsService.getRefreshMode() ||
@@ -206,6 +221,7 @@ class MarketTickerConfigurable : Configurable {
                 baseCurrency != settingsService.getBaseCurrency() ||
                 newsPageSize != settingsService.getNewsPageSize() ||
                 etfPerformancePeriod != settingsService.getEtfPerformancePeriod() ||
+                etfDiscoveryReturnPeriod != settingsService.getEtfDiscoveryReturnPeriod() ||
                 marketPulseCheckBox.isSelected != settingsService.isMarketPulseVisible() ||
                 marketSessionIndicatorCheckBox.isSelected != settingsService.isMarketSessionIndicatorVisible() ||
                 portfolioSummaryCheckBox.isSelected != settingsService.isPortfolioSummaryVisible() ||
@@ -236,6 +252,7 @@ class MarketTickerConfigurable : Configurable {
         val baseCurrency = baseCurrencyCombo.selectedItem as? CurrencyType ?: CurrencyType.KRW
         val newsPageSize = newsPageSizeCombo.selectedItem as? Int ?: AppSettingsService.DEFAULT_NEWS_PAGE_SIZE
         val etfPerformancePeriod = etfPerformancePeriodCombo.selectedItem as? EtfPerformancePeriod ?: EtfPerformancePeriod.MONTH_1
+        val etfDiscoveryReturnPeriod = etfDiscoveryReturnPeriodCombo.selectedItem as? EtfDiscoveryReturnPeriod ?: EtfDiscoveryReturnPeriod.MONTH_3
 
         settingsService.setAutomaticPollingEnabled(automaticPollingCheckBox.isSelected)
         settingsService.setRefreshMode(mode)
@@ -248,6 +265,7 @@ class MarketTickerConfigurable : Configurable {
         settingsService.setBaseCurrency(baseCurrency)
         settingsService.setNewsPageSize(newsPageSize)
         settingsService.setEtfPerformancePeriod(etfPerformancePeriod)
+        settingsService.setEtfDiscoveryReturnPeriod(etfDiscoveryReturnPeriod)
         settingsService.setMarketPulseVisible(marketPulseCheckBox.isSelected)
         settingsService.setMarketSessionIndicatorVisible(marketSessionIndicatorCheckBox.isSelected)
         settingsService.setPortfolioSummaryVisible(portfolioSummaryCheckBox.isSelected)
@@ -274,6 +292,7 @@ class MarketTickerConfigurable : Configurable {
         baseCurrencyCombo.selectedItem = settingsService.getBaseCurrency()
         newsPageSizeCombo.selectedItem = settingsService.getNewsPageSize()
         etfPerformancePeriodCombo.selectedItem = settingsService.getEtfPerformancePeriod()
+        etfDiscoveryReturnPeriodCombo.selectedItem = settingsService.getEtfDiscoveryReturnPeriod()
         marketPulseCheckBox.isSelected = settingsService.isMarketPulseVisible()
         marketSessionIndicatorCheckBox.isSelected = settingsService.isMarketSessionIndicatorVisible()
         portfolioSummaryCheckBox.isSelected = settingsService.isPortfolioSummaryVisible()
