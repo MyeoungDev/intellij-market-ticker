@@ -5,6 +5,12 @@
 ## [Unreleased]
 
 ### Fixed
+
+### Added
+
+## [1.3.0]
+
+### Fixed
 - ETF list pagination now replaces the current page instead of appending rows, and expired ETF cache entries are evicted with bounded cache sizes.
 
 ### Added
